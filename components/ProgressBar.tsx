@@ -1,3 +1,4 @@
+import { Spacings } from "@/constants/Theme";
 import React from "react";
 import { Dimensions, StyleSheet, View } from "react-native";
 import Animated, { SharedValue, useAnimatedProps } from "react-native-reanimated";
@@ -37,6 +38,6 @@ export const ProgressBar = ({ progress }: { progress: SharedValue<number> }) => 
 const styles = StyleSheet.create({
   wrapper: {
     alignSelf: "center",
-    marginBottom: 8,
+    marginBottom: Spacings.md,
   },
 });

@@ -1,30 +1,54 @@
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
-import { Dimensions, StyleSheet, View } from "react-native";
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import React, { useEffect, useState } from "react";
+import { Dimensions, Image, StyleSheet, View } from "react-native";
+import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
+import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
+import { BorderRadii, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { setOnboardingComplete } from "@/utils/onboarding";
+import { getOnboardingStatus, OnboardingStatus, setOnboardingStatus } from "@/utils/onboarding";
 
 const { width } = Dimensions.get("window");
 
 const slides = [
   {
     title: "Welcome to FaceGlowUp",
-    description: "Your journey to a more balanced and confident face begins here.",
+    description: "Your path to enhanced facial symmetry, improved confidence, and lasting results begins now.",
+    image: require("@/assets/images/welcome-face.png"),
   },
   {
-    title: "Science-Backed Methods",
+    title: "Science-Driven Results",
     description:
-      "Facial symmetry can be improved. With daily exercises rooted in muscle training and posture science, subtle yet powerful changes are possible.",
+      "Achieve noticeable facial symmetry improvements with daily exercises designed using proven scientific methods.",
+    image: require("@/assets/images/before-after-proof.png"),
   },
   {
-    title: "Consistency is Confidence",
+    title: "Experience Instant Results",
+    description: "Try a 15-second exercise right now and feel the immediate benefits—no commitments required.",
+    image: require("@/assets/images/exercise-preview.png"),
+    cta: {
+      title: "Try it Now",
+      link: `/auth?redirectTo=/exercise/tongue-posture`,
+    },
+  },
+  {
+    title: "AI Face Coach & Analysis",
     description:
-      "We’ll guide you each day. You just show up. Your face will thank you.\n\nReady to start your transformation?",
+      "Get personalized feedback and progress tracking with our AI-powered face coach, designed to help you achieve your goals.",
+    image: require("@/assets/images/ai-coach.png"),
+    cta: {
+      title: "See it in Action",
+      link: `/auth?redirectTo=/add-user-log`,
+    },
+  },
+  {
+    title: "Join the FaceGlowUp Community",
+    description:
+      "Ready to transform your face? Join our community of users who are already experiencing the benefits of facial symmetry.",
+    image: require("@/assets/images/community.png"),
   },
 ];
 
@@ -37,12 +61,25 @@ export default function OnboardingScreen() {
   const activeDot = useThemeColor({}, "text");
   const bg = useThemeColor({}, "background");
 
+  useEffect(() => {
+    (async () => {
+      const onboardingStatus = await getOnboardingStatus("main-onboarding");
+      if (onboardingStatus?.status === OnboardingStatus.IN_PROGRESS) {
+        setIndex(onboardingStatus.step);
+        translateX.value = withTiming(-(onboardingStatus.step * width), { duration: 300 });
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleNext = async () => {
-    if (index < slides.length - 1) {
-      setIndex(index + 1);
-      translateX.value = withTiming(-(index + 1) * width);
+    const nextIndex = index + 1;
+    if (nextIndex < slides.length) {
+      setIndex(nextIndex);
+      translateX.value = withTiming(-nextIndex * width, { duration: 300 });
+      await setOnboardingStatus("main-onboarding", { step: nextIndex, status: OnboardingStatus.IN_PROGRESS });
     } else {
-      await setOnboardingComplete();
+      await setOnboardingStatus("main-onboarding", { step: 0, status: OnboardingStatus.COMPLETED });
       router.replace("/auth");
     }
   };
@@ -51,101 +88,109 @@ export default function OnboardingScreen() {
     transform: [{ translateX: translateX.value }],
   }));
 
+  const swipeGesture = Gesture.Pan()
+    .onUpdate((e) => {
+      translateX.value = -(index * width) + e.translationX;
+    })
+    .onEnd(() => {
+      const newIndex = Math.min(slides.length - 1, Math.max(0, Math.round(-translateX.value / width)));
+      translateX.value = withTiming(-newIndex * width, { duration: 300 });
+      runOnJS(setIndex)(newIndex);
+      runOnJS(setOnboardingStatus)("main-onboarding", { step: newIndex, status: OnboardingStatus.IN_PROGRESS });
+    });
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
-      <Animated.View style={[styles.sliderContainer, animatedStyle]}>
-        {slides.map((slide, i) => (
-          <View style={styles.slide} key={i}>
-            <ThemedText
-              type="title"
-              style={{
-                marginHorizontal: "auto",
-              }}
-            >
-              {slide.title}
-            </ThemedText>
-            <ThemedText
-              type="subtitle"
-              style={{
-                marginHorizontal: "auto",
-                textAlign: "center",
-              }}
-            >
-              {slide.description}
-            </ThemedText>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <GestureDetector gesture={swipeGesture}>
+          <Animated.View style={[styles.slider, animatedStyle]}>
+            {slides.map((slide, idx) => (
+              <View key={idx} style={styles.slide}>
+                {slide.image && <Image source={slide.image} style={styles.image} resizeMode="contain" />}
+                <ThemedText type="title" style={styles.title}>
+                  {slide.title}
+                </ThemedText>
+                <ThemedText type="subtitle" style={styles.description}>
+                  {slide.description}
+                </ThemedText>
+                {slide.cta && (
+                  <ThemedButton
+                    title={slide.cta.title}
+                    onPress={() => router.replace(slide.cta.link as any)}
+                    variant="outline"
+                    style={styles.ctaButton}
+                  />
+                )}
+              </View>
+            ))}
+          </Animated.View>
+        </GestureDetector>
+        <View style={styles.footer}>
+          <View style={styles.dots}>
+            {slides.map((_, idx) => (
+              <View key={idx} style={[styles.dot, { backgroundColor: idx === index ? activeDot : inactiveDot }]} />
+            ))}
           </View>
-        ))}
-      </Animated.View>
-
-      <View style={styles.footer}>
-        <View style={styles.dots}>
-          {slides.map((_, i) => (
-            <View key={i} style={[styles.dot, { backgroundColor: i === index ? activeDot : inactiveDot }]} />
-          ))}
+          <View style={styles.buttons}>
+            <ThemedButton title="Skip" variant="outline" onPress={() => router.replace("/auth")} />
+            <ThemedButton
+              title={index === slides.length - 1 ? "Get Started" : "Next"}
+              variant="solid"
+              onPress={handleNext}
+            />
+          </View>
         </View>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", width: "100%", paddingHorizontal: 24 }}>
-          <ThemedButton
-            title={index < slides.length - 1 ? "Skip" : "Done"}
-            onPress={async () => {
-              if (index < slides.length - 1) {
-                setIndex(slides.length - 1);
-                translateX.value = withTiming(-(slides.length - 1) * width);
-              } else {
-                await setOnboardingComplete();
-                router.replace("/auth");
-              }
-            }}
-            variant="outline"
-          />
-          <ThemedButton
-            title={index < slides.length - 1 ? "Next" : "Get Started"}
-            onPress={handleNext}
-            variant="solid"
-          />
-        </View>
-      </View>
+      </GestureHandlerRootView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  sliderContainer: {
-    flexDirection: "row",
-    width: width * slides.length,
-    flex: 1,
-  },
+  container: { flex: 1 },
+  slider: { flexDirection: "row", width: width * slides.length, flex: 1 },
   slide: {
     width,
-    padding: 24,
-    justifyContent: "center",
+    padding: Spacings.lg,
     alignItems: "center",
-    gap: 16,
+    justifyContent: "center",
+  },
+  image: {
+    width: "90%",
+    height: 240,
+    marginBottom: Spacings.md,
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: "bold",
     textAlign: "center",
-    marginBottom: 20,
+    marginBottom: Spacings.sm,
   },
   description: {
     fontSize: 16,
     textAlign: "center",
+    marginBottom: Spacings.md,
+    paddingHorizontal: Spacings.md,
+  },
+  ctaButton: {
+    width: "80%",
   },
   footer: {
-    paddingBottom: 40,
-    alignItems: "center",
+    paddingVertical: Spacings.lg,
   },
   dots: {
     flexDirection: "row",
-    marginBottom: 20,
+    justifyContent: "center",
+    marginBottom: Spacings.md,
   },
   dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginHorizontal: 6,
+    width: 8,
+    height: 8,
+    borderRadius: BorderRadii.sm,
+    marginHorizontal: Spacings.xs,
+  },
+  buttons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: Spacings.xl,
   },
 });

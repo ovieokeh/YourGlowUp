@@ -14,6 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
+import { BorderRadii, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { supabase } from "@/supabase";
 
@@ -35,10 +36,7 @@ export default function AuthScreen() {
 
     setLoading(true);
     if (isSignUp) {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-      });
+      const { error } = await supabase.auth.signUp({ email, password });
       if (error) {
         setLoading(false);
         Alert.alert("Sign Up Failed", error.message);
@@ -48,17 +46,11 @@ export default function AuthScreen() {
       setLoading(false);
       return;
     }
-    // Sign in
-    // Use signInWithPassword for both sign in and sign up
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
 
     if (error) {
-      console.log("error message here", error);
       Alert.alert("Sign In Failed", error.message);
     } else {
       router.replace("/(tabs)");
@@ -80,11 +72,11 @@ export default function AuthScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
         <View style={styles.inner}>
-          <View style={{ alignItems: "center", gap: 8, marginBottom: 24 }}>
+          <View style={{ alignItems: "center", gap: Spacings.sm, marginBottom: Spacings.lg }}>
             <ThemedText type="title" style={{ marginHorizontal: "auto" }}>
               {isSignUp ? "Create an Account" : "Welcome Back"}
             </ThemedText>
-            <ThemedText type="subtitle" style={[{ marginHorizontal: "auto" }]}>
+            <ThemedText type="subtitle" style={{ marginHorizontal: "auto" }}>
               {isSignUp ? "Start your symmetry journey today." : "Sign in with your email and password"}
             </ThemedText>
           </View>
@@ -113,10 +105,7 @@ export default function AuthScreen() {
             title={isSignUp ? "Sign Up" : "Sign In"}
             disabled={!email || !password || loading}
             loading={loading}
-            style={{
-              ...styles.button,
-              ...(!email || !password || loading ? styles.buttonDisabled : {}),
-            }}
+            style={{ ...styles.button, ...(!email || !password || loading ? styles.buttonDisabled : {}) }}
             variant="solid"
           />
 
@@ -157,27 +146,27 @@ const styles = StyleSheet.create({
   inner: {
     flex: 1,
     justifyContent: "center",
-    padding: 24,
-    paddingTop: 48,
-    gap: 12,
+    padding: Spacings.lg,
+    paddingTop: Spacings.xl * 2,
+    gap: Spacings.sm,
   },
   input: {
-    padding: 14,
-    borderRadius: 8,
+    padding: Spacings.md,
+    borderRadius: BorderRadii.md,
     fontSize: 16,
-    marginBottom: 16,
+    marginBottom: Spacings.md,
     borderWidth: 1,
   },
   or: {
     fontSize: 15,
-    marginTop: 8,
+    marginTop: Spacings.sm,
     textAlign: "center",
   },
   button: {
-    paddingVertical: 14,
-    borderRadius: 8,
+    paddingVertical: Spacings.lg,
+    borderRadius: BorderRadii.md,
     alignItems: "center",
-    marginTop: 8,
+    marginTop: Spacings.sm,
   },
   buttonDisabled: {
     opacity: 0.6,
@@ -188,7 +177,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   toggle: {
-    marginTop: 24,
+    marginTop: Spacings.lg,
     alignItems: "center",
   },
   toggleText: {

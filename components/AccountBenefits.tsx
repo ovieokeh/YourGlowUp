@@ -1,5 +1,6 @@
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
+import { BorderRadii, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useRouter } from "expo-router";
 import React from "react";
@@ -51,7 +52,7 @@ export const AccountBenefits: React.FC = () => {
   const border = useThemeColor({}, "border");
 
   return (
-    <View style={[styles.container]}>
+    <View style={styles.container}>
       <ThemedText type="title" style={[styles.heading, { color: text }]}>
         Unlock Your Full Potential
       </ThemedText>
@@ -65,7 +66,7 @@ export const AccountBenefits: React.FC = () => {
         ))}
       </View>
 
-      <ThemedButton title="Create Your Free Account" onPress={() => router.push("/auth")} style={{ ...styles.cta }} />
+      <ThemedButton title="Create Your Free Account" onPress={() => router.push("/auth")} style={styles.cta} />
     </View>
   );
 };
@@ -77,8 +78,8 @@ const BenefitCard: React.FC<{
   text: string;
   muted: string;
   border: string;
-}> = ({ benefit, tint, text, muted, border }) => (
-  <View style={[styles.card, { borderColor: tint }]}>
+}> = ({ benefit, tint, text, muted }) => (
+  <View style={[styles.card, { borderColor: tint, shadowColor: tint }]}>
     <IconSymbol name={benefit.icon} size={28} color={tint} style={styles.icon} />
     <View>
       <ThemedText style={[styles.cardTitle, { color: text }]}>{benefit.title}</ThemedText>
@@ -89,37 +90,36 @@ const BenefitCard: React.FC<{
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 24,
+    paddingVertical: Spacings.lg,
   },
   heading: {
     fontSize: 24,
     fontWeight: "700",
     textAlign: "center",
-    marginBottom: 8,
+    marginBottom: Spacings.xs,
   },
   subheading: {
     fontSize: 16,
     fontWeight: "500",
     textAlign: "center",
-    marginBottom: 24,
+    marginBottom: Spacings.lg,
     lineHeight: 22,
   },
   grid: {},
   card: {
     flexDirection: "row",
     alignItems: "flex-start",
-    padding: 12,
-    marginBottom: 16,
+    padding: Spacings.md,
+    marginBottom: Spacings.md,
     borderWidth: 1,
-    borderRadius: 12,
-    shadowColor: "#000",
+    borderRadius: BorderRadii.md,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
   },
   icon: {
-    marginRight: 12,
+    marginRight: Spacings.md,
   },
   cardTitle: {
     fontSize: 14,
@@ -127,13 +127,13 @@ const styles = StyleSheet.create({
   },
   cardDesc: {
     fontSize: 12,
-    marginTop: 4,
+    marginTop: Spacings.xs,
   },
   cta: {
-    marginTop: 24,
-    paddingVertical: 14,
-    borderRadius: 8,
+    marginTop: Spacings.lg,
+    paddingVertical: Spacings.md,
+    borderRadius: BorderRadii.md,
     alignSelf: "center",
-    paddingHorizontal: 32,
+    paddingHorizontal: Spacings.xl,
   },
 });

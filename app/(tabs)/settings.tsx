@@ -3,12 +3,12 @@ import { Pressable, SafeAreaView, StyleSheet, useWindowDimensions, View } from "
 
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import { Colors } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import AccountView from "@/views/settings/account";
 import AppSettingsView from "@/views/settings/app-settings";
 import { useLocalSearchParams } from "expo-router";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
-import { Colors } from "react-native/Libraries/NewAppScreen";
 
 const TABS = ["App Settings", "Account"] as const;
 

@@ -1,4 +1,4 @@
-import { Colors } from "@/constants/Colors";
+import { Colors } from "@/constants/Theme";
 import { useRouter } from "expo-router";
 import { Pressable } from "react-native";
 import { IconSymbol } from "./ui/IconSymbol";

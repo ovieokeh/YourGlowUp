@@ -1,5 +1,6 @@
 export const EXERCISES = [
   {
+    id: "tongue-posture",
     name: "Tongue Posture (Mewing)",
     area: "Skull support",
     duration: 12,
@@ -17,6 +18,7 @@ export const EXERCISES = [
     color: "#FF5733",
   },
   {
+    id: "chin-tuck",
     name: "Chin Tucks",
     area: "Neck posture",
     duration: 45,
@@ -33,6 +35,7 @@ export const EXERCISES = [
     color: "#FAC800",
   },
   {
+    id: "smile-symmetry",
     name: "Smile Symmetry Drill",
     area: "Zygomatic control",
     duration: 60,
@@ -50,6 +53,7 @@ export const EXERCISES = [
     color: "#00BFFF",
   },
   {
+    id: "chewing",
     name: "Chewing (Mastic Gum)",
     area: "Masseter hypertrophy",
     duration: 300,
@@ -66,6 +70,7 @@ export const EXERCISES = [
     color: "#DCFF00",
   },
   {
+    id: "fish-face",
     name: "Fish Face",
     area: "Buccinator tone",
     duration: 45,
@@ -78,6 +83,7 @@ export const EXERCISES = [
     color: "#A0FF00",
   },
   {
+    id: "jaw-push-resist",
     name: "Jaw Push-Resist",
     area: "Jaw strength",
     duration: 60,
@@ -94,6 +100,7 @@ export const EXERCISES = [
     color: "#00FF7F",
   },
   {
+    id: "neck-curl-ups",
     name: "Neck Curl-Ups",
     area: "Cervical tone",
     duration: 60,

@@ -19,7 +19,7 @@ export function ThemedText({ style, lightColor, darkColor, type = "default", ...
         type === "title" ? styles.title : undefined,
         type === "defaultSemiBold" ? styles.defaultSemiBold : undefined,
         type === "subtitle" ? styles.subtitle : undefined,
-        type === "link" ? styles.link : undefined,
+        type === "link" ? [styles.link, { color }] : undefined,
         style,
       ]}
       {...rest}
@@ -40,15 +40,16 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "bold",
-    lineHeight: 32,
+    lineHeight: 34,
   },
   subtitle: {
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: 18,
+    fontWeight: "600",
+    lineHeight: 26,
   },
   link: {
-    lineHeight: 30,
     fontSize: 16,
-    color: "#0a7ea4",
+    lineHeight: 24,
+    textDecorationLine: "underline",
   },
 });

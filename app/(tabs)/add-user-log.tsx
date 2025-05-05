@@ -21,7 +21,7 @@ import { Collapsible } from "@/components/Collapsible";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { Colors } from "@/constants/Colors";
+import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { saveUserLog } from "@/utils/db";
 
@@ -139,15 +139,9 @@ export default function AddUserLogScreen() {
                   style={{
                     borderColor,
                     ...styles.tab,
-                    ...(dominantSide === side
-                      ? {
-                          backgroundColor: backgroundActive,
-                          borderColor: "transparent",
-                          color: dominantSide === side ? Colors.light.text : undefined,
-                        }
-                      : {}),
                   }}
                   onPress={() => setDominantSide(side)}
+                  active={dominantSide === side}
                 />
               ))}
             </View>
@@ -178,7 +172,7 @@ export default function AddUserLogScreen() {
                     height: 18,
                     borderRadius: 4,
                     borderWidth: 1,
-                    borderColor,
+                    borderColor: inputTextColor,
                     backgroundColor: gumUsed ? backgroundActive : "transparent",
                   }}
                 />
@@ -218,18 +212,12 @@ export default function AddUserLogScreen() {
                   style={{
                     borderColor,
                     ...styles.tab,
-                    ...(symmetryRating === num
-                      ? {
-                          backgroundColor: backgroundActive,
-                          borderColor: "transparent",
-                          color: symmetryRating === num ? Colors.light.text : undefined,
-                        }
-                      : {}),
                   }}
                   textStyle={{
                     fontSize: 14,
                   }}
                   variant="ghost"
+                  active={symmetryRating === num}
                 />
               ))}
             </View>
@@ -242,6 +230,7 @@ export default function AddUserLogScreen() {
               value={notes}
               onChangeText={setNotes}
               placeholder="Optional notes..."
+              placeholderTextColor={inputTextColor}
             />
 
             <ThemedText style={styles.label}>Progress Photo</ThemedText>
@@ -291,52 +280,81 @@ export default function AddUserLogScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, paddingBottom: 114 },
-  title: { fontSize: 22, fontWeight: "700", marginBottom: 20 },
-  label: { fontSize: 15, marginTop: 24, marginBottom: 4 },
-  tabsRow: { flexDirection: "row", gap: 8, flexWrap: "wrap", marginBottom: 8 },
+  container: {
+    padding: Spacings.lg,
+    paddingBottom: Spacings.xl * 3,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: "700",
+    marginBottom: Spacings.lg,
+  },
+  label: {
+    fontSize: 15,
+    marginTop: Spacings.lg,
+    marginBottom: Spacings.xs,
+  },
+  tabsRow: {
+    flexDirection: "row",
+    gap: Spacings.sm,
+    flexWrap: "wrap",
+    marginBottom: Spacings.sm,
+  },
   tab: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 6,
+    paddingVertical: Spacings.sm,
+    paddingHorizontal: Spacings.md,
+    borderRadius: BorderRadii.sm,
     borderWidth: 1,
   },
-  sliderRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  sliderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacings.xs,
+  },
   inputBox: {
     width: 50,
     height: 36,
     borderWidth: 1,
-    borderRadius: 6,
-    paddingHorizontal: 8,
+    borderRadius: BorderRadii.sm,
+    paddingHorizontal: Spacings.sm,
     textAlign: "center",
   },
-  checkboxRow: { flexDirection: "row", alignItems: "center", marginTop: 16 },
-  checkbox: { flexDirection: "row", alignItems: "center", gap: 8, marginRight: 8 },
+  checkboxRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: Spacings.md,
+  },
+  checkbox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacings.sm,
+    marginRight: Spacings.sm,
+  },
   textArea: {
     borderWidth: 1,
-    borderRadius: 6,
-    padding: 8,
+    borderRadius: BorderRadii.sm,
+    padding: Spacings.sm,
     height: 80,
     textAlignVertical: "top",
   },
   photo: {
     width: "100%",
     height: 200,
-    borderRadius: 8,
-    marginVertical: 10,
+    borderRadius: BorderRadii.md,
+    marginVertical: Spacings.sm,
   },
   photoButton: {
     borderWidth: 1,
-    borderRadius: 6,
-    padding: 12,
+    borderRadius: BorderRadii.sm,
+    padding: Spacings.md,
     alignItems: "center",
-    marginVertical: 10,
+    marginVertical: Spacings.sm,
   },
   submitButton: {
     backgroundColor: Colors.light.success,
-    marginTop: 24,
-    paddingVertical: 14,
-    borderRadius: 8,
+    marginTop: Spacings.lg,
+    paddingVertical: Spacings.lg,
+    borderRadius: BorderRadii.md,
     alignItems: "center",
   },
 });

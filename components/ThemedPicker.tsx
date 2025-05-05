@@ -1,6 +1,5 @@
-// components/CustomPicker.tsx
-
 import { ThemedText } from "@/components/ThemedText";
+import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import React, { useCallback, useState } from "react";
 import { FlatList, Modal, Pressable, StyleProp, StyleSheet, TextStyle, ViewStyle } from "react-native";
@@ -84,7 +83,11 @@ export function ThemedPicker<T extends unknown>({
                   ]}
                 >
                   <ThemedText
-                    style={[styles.optionLabel, { color: item.value === selectedValue ? "#fff" : text }, labelStyle]}
+                    style={[
+                      styles.optionLabel,
+                      { color: item.value === selectedValue ? Colors.dark.background : text },
+                      labelStyle,
+                    ]}
                   >
                     {item.label}
                   </ThemedText>
@@ -103,12 +106,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: Spacings.sm,
+    paddingHorizontal: Spacings.md,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: BorderRadii.md,
     alignSelf: "center",
-    gap: 8,
+    gap: Spacings.sm,
   },
   inputLabel: {
     fontSize: 16,
@@ -119,15 +122,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   dropdown: {
-    marginHorizontal: 20,
+    marginHorizontal: Spacings.lg,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: BorderRadii.md,
     maxHeight: "50%",
     overflow: "hidden",
   },
   option: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: Spacings.sm,
+    paddingHorizontal: Spacings.md,
   },
   optionLabel: {
     fontSize: 16,

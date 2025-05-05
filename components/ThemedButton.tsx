@@ -9,7 +9,7 @@ import {
   ViewStyle,
 } from "react-native";
 
-import { Colors } from "@/constants/Colors";
+import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { ThemedText } from "./ThemedText";
 import { IconSymbol, IconSymbolName } from "./ui/IconSymbol";
@@ -22,6 +22,7 @@ export type ThemedButtonProps = {
   variant?: ThemedButtonVariant;
   loading?: boolean;
   disabled?: boolean;
+  active?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
   icon?: IconSymbolName;
@@ -34,55 +35,58 @@ export function ThemedButton({
   variant = "solid",
   loading = false,
   disabled = false,
+  active = false,
   style,
   textStyle,
   icon,
   iconPlacement = "left",
 }: ThemedButtonProps) {
-  const themeTextColor = useThemeColor({}, "text");
+  const currentTheme = useThemeColor({}, "background") === Colors.dark.background ? "dark" : "light";
+  const theme = Colors[currentTheme];
 
   const getStyles = (): { button: ViewStyle; textColor: string } => {
     switch (variant) {
       case "solid":
+      case "primary":
         return {
-          button: { backgroundColor: Colors.dark.accent },
-          textColor: themeTextColor,
+          button: { backgroundColor: theme.accent },
+          textColor: currentTheme === "dark" ? Colors.dark.background : Colors.light.background,
         };
       case "outline":
         return {
           button: {
             backgroundColor: "transparent",
-            borderColor: Colors.dark.border,
+            borderColor: theme.border,
             borderWidth: 1.5,
           },
-          textColor: themeTextColor,
-        };
-      case "primary":
-        return {
-          button: { backgroundColor: Colors.dark.accent },
-          textColor: themeTextColor,
+          textColor: theme.text,
         };
       case "destructive":
         return {
-          button: { backgroundColor: Colors.dark.danger },
-          textColor: themeTextColor,
+          button: { backgroundColor: theme.danger },
+          textColor: currentTheme === "dark" ? Colors.dark.background : Colors.light.background,
         };
       case "success":
         return {
-          button: { backgroundColor: Colors.dark.success },
-          textColor: themeTextColor,
+          button: { backgroundColor: theme.success },
+          textColor: currentTheme === "dark" ? Colors.dark.background : Colors.light.background,
         };
-
       case "ghost":
       default:
         return {
           button: { backgroundColor: "transparent" },
-          textColor: themeTextColor,
+          textColor: theme.tint,
         };
     }
   };
 
   const { button, textColor } = getStyles();
+
+  const activeStyles = {
+    backgroundColor: variant === "outline" ? theme.border : theme.accent,
+    borderColor: variant === "outline" ? theme.border : undefined,
+    borderWidth: variant === "outline" ? 1.5 : undefined,
+  };
 
   return (
     <TouchableOpacity
@@ -91,7 +95,7 @@ export function ThemedButton({
       activeOpacity={0.8}
       accessibilityRole="button"
       accessibilityLabel={title}
-      style={[styles.base, button, disabled && styles.disabled, style]}
+      style={[styles.base, button, disabled && styles.disabled, style, active && activeStyles]}
     >
       {loading ? (
         <ActivityIndicator color={textColor} />
@@ -100,7 +104,18 @@ export function ThemedButton({
           {icon && iconPlacement === "left" && (
             <IconSymbol name={icon} size={18} color={textColor} style={styles.iconLeft} />
           )}
-          <ThemedText style={[styles.text, { color: textColor }, textStyle]}>{title}</ThemedText>
+          <ThemedText
+            style={[
+              styles.text,
+              { color: textColor },
+              textStyle,
+              active && {
+                color: ["ghost", "outline"].includes(variant) ? Colors.light.text : textColor,
+              },
+            ]}
+          >
+            {title}
+          </ThemedText>
           {icon && iconPlacement === "right" && (
             <IconSymbol name={icon} size={18} color={textColor} style={styles.iconRight} />
           )}
@@ -112,9 +127,9 @@ export function ThemedButton({
 
 const styles = StyleSheet.create({
   base: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
+    paddingVertical: Spacings.sm,
+    paddingHorizontal: Spacings.md,
+    borderRadius: BorderRadii.md,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -123,10 +138,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   iconLeft: {
-    marginRight: 8,
+    marginRight: Spacings.sm,
   },
   iconRight: {
-    marginLeft: 8,
+    marginLeft: Spacings.sm,
   },
   text: {
     fontSize: 16,

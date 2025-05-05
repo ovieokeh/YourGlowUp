@@ -10,7 +10,8 @@ import "react-native-reanimated";
 import { ThemeProviderCustom, useAppTheme } from "@/hooks/theme/context";
 import { supabase } from "@/supabase";
 import { initLogsTable } from "@/utils/db";
-import { hasCompletedOnboarding } from "@/utils/onboarding";
+import { initBadgesTable } from "@/utils/gamification";
+import { getOnboardingStatus, OnboardingStatus, setOnboardingStatus } from "@/utils/onboarding";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -42,9 +43,9 @@ function App() {
 
   useEffect(() => {
     const init = async () => {
-      const onboarded = await hasCompletedOnboarding();
-      if (!onboarded) {
-        router.replace("/onboarding");
+      const onboarded = await getOnboardingStatus("main-onboarding");
+      if (onboarded?.status !== OnboardingStatus.COMPLETED) {
+        router.replace(`/onboarding?step=${onboarded?.step}`);
         return;
       }
 
@@ -67,6 +68,11 @@ function App() {
 
   useEffect(() => {
     initLogsTable();
+    initBadgesTable();
+    setOnboardingStatus("main-onboarding", {
+      step: 0,
+      status: OnboardingStatus.NOT_STARTED,
+    });
   }, []);
 
   if (!loaded) {

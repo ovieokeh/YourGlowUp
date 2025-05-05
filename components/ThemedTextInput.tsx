@@ -1,6 +1,7 @@
 import React from "react";
 import { StyleSheet, TextInput, TextInputProps, TextStyle, View, ViewStyle } from "react-native";
 
+import { BorderRadii, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { ThemedText } from "./ThemedText";
 
@@ -28,7 +29,11 @@ export function ThemedTextInput({
 
   return (
     <View style={[styles.container, containerStyle]}>
-      {label && <ThemedText style={[styles.label, labelStyle]}>{label}</ThemedText>}
+      {label && (
+        <ThemedText type="subtitle" style={[styles.label, labelStyle]}>
+          {label}
+        </ThemedText>
+      )}
       <TextInput
         style={[styles.input, { backgroundColor, color: textColor, borderColor }, style]}
         placeholderTextColor={placeholderColor}
@@ -40,19 +45,17 @@ export function ThemedTextInput({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
+    marginBottom: Spacings.md,
     width: "100%",
   },
   label: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 6,
+    marginBottom: Spacings.xs,
   },
   input: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: Spacings.md,
+    paddingVertical: Spacings.sm,
     fontSize: 16,
-    borderRadius: 8,
+    borderRadius: BorderRadii.md,
     borderWidth: 1,
   },
 });

@@ -5,8 +5,8 @@ import { LineChart, PieChart } from "react-native-chart-kit";
 
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { Colors } from "@/constants/Colors";
 import { EXERCISES } from "@/constants/Exercises";
+import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { getLogs, isExerciseLog, isUserLog, Log } from "@/utils/db";
 
@@ -231,11 +231,18 @@ const StatCard = ({ label, value }: { label: string; value: string }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { padding: 16, paddingBottom: 92 },
-  selectorRow: { flexDirection: "row", gap: 12, marginBottom: 24 },
+  container: {
+    padding: Spacings.md,
+    paddingBottom: Spacings.xl * 2,
+  },
+  selectorRow: {
+    flexDirection: "row",
+    gap: Spacings.md,
+    marginBottom: Spacings.lg,
+  },
   rangeBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 14,
+    paddingVertical: Spacings.xs,
+    paddingHorizontal: Spacings.md,
     borderRadius: 999,
     borderWidth: 1,
   },
@@ -243,13 +250,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    gap: 12,
-    marginBottom: 24,
+    gap: Spacings.md,
+    marginBottom: Spacings.lg,
   },
   card: {
-    width: "48%",
-    padding: 14,
-    borderRadius: 12,
+    minWidth: "38%",
+    flex: 1,
+    padding: Spacings.md,
+    borderRadius: BorderRadii.md,
     borderWidth: 1,
   },
   cardLabel: {
@@ -262,23 +270,29 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   section: {
-    marginTop: 32,
+    marginTop: Spacings.xl,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    marginBottom: 8,
+    marginBottom: Spacings.sm,
   },
-  chart: { marginVertical: 8, borderRadius: 8 },
-  emptyText: { textAlign: "center", marginVertical: 32 },
+  chart: {
+    marginVertical: Spacings.sm,
+    borderRadius: BorderRadii.sm,
+  },
+  emptyText: {
+    textAlign: "center",
+    marginVertical: Spacings.xl,
+  },
   pieWrapper: {
     width: "100%",
     alignItems: "center",
-    marginTop: 16,
-    paddingBottom: 16,
+    marginTop: Spacings.md,
+    paddingBottom: Spacings.md,
   },
   legendScroll: {
-    marginTop: 16,
+    marginTop: Spacings.md,
     maxHeight: 50,
   },
   legendContainer: {
@@ -288,13 +302,13 @@ const styles = StyleSheet.create({
   legendItem: {
     flexDirection: "row",
     alignItems: "center",
-    marginRight: 16,
+    marginRight: Spacings.md,
   },
   legendMarker: {
     width: 12,
     height: 12,
-    borderRadius: 2,
-    marginRight: 6,
+    borderRadius: BorderRadii.sm / 2,
+    marginRight: Spacings.xs,
   },
   legendText: {
     fontSize: 12,

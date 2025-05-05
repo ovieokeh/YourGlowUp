@@ -6,7 +6,7 @@ import { StyleSheet, View, useColorScheme } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
 import { Log, getLogs, isExerciseLog } from "@/utils/db";
 
-import { Colors } from "@/constants/Colors";
+import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { ThemedButton } from "./ThemedButton";
 import { ThemedView } from "./ThemedView";
@@ -18,6 +18,8 @@ export const TodaysStats: React.FC = () => {
   const router = useRouter();
 
   const wrapperBorder = useThemeColor({}, "border");
+  const muted = useThemeColor({}, "muted");
+  const text = useThemeColor({}, "text");
 
   useFocusEffect(
     useCallback(() => {
@@ -35,7 +37,7 @@ export const TodaysStats: React.FC = () => {
     (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
   )[0];
 
-  if (!todayLogs.length) {
+  if (!exercisesToday.length) {
     return (
       <View style={[styles.wrapper, { borderColor: wrapperBorder }]}>
         <ThemedText style={styles.emptyText}>No activity yet today. Ready to crush a session?</ThemedText>
@@ -45,7 +47,9 @@ export const TodaysStats: React.FC = () => {
 
   return (
     <View style={[styles.wrapper, { borderColor: wrapperBorder }]}>
-      <ThemedText style={styles.title}>Today&apos;s Activity</ThemedText>
+      <ThemedText type="subtitle" style={styles.title}>
+        Today&apos;s Activity
+      </ThemedText>
 
       <View style={styles.statsGrid}>
         <StatCard
@@ -53,7 +57,8 @@ export const TodaysStats: React.FC = () => {
           label="Exercises Done"
           value={exercisesToday.length.toString()}
           color={Colors[colorScheme].success}
-          colorScheme={colorScheme}
+          muted={muted}
+          text={text}
         />
 
         {lastExercise && (
@@ -65,7 +70,8 @@ export const TodaysStats: React.FC = () => {
               addSuffix: true,
             })}
             color={Colors[colorScheme].tint}
-            colorScheme={colorScheme}
+            muted={muted}
+            text={text}
           />
         )}
       </View>
@@ -88,52 +94,53 @@ const StatCard = ({
   value,
   subValue,
   color,
-  colorScheme,
+  muted,
+  text,
 }: {
   icon: IconSymbolName;
   label: string;
   value: string;
   subValue?: string;
   color: string;
-  colorScheme: "light" | "dark";
+  muted: string;
+  text: string;
 }) => (
-  <ThemedView style={[styles.card]}>
+  <ThemedView style={styles.card}>
     <IconSymbol name={icon} color={color} size={22} />
-    <View style={{ marginLeft: 12 }}>
-      <ThemedText style={styles.cardLabel}>{label}</ThemedText>
-      <ThemedText style={[styles.cardValue, { color: Colors[colorScheme].text }]}>{value}</ThemedText>
-      {subValue && <ThemedText style={styles.cardSubValue}>{subValue}</ThemedText>}
+    <View style={{ marginLeft: Spacings.sm }}>
+      <ThemedText style={[styles.cardLabel, { color: muted }]}>{label}</ThemedText>
+      <ThemedText style={[styles.cardValue, { color: text }]}>{value}</ThemedText>
+      {subValue && <ThemedText style={[styles.cardSubValue, { color: muted }]}>{subValue}</ThemedText>}
     </View>
   </ThemedView>
 );
 
 const styles = StyleSheet.create({
   wrapper: {
-    marginBottom: 24,
-    paddingVertical: 16,
-    borderRadius: 16,
+    marginBottom: Spacings.lg,
+    paddingVertical: Spacings.md,
+    paddingHorizontal: Spacings.md,
+    borderRadius: BorderRadii.md,
+    borderWidth: 1,
   },
   title: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 16,
+    marginBottom: Spacings.md,
   },
   statsGrid: {
-    gap: 12,
+    gap: Spacings.sm,
   },
   card: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 16,
-    borderRadius: 14,
+    padding: Spacings.md,
+    borderRadius: BorderRadii.sm,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.07,
     shadowRadius: 6,
-    elevation: 3, // Android
+    elevation: 3,
   },
   cardLabel: {
     fontSize: 13,
-    color: "#888",
   },
   cardValue: {
     fontSize: 18,
@@ -141,7 +148,6 @@ const styles = StyleSheet.create({
   },
   cardSubValue: {
     fontSize: 13,
-    color: "#777",
   },
   emptyText: {
     textAlign: "center",
@@ -149,12 +155,8 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
   button: {
-    marginTop: 20,
+    marginTop: Spacings.lg,
     alignItems: "center",
     minWidth: 160,
-  },
-  buttonText: {
-    fontWeight: "600",
-    fontSize: 16,
   },
 });

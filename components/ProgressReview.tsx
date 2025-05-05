@@ -2,13 +2,14 @@ import Slider from "@react-native-community/slider";
 import React, { useEffect, useRef, useState } from "react";
 import { Dimensions, Image, StyleSheet, View } from "react-native";
 
+import { Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { ThemedButton } from "./ThemedButton";
 import { ThemedPicker } from "./ThemedPicker";
 import { ThemedText } from "./ThemedText";
 
 const { width: SCREEN_W } = Dimensions.get("window");
-const GRID_SIZE = SCREEN_W * 0.9; // 90% of screen width
+const GRID_SIZE = SCREEN_W * 0.9;
 const FRAME_RATE_OPTIONS = [
   { label: "0.5×", value: "2000" },
   { label: "1×", value: "1000" },
@@ -29,7 +30,6 @@ export const ProgressReview: React.FC<Props> = ({ photoURIs }) => {
   const background = useThemeColor({}, "background");
   const border = useThemeColor({}, "border");
 
-  // Auto-scrub control
   useEffect(() => {
     if (playing) {
       timer.current = setInterval(() => {
@@ -43,7 +43,6 @@ export const ProgressReview: React.FC<Props> = ({ photoURIs }) => {
     };
   }, [playing, fpsInterval, photoURIs.length]);
 
-  // Preload next image
   useEffect(() => {
     const next = (current + 1) % photoURIs.length;
     if (!photoURIs[next]) return;
@@ -52,9 +51,8 @@ export const ProgressReview: React.FC<Props> = ({ photoURIs }) => {
 
   if (!photoURIs?.length)
     return (
-      <View style={{ gap: 16, width: "100%" }}>
+      <View style={{ gap: Spacings.md, width: "100%" }}>
         <ThemedText type="subtitle">No photos available</ThemedText>
-
         <ThemedText type="default">
           Please take some photos to review your progress. You can do this by adding a self-report log and including a
           progress photo.
@@ -65,14 +63,10 @@ export const ProgressReview: React.FC<Props> = ({ photoURIs }) => {
   return (
     <View style={{ backgroundColor: background, width: "100%" }}>
       <View style={[styles.wrapper, { backgroundColor: background }]} ref={containerRef}>
-        {/* Center-cropped photo */}
         {!!photoURIs[current] && <Image source={{ uri: photoURIs[current] }} style={styles.photo} resizeMode="cover" />}
-
-        {/* Static grid */}
         <Image source={require("@/assets/images/grid.png")} style={styles.grid} resizeMode="cover" />
-
-        {/* Controls */}
       </View>
+
       <View style={styles.controls}>
         <ThemedButton
           icon={playing ? "pause.fill" : "play.fill"}
@@ -117,7 +111,7 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   photo: {
-    paddingTop: 8,
+    paddingTop: Spacings.sm,
     position: "absolute",
     width: GRID_SIZE,
     height: GRID_SIZE,
@@ -127,16 +121,16 @@ const styles = StyleSheet.create({
     alignSelf: "flex-end",
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: Spacings.sm,
+    paddingHorizontal: Spacings.md,
   },
   button: {
-    padding: 8,
-    marginHorizontal: 4,
+    padding: Spacings.sm,
+    marginHorizontal: Spacings.xs,
   },
   slider: {
     flex: 1,
-    marginHorizontal: 8,
+    marginHorizontal: Spacings.sm,
   },
   picker: {
     width: 100,

@@ -9,7 +9,7 @@ export const initLogsTable = () => {
   db.execSync(
     `CREATE TABLE IF NOT EXISTS logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        type TEXT NOT NULL, -- "exercise" | "user"
+        type TEXT NOT NULL, -- "exercise" | "user" | "task
         exercise TEXT,
         duration INTEGER,
         dominantSide TEXT,
@@ -23,6 +23,14 @@ export const initLogsTable = () => {
     );`
   );
 };
+
+export interface ExerciseLog {
+  id: number;
+  type: "exercise";
+  exercise: string;
+  duration: number;
+  completedAt: string;
+}
 
 export const saveExerciseLog = (exercise: string, duration: number) => {
   const now = new Date().toISOString();
@@ -68,20 +76,26 @@ export const saveUserLog = async (log: UserLogCreate) => {
   );
 };
 
-export interface ExerciseLog {
+export interface TaskLog {
   id: number;
-  type: "exercise";
-  exercise: string;
-  duration: number;
+  type: "task";
+  task: string;
   completedAt: string;
 }
+export const saveTaskLog = (task: string) => {
+  const now = new Date().toISOString();
+  db.runSync(`INSERT INTO logs (type, task, completedAt) VALUES ("task", ?, ?)`, [task, now]);
+};
 
-export type Log = UserLog | ExerciseLog;
+export type Log = UserLog | ExerciseLog | TaskLog;
 export const isUserLog = (log: Log): log is UserLog => {
   return log.type === "user";
 };
 export const isExerciseLog = (log: Log): log is ExerciseLog => {
   return log.type === "exercise";
+};
+export const isTaskLog = (log: Log): log is TaskLog => {
+  return log.type === "task";
 };
 
 export const getLogs = (callback: (rows: Log[]) => void) => {

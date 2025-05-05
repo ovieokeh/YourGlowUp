@@ -8,12 +8,12 @@ import { ThemedFabButton } from "@/components/ThemedFabButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { TodaysStats } from "@/components/TodaysStats";
-import { Colors } from "@/constants/Colors";
 import { EXERCISES } from "@/constants/Exercises";
+import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const CARD_WIDTH = Dimensions.get("window").width - 48;
+const CARD_WIDTH = Dimensions.get("window").width - Spacings.lg * 2;
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -24,7 +24,7 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ThemedView style={styles.container}>
-        <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+        <ScrollView contentContainerStyle={{ paddingBottom: Spacings.lg }}>
           <ThemedText style={styles.title} type="subtitle">
             At a glance
           </ThemedText>
@@ -84,22 +84,22 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 24,
-    paddingBottom: 34,
+    padding: Spacings.lg,
+    paddingBottom: Spacings.xl + 10,
   },
   title: {
     fontSize: 20,
     fontWeight: "600",
-    marginBottom: 12,
+    marginBottom: Spacings.sm,
   },
   card: {
     borderWidth: 1,
-    marginBottom: 32,
-    borderRadius: 12,
+    marginBottom: Spacings.xl,
+    borderRadius: BorderRadii.md,
     overflow: "hidden",
-    shadowColor: "#000",
     shadowOpacity: 0.05,
     shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
     elevation: 3,
     width: CARD_WIDTH,
     alignSelf: "center",
@@ -109,16 +109,16 @@ const styles = StyleSheet.create({
     height: 200,
   },
   cardContent: {
-    padding: 12,
+    padding: Spacings.md,
   },
   exerciseName: {
     fontSize: 16,
     fontWeight: "600",
-    marginBottom: 4,
+    marginBottom: Spacings.xs,
   },
   exerciseArea: {
     fontSize: 13,
-    marginBottom: 6,
+    marginBottom: Spacings.xs,
   },
   description: {
     fontSize: 13,

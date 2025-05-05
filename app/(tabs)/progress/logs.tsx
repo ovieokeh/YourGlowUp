@@ -7,7 +7,7 @@ import { ThemedFabButton } from "@/components/ThemedFabButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { Colors } from "@/constants/Colors";
+import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { getLogs, isExerciseLog, isUserLog, Log } from "@/utils/db";
 
@@ -26,6 +26,8 @@ export default function LogsScreen() {
   const cardBorder = useThemeColor({ light: Colors.light.border, dark: Colors.dark.border }, "border");
   const underline = useThemeColor({ light: Colors.light.accent, dark: Colors.dark.accent }, "accent");
   const iconColor = useThemeColor({}, "text");
+  const success = useThemeColor({}, "success");
+  const danger = useThemeColor({}, "danger");
 
   useFocusEffect(
     React.useCallback(() => {
@@ -54,8 +56,9 @@ export default function LogsScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <ThemedView style={{ flex: 1, paddingBottom: 64 }}>
+      <ThemedView style={{ flex: 1, paddingBottom: Spacings.xl * 2 }}>
         <View style={[styles.tabBar, { borderColor: tabBorder }]}>
+          \n{" "}
           {TABS.map((tab, idx) => (
             <Pressable key={tab} style={styles.tabButton} onPress={() => handleTabPress(tab, idx)}>
               <ThemedText style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab}</ThemedText>
@@ -77,47 +80,41 @@ export default function LogsScreen() {
               )}
               renderItem={({ item }) => (
                 <View style={[styles.log, { backgroundColor: cardBg, borderColor: cardBorder }]}>
-                  {item.photoUri && <Image source={{ uri: item.photoUri }} style={styles.photo} />}
-
+                  \n {item.photoUri && <Image source={{ uri: item.photoUri }} style={styles.photo} />}
                   <View style={styles.row}>
                     <IconSymbol name="face.smiling.fill" size={18} color={iconColor} />
                     <ThemedText style={styles.rowText}>
                       Dominant side: <ThemedText style={styles.bold}>{item.dominantSide}</ThemedText>
                     </ThemedText>
                   </View>
-
                   <View style={styles.row}>
                     <IconSymbol name="clock" size={18} color={iconColor} />
                     <ThemedText style={styles.rowText}>
                       Chewing duration: <ThemedText style={styles.bold}>{item.chewingDuration} min</ThemedText>
                     </ThemedText>
                   </View>
-
                   <View style={styles.row}>
                     <IconSymbol
                       name={item.gumUsed ? "checkmark.circle" : "xmark.circle"}
                       size={18}
-                      color={item.gumUsed ? Colors.light.success : Colors.light.danger}
+                      color={item.gumUsed ? success : danger}
                     />
                     <ThemedText style={styles.rowText}>
                       {item.gumUsed ? `Gum: ${item.gumChewingDuration} min` : "No gum used"}
                     </ThemedText>
                   </View>
-
                   <View style={styles.row}>
                     <IconSymbol name="face.smiling" size={18} color={iconColor} />
                     <ThemedText style={styles.rowText}>
                       Symmetry rating: <ThemedText style={styles.bold}>{item.symmetryRating}</ThemedText>
                     </ThemedText>
                   </View>
-
                   {item.notes && (
                     <View style={styles.row}>
                       <IconSymbol name="message" size={18} color={iconColor} />
                       <ThemedText style={styles.rowText}>Notes: {item.notes}</ThemedText>
                     </View>
                   )}
-
                   <ThemedText style={styles.timestamp}>{new Date(item.completedAt).toLocaleString()}</ThemedText>
                 </View>
               )}
@@ -144,10 +141,10 @@ export default function LogsScreen() {
               )}
               renderItem={({ item }) => (
                 <View style={[styles.log, { backgroundColor: cardBg, borderColor: cardBorder }]}>
-                  <ThemedText style={styles.exercise}>{item.exercise}</ThemedText>
+                  \n <ThemedText style={styles.exercise}>{item.exercise}</ThemedText>
                   <View
                     style={{
-                      marginTop: 10,
+                      marginTop: Spacings.sm,
                       flexDirection: "row",
                       justifyContent: "space-between",
                       alignItems: "center",
@@ -185,22 +182,32 @@ const styles = StyleSheet.create({
     position: "relative",
     borderBottomWidth: 1,
   },
-  tabButton: { flex: 1, paddingVertical: 12, alignItems: "center" },
-  tabText: { fontSize: 16 },
-  tabTextActive: { fontWeight: "600" },
+  tabButton: {
+    flex: 1,
+    paddingVertical: Spacings.md,
+    alignItems: "center",
+  },
+  tabText: {
+    fontSize: 16,
+  },
+  tabTextActive: {
+    fontWeight: "600",
+  },
   underline: {
     position: "absolute",
     height: 2,
     bottom: 0,
     left: 0,
   },
-  list: { padding: 20, paddingBottom: 92 },
+  list: {
+    padding: Spacings.lg,
+    paddingBottom: Spacings.xl * 2,
+    gap: Spacings.md,
+  },
   log: {
-    marginTop: 14,
-    padding: 12,
+    padding: Spacings.md,
     borderWidth: 1,
-    borderRadius: 8,
-    shadowColor: "#000",
+    borderRadius: BorderRadii.md,
     shadowOpacity: 0.05,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
@@ -208,8 +215,8 @@ const styles = StyleSheet.create({
   photo: {
     width: "100%",
     height: 180,
-    borderRadius: 12,
-    marginBottom: 12,
+    borderRadius: BorderRadii.md,
+    marginBottom: Spacings.md,
   },
   row: {
     flexDirection: "row",
@@ -217,7 +224,7 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   rowText: {
-    marginLeft: 8,
+    marginLeft: Spacings.xs,
     fontSize: 15,
   },
   bold: {
@@ -227,7 +234,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     alignSelf: "flex-end",
   },
-  exercise: { fontSize: 16, fontWeight: "600" },
-  emptyState: { paddingVertical: 32, alignItems: "center" },
-  emptyText: { fontSize: 16, marginBottom: 12 },
+  exercise: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  emptyState: {
+    paddingVertical: Spacings.xl,
+    alignItems: "center",
+  },
+  emptyText: {
+    fontSize: 16,
+    marginBottom: Spacings.md,
+  },
 });

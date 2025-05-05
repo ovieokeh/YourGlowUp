@@ -6,6 +6,7 @@ import { ProgressReview } from "@/components/ProgressReview";
 import { ThemedFabButton } from "@/components/ThemedFabButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import { Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { getLogs, isUserLog, Log } from "@/utils/db";
 
@@ -52,24 +53,27 @@ export default function TrackScreen() {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={{ flex: 1 }}>
-        <ThemedView style={[styles.container]}>
-          <View style={styles.selectorRow}>
-            {RANGE_OPTIONS.map((r) => (
-              <Pressable
-                key={r}
-                onPress={() => setRange(r as any)}
-                style={[
-                  styles.rangeBtn,
-                  { borderColor },
-                  range === r && { backgroundColor: accentColor, borderColor: accentColor },
-                ]}
-              >
-                <ThemedText style={{ fontWeight: "500", color: range === r ? "#fff" : textColor }}>{r}</ThemedText>
-              </Pressable>
-            ))}
-          </View>
+        <ThemedView style={styles.container}>
+          {photoURIs.length ? (
+            <View style={styles.selectorRow}>
+              {RANGE_OPTIONS.map((r) => (
+                <Pressable
+                  key={r}
+                  onPress={() => setRange(r as any)}
+                  style={[
+                    styles.rangeBtn,
+                    { borderColor },
+                    range === r && { backgroundColor: accentColor, borderColor: accentColor },
+                  ]}
+                >
+                  <ThemedText style={{ fontWeight: "500", color: range === r ? "#fff" : textColor }}>{r}</ThemedText>
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
 
           <ProgressReview photoURIs={photoURIs!} />
+
           <ThemedFabButton
             icon="camera"
             title="Add a self-report log"
@@ -87,21 +91,32 @@ export default function TrackScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, paddingBottom: 92 },
-  selectorRow: { flexDirection: "row", gap: 12, marginBottom: 24 },
+  container: {
+    flex: 1,
+    padding: Spacings.md,
+    paddingBottom: Spacings.xl * 2,
+  },
+  selectorRow: {
+    flexDirection: "row",
+    gap: Spacings.md,
+    marginBottom: Spacings.lg,
+  },
   rangeBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 14,
+    paddingVertical: Spacings.xs,
+    paddingHorizontal: Spacings.md,
     borderRadius: 999,
     borderWidth: 1,
   },
   section: {
-    marginTop: 32,
+    marginTop: Spacings.xl,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    marginBottom: 8,
+    marginBottom: Spacings.sm,
   },
-  emptyText: { textAlign: "center", marginVertical: 32 },
+  emptyText: {
+    textAlign: "center",
+    marginVertical: Spacings.xl,
+  },
 });

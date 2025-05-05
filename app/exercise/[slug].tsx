@@ -8,8 +8,8 @@ import { ProgressBar } from "@/components/ProgressBar";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { Colors } from "@/constants/Colors";
 import { EXERCISES } from "@/constants/Exercises";
+import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { saveExerciseLog } from "@/utils/db";
 
@@ -29,9 +29,6 @@ export default function ExerciseSession() {
   const background = useThemeColor({}, "background");
   const card = useThemeColor({ light: Colors.light.background, dark: Colors.dark.background }, "background");
   const border = useThemeColor({}, "border");
-  const success = useThemeColor({}, "success");
-  const danger = useThemeColor({}, "danger");
-  const primary = useThemeColor({}, "tint");
 
   useEffect(() => {
     if (started && timeLeft > 0 && exercise) {
@@ -96,28 +93,30 @@ export default function ExerciseSession() {
   if (!exercise) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: background }]}>
-        <ThemedText style={styles.title}>Exercise not found.</ThemedText>
+        \n <ThemedText style={styles.title}>Exercise not found.</ThemedText>\n{" "}
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: background }]}>
+      \n{" "}
       <ScrollView contentContainerStyle={styles.scrollView}>
         <ThemedText type="title">{exercise.name}</ThemedText>
         <Image source={{ uri: exercise.animation }} style={styles.image} resizeMode="contain" />
 
         <View style={[styles.infoCard, { backgroundColor: card, borderColor: border }]}>
+          \n{" "}
           <View style={[styles.descriptionContainer, { backgroundColor: border }]}>
+            \n{" "}
             <View style={styles.infoRow}>
-              <IconSymbol name="target" size={18} color={textColor} />
-              <ThemedText style={styles.infoText}>Target Area: {exercise.area}</ThemedText>
+              \n <IconSymbol name="target" size={18} color={textColor} />
+              \n <ThemedText style={styles.infoText}>Target Area: {exercise.area}</ThemedText>\n{" "}
             </View>
-            <ThemedText style={styles.description}>{exercise.description}</ThemedText>
+            <ThemedText style={styles.description}>{exercise.description}</ThemedText>\n{" "}
           </View>
-
           <View style={styles.instructions}>
-            <ThemedText style={styles.instructionsTitle}>Instructions:</ThemedText>
+            \n <ThemedText style={styles.instructionsTitle}>Instructions:</ThemedText>\n{" "}
             {exercise.instructions.map((step, idx) => (
               <ThemedText key={idx} style={styles.step}>
                 {idx + 1}. {step}
@@ -133,22 +132,22 @@ export default function ExerciseSession() {
           </View>
         )}
 
-        <ThemedButton
-          title={started ? (completed ? "Finish Session" : "Quit Early") : "Start Session"}
-          onPress={started ? (completed ? handleComplete : handleQuit) : handleStart}
-          variant={started ? (completed ? "primary" : "destructive") : "success"}
-          icon={started ? (completed ? "checkmark.rectangle" : "x.circle") : "play"}
-          iconPlacement="right"
-          style={styles.startButton}
-          textStyle={styles.startButtonText}
-        />
-
-        {!started && (
-          <Pressable style={styles.backButton} onPress={() => router.back()}>
+        <View style={[styles.infoRow, { marginTop: Spacings.xl, justifyContent: "space-between", width: "100%" }]}>
+          <Pressable style={styles.backButton} onPress={() => router.back()} disabled={started}>
             <IconSymbol name="arrow.backward" size={16} color={textColor} />
             <ThemedText style={styles.backButtonText}>Back</ThemedText>
           </Pressable>
-        )}
+
+          <ThemedButton
+            title={started ? (completed ? "Finish Session" : "Quit Early") : "Start Session"}
+            onPress={started ? (completed ? handleComplete : handleQuit) : handleStart}
+            variant={started ? (completed ? "primary" : "destructive") : "success"}
+            icon={started ? (completed ? "checkmark.rectangle" : "x.circle") : "play"}
+            iconPlacement="right"
+            style={styles.startButton}
+            textStyle={styles.startButtonText}
+          />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -157,30 +156,30 @@ export default function ExerciseSession() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 24,
+    paddingTop: Spacings.lg,
   },
   scrollView: {
-    paddingHorizontal: 20,
+    paddingHorizontal: Spacings.lg,
     alignItems: "center",
-    paddingBottom: 40,
-    gap: 20,
+    paddingBottom: Spacings.xl,
+    gap: Spacings.lg,
   },
   title: {
     fontSize: 28,
     fontWeight: "700",
     textAlign: "center",
-    marginBottom: 10,
+    marginBottom: Spacings.sm,
   },
   image: {
     width: "100%",
     height: 220,
-    marginVertical: 15,
-    borderRadius: 12,
+    marginVertical: Spacings.md,
+    borderRadius: BorderRadii.md,
   },
   infoCard: {
     borderWidth: 1,
-    padding: 15,
-    borderRadius: 12,
+    padding: Spacings.md,
+    borderRadius: BorderRadii.md,
     width: "100%",
     shadowOpacity: 0.05,
     shadowOffset: { width: 0, height: 2 },
@@ -190,18 +189,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 8,
+    marginBottom: Spacings.xs,
   },
   infoText: {
-    marginLeft: 8,
+    marginLeft: Spacings.xs,
     fontSize: 16,
     fontWeight: "600",
     textAlign: "center",
   },
   descriptionContainer: {
-    padding: 8,
-    borderRadius: 8,
-    marginVertical: 10,
+    padding: Spacings.sm,
+    borderRadius: BorderRadii.sm,
+    marginVertical: Spacings.sm,
   },
   description: {
     fontSize: 15,
@@ -209,11 +208,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   instructions: {
-    marginTop: 10,
+    marginTop: Spacings.sm,
   },
   instructionsTitle: {
     fontWeight: "700",
-    marginBottom: 6,
+    marginBottom: Spacings.xs,
     fontSize: 16,
   },
   step: {
@@ -221,54 +220,29 @@ const styles = StyleSheet.create({
     marginVertical: 2,
   },
   progressContainer: {
-    marginVertical: 20,
     alignItems: "center",
   },
   timer: {
-    marginTop: 10,
+    marginTop: Spacings.sm,
     fontSize: 20,
     fontWeight: "700",
   },
   startButton: {
-    padding: 12,
-    borderRadius: 8,
-    width: "100%",
+    padding: Spacings.sm,
+    borderRadius: BorderRadii.md,
     alignItems: "center",
-    marginVertical: 10,
+    marginVertical: Spacings.sm,
   },
   startButtonText: {
     fontSize: 16,
     fontWeight: "600",
   },
-  quitButton: {
-    padding: 10,
-    borderRadius: 8,
-    width: "100%",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  quitButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginLeft: 6,
-  },
-  completeButton: {
-    padding: 12,
-    borderRadius: 8,
-    width: "100%",
-    alignItems: "center",
-  },
-  completeButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
   backButton: {
     flexDirection: "row",
-    marginTop: 8,
+    marginTop: Spacings.xs,
     alignItems: "center",
   },
   backButtonText: {
-    marginLeft: 4,
+    marginLeft: Spacings.xs,
   },
 });
