@@ -25,9 +25,6 @@ export default function HomeScreen() {
     <SafeAreaView style={{ flex: 1 }}>
       <ThemedView style={styles.container}>
         <ScrollView contentContainerStyle={{ paddingBottom: Spacings.lg }}>
-          <ThemedText style={styles.title} type="subtitle">
-            At a glance
-          </ThemedText>
           <TodaysStats />
 
           <ThemedText style={styles.title} type="subtitle">

@@ -1,6 +1,6 @@
 import { useFocusEffect } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
-import { Dimensions, Pressable, SafeAreaView, ScrollView, StyleSheet, View } from "react-native";
+import { Dimensions, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { LineChart, PieChart } from "react-native-chart-kit";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -15,7 +15,7 @@ const CHART_WIDTH = SCREEN_WIDTH - 32;
 const CHART_HEIGHT = 200;
 const RANGE_OPTIONS = ["7d", "30d", "3mo", "all"];
 
-export default function StatsScreen() {
+export function ProgressStatsView() {
   const [logs, setLogs] = useState<Log[]>([]);
   const [range, setRange] = useState<"7d" | "30d" | "3mo" | "all">("30d");
 
@@ -122,89 +122,87 @@ export default function StatsScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <ThemedView style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={styles.container}>
-          <View style={styles.selectorRow}>
-            {RANGE_OPTIONS.map((r) => (
-              <Pressable
-                key={r}
-                onPress={() => setRange(r as any)}
-                style={[
-                  styles.rangeBtn,
-                  { borderColor },
-                  range === r && { backgroundColor: accentColor, borderColor: accentColor },
-                ]}
-              >
-                <ThemedText style={{ fontWeight: "500", color: range === r ? "#fff" : textColor }}>{r}</ThemedText>
-              </Pressable>
-            ))}
-          </View>
+    <ThemedView style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.selectorRow}>
+          {RANGE_OPTIONS.map((r) => (
+            <Pressable
+              key={r}
+              onPress={() => setRange(r as any)}
+              style={[
+                styles.rangeBtn,
+                { borderColor },
+                range === r && { backgroundColor: accentColor, borderColor: accentColor },
+              ]}
+            >
+              <ThemedText style={{ fontWeight: "500", color: range === r ? "#fff" : textColor }}>{r}</ThemedText>
+            </Pressable>
+          ))}
+        </View>
 
-          <View style={styles.cardGrid}>
-            <StatCard label="Current Streak" value={`${streak} days`} />
-            <StatCard label="Avg Symmetry" value={symmetryAvg} />
-            <StatCard label="Total Chewing" value={chewingTime} />
-            <StatCard label="Gum Time" value={gumTime} />
-          </View>
+        <View style={styles.cardGrid}>
+          <StatCard label="Current Streak" value={`${streak} days`} />
+          <StatCard label="Avg Symmetry" value={symmetryAvg} />
+          <StatCard label="Total Chewing" value={chewingTime} />
+          <StatCard label="Gum Time" value={gumTime} />
+        </View>
 
-          <View style={styles.section}>
-            <ThemedText style={styles.sectionTitle}>Symmetry Trend</ThemedText>
-            {lineData.datasets[0].data.length ? (
-              <LineChart
-                data={lineData}
-                width={CHART_WIDTH}
+        <View style={styles.section}>
+          <ThemedText style={styles.sectionTitle}>Symmetry Trend</ThemedText>
+          {lineData.datasets[0].data.length ? (
+            <LineChart
+              data={lineData}
+              width={CHART_WIDTH}
+              height={CHART_HEIGHT}
+              chartConfig={chartConfig}
+              bezier
+              style={styles.chart}
+            />
+          ) : (
+            <ThemedText style={styles.emptyText}>No data available</ThemedText>
+          )}
+        </View>
+
+        <View style={styles.section}>
+          <ThemedText style={styles.sectionTitle}>Exercises Breakdown</ThemedText>
+          {pieData.length ? (
+            <View style={styles.pieWrapper}>
+              <PieChart
+                data={pieData.map(({ name, count, color, legendFontColor, legendFontSize }) => ({
+                  name,
+                  population: count,
+                  color,
+                  legendFontColor,
+                  legendFontSize,
+                }))}
+                width={SCREEN_WIDTH / 2}
                 height={CHART_HEIGHT}
                 chartConfig={chartConfig}
-                bezier
-                style={styles.chart}
+                accessor="population"
+                backgroundColor="transparent"
+                paddingLeft={`48`}
+                hasLegend={false}
+                absolute
               />
-            ) : (
-              <ThemedText style={styles.emptyText}>No data available</ThemedText>
-            )}
-          </View>
-
-          <View style={styles.section}>
-            <ThemedText style={styles.sectionTitle}>Exercises Breakdown</ThemedText>
-            {pieData.length ? (
-              <View style={styles.pieWrapper}>
-                <PieChart
-                  data={pieData.map(({ name, count, color, legendFontColor, legendFontSize }) => ({
-                    name,
-                    population: count,
-                    color,
-                    legendFontColor,
-                    legendFontSize,
-                  }))}
-                  width={SCREEN_WIDTH / 2}
-                  height={CHART_HEIGHT}
-                  chartConfig={chartConfig}
-                  accessor="population"
-                  backgroundColor="transparent"
-                  paddingLeft={`48`}
-                  hasLegend={false}
-                  absolute
-                />
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.legendScroll}>
-                  <View style={styles.legendContainer}>
-                    {pieData.map((item) => (
-                      <View key={item.name} style={styles.legendItem}>
-                        <View style={[styles.legendMarker, { backgroundColor: item.color }]} />
-                        <ThemedText style={styles.legendText}>
-                          {item.name} ({item.count})
-                        </ThemedText>
-                      </View>
-                    ))}
-                  </View>
-                </ScrollView>
-              </View>
-            ) : (
-              <ThemedText style={styles.emptyText}>No data available</ThemedText>
-            )}
-          </View>
-        </ScrollView>
-      </ThemedView>
-    </SafeAreaView>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.legendScroll}>
+                <View style={styles.legendContainer}>
+                  {pieData.map((item) => (
+                    <View key={item.name} style={styles.legendItem}>
+                      <View style={[styles.legendMarker, { backgroundColor: item.color }]} />
+                      <ThemedText style={styles.legendText}>
+                        {item.name} ({item.count})
+                      </ThemedText>
+                    </View>
+                  ))}
+                </View>
+              </ScrollView>
+            </View>
+          ) : (
+            <ThemedText style={styles.emptyText}>No data available</ThemedText>
+          )}
+        </View>
+      </ScrollView>
+    </ThemedView>
   );
 }
 

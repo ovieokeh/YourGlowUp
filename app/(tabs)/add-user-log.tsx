@@ -92,7 +92,7 @@ export default function AddUserLogScreen() {
     });
 
     resetForm();
-    router.replace("/(tabs)/progress/logs?activeTab=Self%20Reports");
+    router.replace("/(tabs)/progress?activeTab=Logs&logsTab=Self%20Reports");
   };
 
   const handlePickPhoto = async () => {

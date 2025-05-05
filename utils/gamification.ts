@@ -1,9 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as SQLite from "expo-sqlite";
 
 import { IconSymbolName } from "@/components/ui/IconSymbol";
-
-const db = SQLite.openDatabaseSync("face-symmetry.db");
+import { Log } from "./db";
 
 export enum BadgeStatus {
   NOT_EARNED = "NOT_EARNED",
@@ -195,7 +193,7 @@ export const BADGES: Record<BadgeKey, Badge> = {
 
 const BADGES_KEY = "badges";
 
-export const fetchBadges = async (): Promise<Record<BadgeKey, Badge>> => {
+export const fetchUserBadges = async (): Promise<Record<BadgeKey, Badge>> => {
   try {
     const badges = await AsyncStorage.getItem(BADGES_KEY);
     if (badges) {
@@ -211,7 +209,7 @@ export const fetchBadges = async (): Promise<Record<BadgeKey, Badge>> => {
 
 export const setBadgeStatus = async (key: BadgeKey, status: BadgeStatus) => {
   try {
-    const badges = await fetchBadges();
+    const badges = await fetchUserBadges();
     const updatedBadges = {
       ...badges,
       [key]: {
@@ -225,30 +223,53 @@ export const setBadgeStatus = async (key: BadgeKey, status: BadgeStatus) => {
   }
 };
 
-export const initBadgesTable = () => {
-  // drop table if exists
-  // db.execSync("DROP TABLE IF EXISTS badges;");
+const XP_KEY = "xp";
+export const fetchUserXP = async (): Promise<number> => {
+  try {
+    const xp = await AsyncStorage.getItem(XP_KEY);
+    if (xp) {
+      return parseInt(xp, 10);
+    }
+    return 0;
+  } catch (error) {
+    console.error("Error fetching XP data:", error);
+    return 0;
+  }
+};
+export const addXP = async (xp: number) => {
+  try {
+    const currentXP = await fetchUserXP();
+    const newXP = currentXP + xp;
+    await AsyncStorage.setItem(XP_KEY, newXP.toString());
+  } catch (error) {
+    console.error("Error adding XP:", error);
+  }
+};
+export const resetXP = async () => {
+  try {
+    await AsyncStorage.setItem(XP_KEY, "0");
+  } catch (error) {
+    console.error("Error resetting XP:", error);
+  }
+};
+export const LOG_TYPE_XP_MAP: Record<Log["type"], number> = {
+  exercise: 10,
+  user: 5,
+  task: 2,
+};
 
-  // create table
-  db.execSync(
-    `CREATE TABLE IF NOT EXISTS badges (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        description TEXT NOT NULL,
-        level TEXT NOT NULL,
-        icon TEXT NOT NULL,
-        status TEXT NOT NULL -- "NOT_EARNED" | "EARNED"
-    );`
-  );
-  // insert badges
-  // Object.values(BADGES).forEach((badge) => {
-  //   db.runSync(`INSERT INTO badges (id, name, description, level, icon, status) VALUES (?, ?, ?, ?, ?, ?)`, [
-  //     badge.id,
-  //     badge.name,
-  //     badge.description,
-  //     badge.level,
-  //     badge.icon,
-  //     badge.status,
-  //   ]);
-  // });
+export const getStreak = (logs: Log[]) => {
+  const today = new Date();
+  const streak = logs.reduce((acc, log) => {
+    const logDate = new Date(log.completedAt);
+    if (logDate.toDateString() === today.toDateString()) {
+      acc += 1;
+    } else if (logDate.getTime() === today.getTime() - 86400000) {
+      acc += 1;
+    } else {
+      acc = 0;
+    }
+    return acc;
+  }, 0);
+  return streak;
 };

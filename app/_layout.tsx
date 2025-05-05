@@ -10,7 +10,6 @@ import "react-native-reanimated";
 import { ThemeProviderCustom, useAppTheme } from "@/hooks/theme/context";
 import { supabase } from "@/supabase";
 import { initLogsTable } from "@/utils/db";
-import { initBadgesTable } from "@/utils/gamification";
 import { getOnboardingStatus, OnboardingStatus, setOnboardingStatus } from "@/utils/onboarding";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -68,7 +67,6 @@ function App() {
 
   useEffect(() => {
     initLogsTable();
-    initBadgesTable();
     setOnboardingStatus("main-onboarding", {
       step: 0,
       status: OnboardingStatus.NOT_STARTED,

@@ -46,10 +46,9 @@ export default function TabLayout() {
         name="progress"
         options={{
           title: "Progress",
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="chart.xyaxis.line" color={color} />,
-          tabBarStyle: { display: "none" },
-          headerShown: true,
           headerLeft: () => <BackButton />,
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="chart.xyaxis.line" color={color} />,
+          headerShown: false,
         }}
       />
 

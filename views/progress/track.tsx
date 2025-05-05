@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import { ProgressReview } from "@/components/ProgressReview";
 import { ThemedFabButton } from "@/components/ThemedFabButton";
@@ -12,7 +12,7 @@ import { getLogs, isUserLog, Log } from "@/utils/db";
 
 const RANGE_OPTIONS = ["7d", "30d", "3mo", "all"];
 
-export default function TrackScreen() {
+export function ProgressTrackView() {
   const router = useRouter();
   const [logs, setLogs] = useState<Log[]>([]);
   const [range, setRange] = useState<"7d" | "30d" | "3mo" | "all">("30d");
@@ -51,42 +51,40 @@ export default function TrackScreen() {
   }, [filtered]);
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={{ flex: 1 }}>
-        <ThemedView style={styles.container}>
-          {photoURIs.length ? (
-            <View style={styles.selectorRow}>
-              {RANGE_OPTIONS.map((r) => (
-                <Pressable
-                  key={r}
-                  onPress={() => setRange(r as any)}
-                  style={[
-                    styles.rangeBtn,
-                    { borderColor },
-                    range === r && { backgroundColor: accentColor, borderColor: accentColor },
-                  ]}
-                >
-                  <ThemedText style={{ fontWeight: "500", color: range === r ? "#fff" : textColor }}>{r}</ThemedText>
-                </Pressable>
-              ))}
-            </View>
-          ) : null}
+    <ScrollView contentContainerStyle={{ flex: 1 }}>
+      <ThemedView style={styles.container}>
+        {photoURIs.length ? (
+          <View style={styles.selectorRow}>
+            {RANGE_OPTIONS.map((r) => (
+              <Pressable
+                key={r}
+                onPress={() => setRange(r as any)}
+                style={[
+                  styles.rangeBtn,
+                  { borderColor },
+                  range === r && { backgroundColor: accentColor, borderColor: accentColor },
+                ]}
+              >
+                <ThemedText style={{ fontWeight: "500", color: range === r ? "#fff" : textColor }}>{r}</ThemedText>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
 
-          <ProgressReview photoURIs={photoURIs!} />
+        <ProgressReview photoURIs={photoURIs!} />
 
-          <ThemedFabButton
-            icon="camera"
-            title="Add a self-report log"
-            onPress={() => {
-              router.push({
-                pathname: "/(tabs)/add-user-log",
-                params: { activeTab: "Self Reports" },
-              });
-            }}
-          />
-        </ThemedView>
-      </ScrollView>
-    </SafeAreaView>
+        <ThemedFabButton
+          icon="camera"
+          title="Add a self-report log"
+          onPress={() => {
+            router.push({
+              pathname: "/(tabs)/add-user-log",
+              params: { activeTab: "Self Reports" },
+            });
+          }}
+        />
+      </ThemedView>
+    </ScrollView>
   );
 }
 

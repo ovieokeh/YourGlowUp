@@ -1,31 +1,41 @@
 import { formatDistanceToNow } from "date-fns";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
-import { StyleSheet, View, useColorScheme } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import { ThemedText } from "@/components/ThemedText";
 import { Log, getLogs, isExerciseLog } from "@/utils/db";
 
-import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
+import { BorderRadii, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { fetchUserXP, getStreak } from "@/utils/gamification";
 import { ThemedButton } from "./ThemedButton";
 import { ThemedView } from "./ThemedView";
 import { IconSymbol, IconSymbolName } from "./ui/IconSymbol";
 
 export const TodaysStats: React.FC = () => {
   const [logs, setLogs] = useState<Log[]>([]);
-  const colorScheme = useColorScheme() ?? "light";
+
+  const [xp, setXP] = useState(0);
   const router = useRouter();
 
   const wrapperBorder = useThemeColor({}, "border");
   const muted = useThemeColor({}, "muted");
   const text = useThemeColor({}, "text");
+  const tint = useThemeColor({}, "tint");
 
   useFocusEffect(
     useCallback(() => {
       getLogs(setLogs);
+      fetchUserXP().then((xpVal) => {
+        setXP(xpVal);
+      });
     }, [])
   );
+
+  const streak = useMemo(() => {
+    return getStreak(logs);
+  }, [logs]);
 
   const todayLogs = useMemo(() => {
     const today = new Date().toDateString();
@@ -48,15 +58,24 @@ export const TodaysStats: React.FC = () => {
   return (
     <View style={[styles.wrapper, { borderColor: wrapperBorder }]}>
       <ThemedText type="subtitle" style={styles.title}>
-        Today&apos;s Activity
+        At a glance
       </ThemedText>
 
       <View style={styles.statsGrid}>
+        <StatCard icon="trophy" label="XP Earned" value={xp.toString()} color={tint} muted={muted} text={text} />
+        <StatCard
+          icon="calendar"
+          label="Current Streak"
+          value={`${streak} days`}
+          color={tint}
+          muted={muted}
+          text={text}
+        />
         <StatCard
           icon="figure.walk.circle"
           label="Exercises Done"
           value={exercisesToday.length.toString()}
-          color={Colors[colorScheme].success}
+          color={tint}
           muted={muted}
           text={text}
         />
@@ -69,7 +88,7 @@ export const TodaysStats: React.FC = () => {
             subValue={formatDistanceToNow(new Date(lastExercise.completedAt), {
               addSuffix: true,
             })}
-            color={Colors[colorScheme].tint}
+            color={tint}
             muted={muted}
             text={text}
           />
@@ -78,7 +97,7 @@ export const TodaysStats: React.FC = () => {
 
       <ThemedButton
         title="View Progress"
-        onPress={() => router.replace("/progress/stats")}
+        onPress={() => router.replace("/progress?activeTab=Stats")}
         variant="outline"
         icon="chevron.right"
         iconPlacement="right"
@@ -124,7 +143,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   title: {
-    marginBottom: Spacings.md,
+    marginBottom: Spacings.sm,
   },
   statsGrid: {
     gap: Spacings.sm,
@@ -132,7 +151,7 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: "row",
     alignItems: "center",
-    padding: Spacings.md,
+    padding: Spacings.sm,
     borderRadius: BorderRadii.sm,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.07,

@@ -1,4 +1,4 @@
-import { useRouter } from "expo-router";
+import { Href, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -17,6 +17,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { BorderRadii, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { supabase } from "@/supabase";
+import { useSearchParams } from "expo-router/build/hooks";
 
 export default function AuthScreen() {
   const router = useRouter();
@@ -24,6 +25,8 @@ export default function AuthScreen() {
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
+  const params = useSearchParams();
+  const redirectTo = (params.get("redirectTo") as Href) || null;
 
   const bg = useThemeColor({}, "background");
   const text = useThemeColor({}, "text");
@@ -53,7 +56,11 @@ export default function AuthScreen() {
     if (error) {
       Alert.alert("Sign In Failed", error.message);
     } else {
-      router.replace("/(tabs)");
+      if (redirectTo) {
+        router.replace(redirectTo);
+      } else {
+        router.replace("/(tabs)");
+      }
     }
   };
 
@@ -64,7 +71,11 @@ export default function AuthScreen() {
     if (error) {
       Alert.alert("Anonymous Sign In Failed", error.message);
     } else {
-      router.replace("/(tabs)");
+      if (redirectTo) {
+        router.replace(redirectTo);
+      } else {
+        router.replace("/(tabs)");
+      }
     }
   };
 
