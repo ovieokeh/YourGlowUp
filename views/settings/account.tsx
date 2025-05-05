@@ -1,0 +1,275 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as DocumentPicker from "expo-document-picker";
+import * as FileSystem from "expo-file-system";
+import { useRouter } from "expo-router";
+import * as Sharing from "expo-sharing";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+import { AccountBenefits } from "@/components/AccountBenefits";
+import { ThemedButton } from "@/components/ThemedButton";
+import { ThemedText } from "@/components/ThemedText";
+import { useThemeColor } from "@/hooks/useThemeColor";
+import { supabase } from "@/supabase";
+import { getLogs, isUserLog, Log, saveExerciseLog, saveUserLog } from "@/utils/db";
+
+const NOTIF_ENABLED_KEY = "settings.notifications.enabled";
+const NOTIF_TIME_KEY = "settings.notifications.time";
+
+export default function AccountView() {
+  const router = useRouter();
+
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
+  const [name, setName] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const bg = useThemeColor({}, "background");
+  const text = useThemeColor({}, "text");
+  const border = useThemeColor({}, "border");
+  const tint = useThemeColor({}, "tint");
+  const muted = useThemeColor({}, "muted");
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      const {
+        data: { user: currentUser },
+        error,
+      } = await supabase.auth.getUser();
+      setLoading(false);
+
+      if (error) {
+        Alert.alert("Error", "Could not fetch user");
+      } else if (!currentUser) {
+        // no session, redirect to auth
+        router.push("/auth");
+      } else {
+        setUser(currentUser);
+        setName(currentUser.user_metadata?.full_name || "");
+      }
+    })();
+  }, [router]);
+
+  const handleSave = async () => {
+    if (!name) return;
+    setSaving(true);
+    const { error } = await supabase.auth.updateUser({
+      data: { full_name: name },
+    });
+    setSaving(false);
+    if (error) {
+      Alert.alert("Save Failed", error.message);
+    } else {
+      Alert.alert("Saved", "Your name has been updated.");
+    }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/auth");
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
+        <ActivityIndicator style={{ flex: 1 }} color={tint} />
+      </SafeAreaView>
+    );
+  }
+
+  const exportData = async () => {
+    getLogs(async (logs) => {
+      const IMAGE_URI_BLOB_MAP: Record<string, string> = {};
+      const imagesBase64Blobs = logs
+        .filter(isUserLog)
+        .filter((log) => log.photoUri)
+        .map(async (log) => {
+          const uri = log.photoUri!;
+          const base64 = FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+          return base64.then((base64String) => {
+            IMAGE_URI_BLOB_MAP[uri] = base64String;
+            return `data:image/jpeg;base64,${base64String}`;
+          });
+        });
+      await Promise.allSettled(imagesBase64Blobs);
+      const notificationsEnabled = await AsyncStorage.getItem(NOTIF_ENABLED_KEY);
+      const notificationTimeRaw = await AsyncStorage.getItem(NOTIF_TIME_KEY);
+      const notificationTime = notificationTimeRaw ? new Date(notificationTimeRaw) : new Date();
+      const settingsData = {
+        notificationsEnabled,
+        notificationTime: notificationTime.toISOString(),
+        logs,
+        IMAGE_URI_BLOB_MAP,
+      };
+      const data = JSON.stringify(settingsData, null, 2);
+
+      const baseDirectory = FileSystem.documentDirectory;
+      const path = baseDirectory + "symmetry-export.json";
+      FileSystem.writeAsStringAsync(path, data)
+        .then(() => {
+          Alert.alert("Export Successful", "Your data has been exported.");
+        })
+        .catch((error) => {
+          console.error("Error exporting data:", error);
+          Alert.alert("Export Failed", "An error occurred while exporting your data.");
+        });
+      Sharing.shareAsync(path)
+        .then(() => {
+          Alert.alert("Export Successful", "Your data has been shared.");
+          FileSystem.deleteAsync(path).catch(console.error);
+        })
+        .catch((error) => {
+          console.error("Error sharing file:", error);
+          Alert.alert("Share Failed", "An error occurred while sharing your data.");
+        });
+    });
+  };
+
+  const importData = async () => {
+    Alert.alert("Warning", "This will overwrite your existing data. Do you want to continue?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Continue",
+        onPress: async () => {
+          const result = await DocumentPicker.getDocumentAsync({ type: "application/json" });
+          if (result.canceled) return;
+
+          const content = await FileSystem.readAsStringAsync(result.assets[0].uri);
+          try {
+            const parsed = JSON.parse(content);
+
+            await AsyncStorage.setItem(NOTIF_ENABLED_KEY, String(parsed.notificationsEnabled));
+            await AsyncStorage.setItem(NOTIF_TIME_KEY, parsed.notificationTime);
+
+            const logs = parsed.logs as Log[];
+            const IMAGE_URI_BLOB_MAP = parsed.IMAGE_URI_BLOB_MAP;
+            for (const [uri, base64] of Object.entries(IMAGE_URI_BLOB_MAP)) {
+              const blob = `data:image/jpeg;base64,${base64}`;
+              const newUri = `${FileSystem.documentDirectory}${uri.split("/").pop()}`;
+              await FileSystem.writeAsStringAsync(newUri, blob, {
+                encoding: FileSystem.EncodingType.Base64,
+              });
+              const log = logs.filter(isUserLog).find((log) => log.photoUri === uri);
+              if (log) {
+                log.photoUri = newUri;
+              }
+            }
+
+            for (const log of logs) {
+              if (log.type === "exercise") {
+                saveExerciseLog(log.exercise, log.duration);
+              } else if (log.type === "user") {
+                await saveUserLog(log);
+              }
+            }
+
+            Alert.alert("Import Successful", "Your data has been imported.");
+          } catch {
+            Alert.alert("Invalid JSON", "The selected file is not valid.");
+          }
+        },
+      },
+    ]);
+  };
+
+  // Anonymous user (no email)
+  const isAnonymous = !user?.email;
+
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
+        <ScrollView style={styles.inner}>
+          {isAnonymous ? (
+            <>
+              <AccountBenefits />
+            </>
+          ) : (
+            <>
+              <ThemedText type="title" style={{ marginHorizontal: "auto" }}>
+                Your Account
+              </ThemedText>
+
+              <ThemedText style={[styles.label, { color: muted }]}>Name</ThemedText>
+              <TextInput
+                style={[styles.input, { backgroundColor: bg, color: text, borderColor: border }]}
+                placeholder="Full Name"
+                placeholderTextColor={muted}
+                value={name}
+                onChangeText={setName}
+              />
+
+              <ThemedText style={[styles.label, { color: muted, marginTop: 16 }]}>Email</ThemedText>
+              <TextInput
+                style={[styles.input, { backgroundColor: bg, color: text, borderColor: border }]}
+                value={user.email}
+                editable={false}
+              />
+
+              <ThemedButton
+                title="Save"
+                onPress={handleSave}
+                disabled={saving || name === (user.user_metadata?.full_name || "")}
+                style={{ ...styles.button }}
+              />
+
+              <ThemedButton
+                title="Log Out"
+                onPress={handleLogout}
+                variant="outline"
+                style={{ ...styles.button, marginTop: 8 }}
+              />
+
+              <View style={styles.section}>
+                <ThemedText type="subtitle">Data</ThemedText>
+                <ThemedButton title="Export Data" onPress={exportData} variant="outline" />
+                <ThemedButton title="Import Data" onPress={importData} variant="outline" />
+              </View>
+            </>
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  inner: {
+    flex: 1,
+    paddingHorizontal: 24,
+    marginBottom: 64,
+    gap: 16,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: 6,
+  },
+  input: {
+    padding: 14,
+    borderRadius: 8,
+    fontSize: 16,
+    borderWidth: 1,
+  },
+  button: {
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 16,
+  },
+  section: {
+    marginTop: 32,
+    gap: 12,
+  },
+});

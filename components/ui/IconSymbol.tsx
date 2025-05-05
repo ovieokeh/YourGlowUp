@@ -1,29 +1,41 @@
-// Fallback for using MaterialIcons on Android and web.
+// This file is a fallback for using MaterialIcons on Android and web.
 
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { SymbolWeight, SymbolViewProps } from 'expo-symbols';
-import { ComponentProps } from 'react';
-import { OpaqueColorValue, type StyleProp, type TextStyle } from 'react-native';
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import { SymbolWeight } from "expo-symbols";
+import React from "react";
+import { OpaqueColorValue, StyleProp, ViewStyle } from "react-native";
 
-type IconMapping = Record<SymbolViewProps['name'], ComponentProps<typeof MaterialIcons>['name']>;
-type IconSymbolName = keyof typeof MAPPING;
-
-/**
- * Add your SF Symbols to Material Icons mappings here.
- * - see Material Icons in the [Icons Directory](https://icons.expo.fyi).
- * - see SF Symbols in the [SF Symbols](https://developer.apple.com/sf-symbols/) app.
- */
+// Add your SFSymbol to MaterialIcons mappings here.
 const MAPPING = {
-  'house.fill': 'home',
-  'paperplane.fill': 'send',
-  'chevron.left.forwardslash.chevron.right': 'code',
-  'chevron.right': 'chevron-right',
-} as IconMapping;
+  "chevron.right": "chevron-right",
+  "chart.xyaxis.line": "chart-line",
+  gear: "cog",
+  mouth: "emoticon-happy-outline",
+  "checkmark.circle": "check-circle",
+  "xmark.circle": "close-circle",
+  "face.smiling": "emoticon-happy-outline",
+  "face.smiling.fill": "emoticon-happy",
+  "x.circle": "close-circle-outline",
+  "arrow.backward": "chevron-left",
+  "sun.max": "weather-sunny",
+  "moon.fill": "weather-night",
+  "automatic.brakesignal": "car-brake-alert",
+  "arrow.triangle.2.circlepath.circle": "sync",
+  "person.crop.circle.badge.checkmark": "account-check",
+  "clock.arrow.2.circlepath": "clock-time-four",
+  "bell.badge": "bell-alert",
+  "star.circle": "star-circle",
+  "person.3.sequence": "account-multiple",
+} as Partial<
+  Record<import("expo-symbols").SymbolViewProps["name"], React.ComponentProps<typeof MaterialCommunityIcons>["name"]>
+>;
+
+export type IconSymbolName = keyof typeof MAPPING;
 
 /**
- * An icon component that uses native SF Symbols on iOS, and Material Icons on Android and web.
- * This ensures a consistent look across platforms, and optimal resource usage.
- * Icon `name`s are based on SF Symbols and require manual mapping to Material Icons.
+ * An icon component that uses native SFSymbols on iOS, and MaterialIcons on Android and web. This ensures a consistent look across platforms, and optimal resource usage.
+ *
+ * Icon `name`s are based on SFSymbols and require manual mapping to MaterialIcons.
  */
 export function IconSymbol({
   name,
@@ -34,8 +46,8 @@ export function IconSymbol({
   name: IconSymbolName;
   size?: number;
   color: string | OpaqueColorValue;
-  style?: StyleProp<TextStyle>;
+  style?: StyleProp<ViewStyle>;
   weight?: SymbolWeight;
 }) {
-  return <MaterialIcons color={color} size={size} name={MAPPING[name]} style={style} />;
+  return <MaterialCommunityIcons color={color} size={size} name={MAPPING[name]} style={style as any} />;
 }
