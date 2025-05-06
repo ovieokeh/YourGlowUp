@@ -11,8 +11,8 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { EXERCISES } from "@/constants/Exercises";
 import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { saveExerciseLog } from "@/utils/db";
 import { addXP, LOG_TYPE_XP_MAP } from "@/utils/gamification";
+import { saveExerciseLog } from "@/utils/logs";
 
 export default function ExerciseSession() {
   const { slug } = useLocalSearchParams<{ slug: string }>();

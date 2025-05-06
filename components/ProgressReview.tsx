@@ -17,13 +17,21 @@ const FRAME_RATE_OPTIONS = [
 ];
 
 type Props = {
-  photoURIs: string[];
+  photos: {
+    uri: string;
+    transform?: {
+      scale: number;
+      x: number;
+      y: number;
+    };
+  }[];
 };
 
-export const ProgressReview: React.FC<Props> = ({ photoURIs }) => {
+export const ProgressReview: React.FC<Props> = ({ photos }) => {
   const [current, setCurrent] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [fpsInterval, setFpsInterval] = useState(1000);
+  const [showGrid, setShowGrid] = useState(true);
   const containerRef = useRef<View>(null);
   const timer = useRef<number | null>(null);
 
@@ -33,7 +41,7 @@ export const ProgressReview: React.FC<Props> = ({ photoURIs }) => {
   useEffect(() => {
     if (playing) {
       timer.current = setInterval(() => {
-        setCurrent((i) => (i + 1) % photoURIs.length);
+        setCurrent((i) => (i + 1) % photos.length);
       }, fpsInterval);
     } else {
       timer.current && clearInterval(timer.current);
@@ -41,15 +49,15 @@ export const ProgressReview: React.FC<Props> = ({ photoURIs }) => {
     return () => {
       timer.current && clearInterval(timer.current);
     };
-  }, [playing, fpsInterval, photoURIs.length]);
+  }, [playing, fpsInterval, photos.length]);
 
   useEffect(() => {
-    const next = (current + 1) % photoURIs.length;
-    if (!photoURIs[next]) return;
-    Image.prefetch(photoURIs[next]);
-  }, [current, photoURIs]);
+    const next = (current + 1) % photos.length;
+    if (!photos[next]) return;
+    Image.prefetch(photos[next].uri);
+  }, [current, photos]);
 
-  if (!photoURIs?.length)
+  if (!photos?.length)
     return (
       <View style={{ gap: Spacings.md, width: "100%" }}>
         <ThemedText type="subtitle">No photos available</ThemedText>
@@ -63,8 +71,23 @@ export const ProgressReview: React.FC<Props> = ({ photoURIs }) => {
   return (
     <View style={{ backgroundColor: background, width: "100%" }}>
       <View style={[styles.wrapper, { backgroundColor: background }]} ref={containerRef}>
-        {!!photoURIs[current] && <Image source={{ uri: photoURIs[current] }} style={styles.photo} resizeMode="cover" />}
-        <Image source={require("@/assets/images/grid.png")} style={styles.grid} resizeMode="cover" />
+        {!!photos[current] && (
+          <Image
+            source={{ uri: photos[current].uri }}
+            style={[
+              styles.photo,
+              {
+                transform: [
+                  { scale: Math.min(photos[current].transform?.scale || 1, 1) },
+                  { translateX: photos[current].transform?.x || 0 },
+                  { translateY: photos[current].transform?.y || 0 },
+                ],
+              },
+            ]}
+            resizeMode="cover"
+          />
+        )}
+        {showGrid && <Image source={require("@/assets/images/grid.png")} style={styles.grid} resizeMode="cover" />}
       </View>
 
       <View style={styles.controls}>
@@ -79,7 +102,7 @@ export const ProgressReview: React.FC<Props> = ({ photoURIs }) => {
         <Slider
           style={styles.slider}
           minimumValue={0}
-          maximumValue={photoURIs.length - 1}
+          maximumValue={photos.length - 1}
           step={1}
           value={current}
           onValueChange={setCurrent}
@@ -91,6 +114,14 @@ export const ProgressReview: React.FC<Props> = ({ photoURIs }) => {
           items={FRAME_RATE_OPTIONS}
           selectedValue={fpsInterval.toString()}
           onValueChange={(v) => setFpsInterval(+v)}
+        />
+
+        <ThemedButton
+          icon={showGrid ? "eye.slash" : "eye"}
+          title=""
+          onPress={() => setShowGrid((g) => !g)}
+          variant="ghost"
+          style={styles.button}
         />
       </View>
     </View>

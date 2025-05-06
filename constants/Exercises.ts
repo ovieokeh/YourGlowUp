@@ -1,6 +1,7 @@
 export const EXERCISES = [
   {
     id: "tongue-posture",
+    type: "exercise",
     name: "Tongue Posture (Mewing)",
     area: "Skull support",
     duration: 12,
@@ -19,6 +20,7 @@ export const EXERCISES = [
   },
   {
     id: "chin-tuck",
+    type: "exercise",
     name: "Chin Tucks",
     area: "Neck posture",
     duration: 45,
@@ -36,6 +38,7 @@ export const EXERCISES = [
   },
   {
     id: "smile-symmetry",
+    type: "exercise",
     name: "Smile Symmetry Drill",
     area: "Zygomatic control",
     duration: 60,
@@ -54,6 +57,7 @@ export const EXERCISES = [
   },
   {
     id: "chewing",
+    type: "exercise",
     name: "Chewing (Mastic Gum)",
     area: "Masseter hypertrophy",
     duration: 300,
@@ -68,9 +72,11 @@ export const EXERCISES = [
     animation:
       "https://lvaengmvyffyrughoqmc.supabase.co/storage/v1/object/public/app-assets/images/chewing-feature-image.png",
     color: "#DCFF00",
+    itemsNeeded: ["gum"],
   },
   {
     id: "fish-face",
+    type: "exercise",
     name: "Fish Face",
     area: "Buccinator tone",
     duration: 45,
@@ -84,6 +90,7 @@ export const EXERCISES = [
   },
   {
     id: "jaw-push-resist",
+    type: "exercise",
     name: "Jaw Push-Resist",
     area: "Jaw strength",
     duration: 60,
@@ -101,6 +108,7 @@ export const EXERCISES = [
   },
   {
     id: "neck-curl-ups",
+    type: "exercise",
     name: "Neck Curl-Ups",
     area: "Cervical tone",
     duration: 60,
@@ -115,5 +123,162 @@ export const EXERCISES = [
     animation:
       "https://lvaengmvyffyrughoqmc.supabase.co/storage/v1/object/public/app-assets/images/neck-curl-ups-feature-image.png",
     color: "#CEFF00",
+  },
+];
+
+export const TASKS = [
+  {
+    id: "cleanse",
+    type: "task",
+    name: "Cleanse",
+    area: "Facial Care",
+    duration: 5,
+    description: "Wash your face with a gentle cleanser to remove impurities.",
+    instructions: [
+      "Use lukewarm water to wet your face.",
+      "Apply a small amount of cleanser to your fingertips.",
+      "Gently massage the cleanser onto your face in circular motions.",
+      "Rinse thoroughly with lukewarm water.",
+      "Pat your face dry with a clean towel.",
+    ],
+    featureImage:
+      "https://lvaengmvyffyrughoqmc.supabase.co/storage/v1/object/public/app-assets/images/cleanser-feature-image.png",
+    animation:
+      "https://lvaengmvyffyrughoqmc.supabase.co/storage/v1/object/public/app-assets/images/cleanser-feature-image.png",
+    color: "#FF6347",
+    itemsNeeded: ["cleanser"],
+  },
+  {
+    id: "exfoliate",
+    type: "task",
+    name: "Exfoliate",
+    area: "Facial Care",
+    duration: 10,
+    description: "Exfoliate your skin to remove dead cells and promote cell turnover.",
+    instructions: [
+      "Apply a small amount of exfoliator to your fingertips.",
+      "Gently massage it onto your face in circular motions, avoiding the eye area.",
+      "Rinse thoroughly with lukewarm water.",
+      "Pat your face dry with a clean towel.",
+    ],
+    featureImage:
+      "https://lvaengmvyffyrughoqmc.supabase.co/storage/v1/object/public/app-assets/images/exfoliate-feature-image.png",
+    animation:
+      "https://lvaengmvyffyrughoqmc.supabase.co/storage/v1/object/public/app-assets/images/exfoliate-feature-image.png",
+    color: "#FF8C00",
+    itemsNeeded: ["exfoliator"],
+  },
+  {
+    id: "serum",
+    type: "task",
+    name: "Apply Serum",
+    area: "Facial Care",
+    duration: 5,
+    description: "Apply a hydrating serum to nourish your skin.",
+    instructions: [
+      "Take a few drops of serum on your fingertips.",
+      "Gently press the serum onto your face and neck.",
+      "Allow it to absorb for a few minutes before applying moisturizer.",
+    ],
+    featureImage:
+      "https://lvaengmvyffyrughoqmc.supabase.co/storage/v1/object/public/app-assets/images/serum-feature-image.png",
+    animation:
+      "https://lvaengmvyffyrughoqmc.supabase.co/storage/v1/object/public/app-assets/images/serum-feature-image.png",
+    color: "#FF4500",
+    itemsNeeded: ["serum"],
+  },
+  {
+    id: "moisturize",
+    type: "task",
+    name: "Moisturize",
+    area: "Facial Care",
+    duration: 5,
+    description: "Use a moisturizer to lock in hydration.",
+    instructions: [
+      "Take a small amount of moisturizer on your fingertips.",
+      "Gently massage it onto your face and neck in upward motions.",
+      "Allow it to absorb for a few minutes before applying sunscreen.",
+    ],
+    itemsNeeded: ["moisturizer"],
+  },
+  {
+    id: "sunscreen",
+    type: "task",
+    name: "Apply Sunscreen",
+    area: "Facial Care",
+    duration: 5,
+    description: "Protect your skin with sunscreen.",
+    instructions: [
+      "Take a generous amount of sunscreen on your fingertips.",
+      "Apply it evenly on your face and neck.",
+      "Reapply every 2 hours if exposed to sunlight.",
+    ],
+    featureImage:
+      "https://lvaengmvyffyrughoqmc.supabase.co/storage/v1/object/public/app-assets/images/sunscreen-feature-image.png",
+    animation:
+      "https://lvaengmvyffyrughoqmc.supabase.co/storage/v1/object/public/app-assets/images/sunscreen-feature-image.png",
+    color: "#FFD700",
+    itemsNeeded: ["sunscreen"],
+  },
+  {
+    id: "breath",
+    type: "exercise",
+    name: "Breath Exercise",
+    area: "Relaxation",
+    duration: 5,
+    description: "Take a moment to breathe deeply and relax.",
+    instructions: ["Inhale deeply through your nose.", "Exhale slowly through your mouth."],
+    featureImage:
+      "https://lvaengmvyffyrughoqmc.supabase.co/storage/v1/object/public/app-assets/images/breath-feature-image.png",
+    animation:
+      "https://lvaengmvyffyrughoqmc.supabase.co/storage/v1/object/public/app-assets/images/breath-feature-image.png",
+    color: "#00CED1",
+    notificationTime: "random",
+  },
+  {
+    id: "hydrate",
+    type: "task",
+    name: "Hydrate",
+    area: "Hydration",
+    duration: 30,
+    description: "Drink a glass of water to stay hydrated.",
+    instructions: ["Fill a glass with water.", "Drink it slowly."],
+    featureImage:
+      "https://lvaengmvyffyrughoqmc.supabase.co/storage/v1/object/public/app-assets/images/hydrate-feature-image.png",
+    animation:
+      "https://lvaengmvyffyrughoqmc.supabase.co/storage/v1/object/public/app-assets/images/hydrate-feature-image.png",
+    color: "#00FF00",
+    notificationTime: "random",
+  },
+];
+
+export const ROUTINES = [
+  {
+    id: "morning-routine",
+    name: "Morning Routine",
+    description: "A routine for facial care and exercises to start your day.",
+    notificationTime: "08:00",
+    steps: ["cleanse", "serum", "moisturize", "sunscreen", "smile-symmetry"],
+  },
+  {
+    id: "self-love-routine",
+    name: "Self-Love Routine",
+    description: "A routine for keeping your skin and mind healthy.",
+    notificationTime: "random",
+    steps: ["hydrate", "breath", "tongue-posture"],
+  },
+  {
+    id: "evening-routine",
+    name: "Evening Routine",
+    description: "A routine for facial care and exercises to end your day.",
+    notificationTime: "20:00",
+    steps: ["cleanse", "exfoliate", "serum", "moisturize", "fish-face", "chewing"],
+  },
+  {
+    id: "workout-routine",
+    name: "Workout Routine",
+    description: "A routine for facial exercises to enhance your workout.",
+    notificationTime: "07:00",
+    steps: ["tongue-posture", "chin-tuck", "jaw-push-resist"],
   },
 ];

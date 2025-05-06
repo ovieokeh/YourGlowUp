@@ -8,7 +8,7 @@ import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemePreference, useAppTheme } from "@/hooks/theme/context";
-import { getLogs, isUserLog, Log } from "@/utils/db";
+import { getLogs, isUserLog, Log } from "@/utils/logs";
 
 const NOTIF_ENABLED_KEY = "settings.notifications.enabled";
 

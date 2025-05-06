@@ -21,7 +21,7 @@ import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { supabase } from "@/supabase";
-import { getLogs, isUserLog, Log, saveExerciseLog, saveUserLog } from "@/utils/db";
+import { getLogs, isUserLog, Log, saveExerciseLog, saveUserLog } from "@/utils/logs";
 
 const NOTIF_ENABLED_KEY = "settings.notifications.enabled";
 const NOTIF_TIME_KEY = "settings.notifications.time";
@@ -99,7 +99,7 @@ export default function AccountView() {
           const base64 = FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
           return base64.then((base64String) => {
             IMAGE_URI_BLOB_MAP[uri] = base64String;
-            return `data:image/jpeg;base64,${base64String}`;
+            return `data:image/jpg;base64,${base64String}`;
           });
         });
       await Promise.allSettled(imagesBase64Blobs);
@@ -155,7 +155,7 @@ export default function AccountView() {
             const logs = parsed.logs as Log[];
             const IMAGE_URI_BLOB_MAP = parsed.IMAGE_URI_BLOB_MAP;
             for (const [uri, base64] of Object.entries(IMAGE_URI_BLOB_MAP)) {
-              const blob = `data:image/jpeg;base64,${base64}`;
+              const blob = `data:image/jpg;base64,${base64}`;
               const newUri = `${FileSystem.documentDirectory}${uri.split("/").pop()}`;
               await FileSystem.writeAsStringAsync(newUri, blob, {
                 encoding: FileSystem.EncodingType.Base64,

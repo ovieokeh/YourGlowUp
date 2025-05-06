@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { IconSymbolName } from "@/components/ui/IconSymbol";
-import { Log } from "./db";
+import { Log } from "./logs";
 
 export enum BadgeStatus {
   NOT_EARNED = "NOT_EARNED",

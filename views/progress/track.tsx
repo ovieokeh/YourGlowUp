@@ -8,7 +8,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { getLogs, isUserLog, Log } from "@/utils/db";
+import { getLogs, isUserLog, Log } from "@/utils/logs";
 
 const RANGE_OPTIONS = ["7d", "30d", "3mo", "all"];
 
@@ -45,9 +45,17 @@ export function ProgressTrackView() {
   const photoURIs = useMemo(() => {
     const photos = filtered
       .filter(isUserLog)
-      .map((l) => l.photoUri)
+      .filter((l) => l.photoUri)
+      .map((l) => ({
+        uri: l.photoUri!,
+        transform: (l.transform
+          ? typeof l.transform === "string"
+            ? JSON.parse(l.transform as unknown as string)
+            : l.transform
+          : undefined) as { scale: number; x: number; y: number } | undefined,
+      }))
       .filter(Boolean);
-    return (photos.length ? photos : []).filter((uri) => !!uri) as string[];
+    return photos ?? [];
   }, [filtered]);
 
   return (
@@ -71,7 +79,7 @@ export function ProgressTrackView() {
           </View>
         ) : null}
 
-        <ProgressReview photoURIs={photoURIs!} />
+        <ProgressReview photos={photoURIs} />
 
         <ThemedFabButton
           icon="camera"

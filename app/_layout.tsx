@@ -9,8 +9,9 @@ import "react-native-reanimated";
 
 import { ThemeProviderCustom, useAppTheme } from "@/hooks/theme/context";
 import { supabase } from "@/supabase";
-import { initLogsTable } from "@/utils/db";
+import { initLogsTable } from "@/utils/logs";
 import { getOnboardingStatus, OnboardingStatus, setOnboardingStatus } from "@/utils/onboarding";
+import { initRoutinesLogsTable } from "@/utils/routines";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -67,6 +68,7 @@ function App() {
 
   useEffect(() => {
     initLogsTable();
+    initRoutinesLogsTable();
     setOnboardingStatus("main-onboarding", {
       step: 0,
       status: OnboardingStatus.NOT_STARTED,
@@ -94,6 +96,12 @@ function App() {
           name="(tabs)"
           options={{
             headerTitle: "Home",
+          }}
+        />
+        <Stack.Screen
+          name="face-analysis"
+          options={{
+            headerTitle: "Face Analysis",
           }}
         />
         <Stack.Screen name="+not-found" />

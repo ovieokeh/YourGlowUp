@@ -4,7 +4,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { ThemedText } from "@/components/ThemedText";
-import { Log, getLogs, isExerciseLog } from "@/utils/db";
+import { Log, getLogs, isExerciseLog } from "@/utils/logs";
 
 import { BorderRadii, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";

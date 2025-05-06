@@ -8,7 +8,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { getLogs, isExerciseLog, isUserLog, Log } from "@/utils/db";
+import { getLogs, isExerciseLog, isUserLog, Log } from "@/utils/logs";
 
 const TABS = ["Self Reports", "Exercise Logs"] as const;
 const SCREEN_WIDTH = Dimensions.get("window").width;

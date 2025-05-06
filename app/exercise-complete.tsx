@@ -7,8 +7,8 @@ import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { getLogs } from "@/utils/db";
 import { fetchUserXP } from "@/utils/gamification";
+import { getLogs } from "@/utils/logs";
 
 export default function ExerciseCompleteScreen() {
   const [xp, setXP] = useState(0);

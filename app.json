@@ -10,14 +10,19 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.nerdylegs.FaceGlowUp"
+      "bundleIdentifier": "com.nerdylegs.FaceGlowUp",
+      "runtimeVersion": "1.0.0"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "runtimeVersion": {
+        "policy": "appVersion"
+      },
+      "package": "com.nerdylegs.FaceGlowUp"
     },
     "web": {
       "bundler": "metro",
@@ -39,6 +44,16 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "50981f14-aa22-46a6-aac5-b9db1afde10b"
+      }
+    },
+    "owner": "nerdylegs",
+    "updates": {
+      "url": "https://u.expo.dev/50981f14-aa22-46a6-aac5-b9db1afde10b"
     }
   }
 }

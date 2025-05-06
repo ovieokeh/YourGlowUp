@@ -8,7 +8,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { EXERCISES } from "@/constants/Exercises";
 import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { getLogs, isExerciseLog, isUserLog, Log } from "@/utils/db";
+import { getLogs, isExerciseLog, isUserLog, Log } from "@/utils/logs";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const CHART_WIDTH = SCREEN_WIDTH - 32;

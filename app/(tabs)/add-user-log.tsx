@@ -1,12 +1,10 @@
 import Slider from "@react-native-community/slider";
 import * as FileSystem from "expo-file-system";
-import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   Alert,
   findNodeHandle,
-  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -18,12 +16,13 @@ import {
 } from "react-native";
 
 import { Collapsible } from "@/components/Collapsible";
+import { PhotoUpload, PhotoUploadViewProps } from "@/components/PhotoUpload";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { saveUserLog } from "@/utils/db";
+import { saveUserLog } from "@/utils/logs";
 
 const TIPS = [
   "Avoid chewing only on one side — causes asymmetry.",
@@ -44,7 +43,15 @@ export default function AddUserLogScreen() {
   const [symmetryRating, setSymmetryRating] = useState(3);
   const [notes, setNotes] = useState("");
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [transformForLog, setTransformForLog] = useState<{ scale: number; x: number; y: number }>({
+    scale: 1,
+    x: 0,
+    y: 0,
+  });
 
+  console.log("AddUserLogScreen", {
+    transformForLog,
+  });
   const borderColor = useThemeColor({}, "border");
   const inputTextColor = useThemeColor({}, "text");
   const backgroundActive = useThemeColor({ light: Colors.light.accent, dark: Colors.dark.accent }, "accent");
@@ -89,24 +96,20 @@ export default function AddUserLogScreen() {
       symmetryRating,
       notes,
       photoUri: savedUri || undefined,
-    });
-
-    resetForm();
-    router.replace("/(tabs)/progress?activeTab=Logs&logsTab=Self%20Reports");
+      transform: transformForLog,
+    })
+      .then(() => {
+        resetForm();
+        router.replace("/(tabs)/progress?activeTab=Logs&logsTab=Self%20Reports");
+      })
+      .catch((err) => {
+        console.error("Error saving user log", err);
+        Alert.alert("Error", "Failed to save log. Please try again.");
+      });
   };
 
-  const handlePickPhoto = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== "granted") return;
-
-    const result = await ImagePicker.launchCameraAsync({
-      quality: 0.5,
-      base64: false,
-    });
-
-    if (!result.canceled && result.assets.length > 0) {
-      setPhotoUri(result.assets[0].uri);
-    }
+  const handlePickPhoto = async ({ uri, transform }: PhotoUploadViewProps["onPickPhoto"]["arguments"][0]) => {
+    setPhotoUri(uri);
   };
 
   const onTipsPress = () => {
@@ -235,24 +238,12 @@ export default function AddUserLogScreen() {
 
             <ThemedText style={styles.label}>Progress Photo</ThemedText>
             {photoUri ? (
-              <View style={{ position: "relative" }}>
-                <Image source={{ uri: photoUri }} style={styles.photo} />
-                <View
-                  style={{
-                    ...StyleSheet.absoluteFillObject,
-                    borderWidth: 1,
-                    borderColor: "rgba(255, 255, 255, 0.3)",
-                    borderStyle: "solid",
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                >
-                  <View style={{ width: "90%", height: 1, backgroundColor: "rgba(255,255,255,0.6)" }} />
-                  <View
-                    style={{ position: "absolute", width: 1, height: "90%", backgroundColor: "rgba(255,255,255,0.6)" }}
-                  />
-                </View>
-              </View>
+              <PhotoUpload
+                photoUri={photoUri}
+                onPickPhoto={handlePickPhoto}
+                onTransformChange={setTransformForLog}
+                initialTransform={transformForLog}
+              />
             ) : (
               <Pressable onPress={handlePickPhoto} style={[styles.photoButton, { borderColor }]}>
                 <ThemedText style={{ color: inputTextColor }}>Take Photo</ThemedText>

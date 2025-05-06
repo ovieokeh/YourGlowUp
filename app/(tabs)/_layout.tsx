@@ -43,6 +43,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="routines/index"
+        options={{
+          title: "Routines",
+          // href: null,
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="clock" color={color} />,
+          headerLeft: () => <BackButton />,
+        }}
+      />
+      <Tabs.Screen
         name="progress"
         options={{
           title: "Progress",
