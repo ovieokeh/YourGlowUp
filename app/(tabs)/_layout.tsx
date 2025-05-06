@@ -67,7 +67,6 @@ export default function TabLayout() {
         options={{
           title: "Routines",
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="clock" color={color} />,
-          headerLeft: () => <BackButton />,
         }}
       />
       <Tabs.Screen

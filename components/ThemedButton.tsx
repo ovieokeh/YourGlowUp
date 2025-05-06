@@ -110,7 +110,11 @@ export function ThemedButton({
               { color: textColor },
               textStyle,
               active && {
-                color: ["ghost", "outline"].includes(variant) ? Colors.light.text : textColor,
+                color: ["ghost"].includes(variant)
+                  ? Colors.light.text
+                  : ["outline"].includes(variant)
+                  ? Colors.dark.accent
+                  : textColor,
               },
             ]}
           >

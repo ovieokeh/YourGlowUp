@@ -17,6 +17,7 @@ export const Colors = {
     danger: "#FF2E63",
     muted: "#9A9A9A",
     tabBar: glowLight,
+    gray10: "#F5F5F5",
   },
   dark: {
     text: glowLight,
@@ -31,6 +32,7 @@ export const Colors = {
     danger: "#FF2E63",
     muted: "#757575",
     tabBar: "#181818",
+    gray10: "#121212",
   },
 };
 

@@ -14,7 +14,6 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AccountBenefits } from "@/components/AccountBenefits";
 import { ThemedButton } from "@/components/ThemedButton";
@@ -81,11 +80,7 @@ export default function AccountView() {
   };
 
   if (loading) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
-        <ActivityIndicator style={{ flex: 1 }} color={tint} />
-      </SafeAreaView>
-    );
+    return <ActivityIndicator style={{ flex: 1 }} color={tint} />;
   }
 
   const exportData = async () => {
@@ -187,64 +182,61 @@ export default function AccountView() {
   const isAnonymous = !user?.email;
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
-        <ScrollView style={styles.inner}>
-          {isAnonymous ? (
-            <>
-              <AccountBenefits />
-            </>
-          ) : (
-            <>
-              <ThemedText type="title" style={{ marginHorizontal: "auto" }}>
-                Your Account
-              </ThemedText>
+    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
+      <ScrollView style={styles.inner}>
+        {isAnonymous ? (
+          <>
+            <AccountBenefits />
+          </>
+        ) : (
+          <>
+            <ThemedText type="title" style={{ marginHorizontal: "auto" }}>
+              Your Account
+            </ThemedText>
 
-              <ThemedText style={[styles.label, { color: muted }]}>Name</ThemedText>
-              <TextInput
-                style={[styles.input, { backgroundColor: bg, color: text, borderColor: border }]}
-                placeholder="Full Name"
-                placeholderTextColor={muted}
-                value={name}
-                onChangeText={setName}
-              />
+            <ThemedText style={[styles.label, { color: muted }]}>Name</ThemedText>
+            <TextInput
+              style={[styles.input, { backgroundColor: bg, color: text, borderColor: border }]}
+              placeholder="Full Name"
+              placeholderTextColor={muted}
+              value={name}
+              onChangeText={setName}
+            />
 
-              <ThemedText style={[styles.label, { color: muted, marginTop: 16 }]}>Email</ThemedText>
-              <TextInput
-                style={[styles.input, { backgroundColor: bg, color: text, borderColor: border }]}
-                value={user.email}
-                editable={false}
-              />
+            <ThemedText style={[styles.label, { color: muted, marginTop: 16 }]}>Email</ThemedText>
+            <TextInput
+              style={[styles.input, { backgroundColor: bg, color: text, borderColor: border }]}
+              value={user.email}
+              editable={false}
+            />
 
-              <ThemedButton
-                title="Save"
-                onPress={handleSave}
-                disabled={saving || name === (user.user_metadata?.full_name || "")}
-                style={{ ...styles.button }}
-              />
+            <ThemedButton
+              title="Save"
+              onPress={handleSave}
+              disabled={saving || name === (user.user_metadata?.full_name || "")}
+              style={{ ...styles.button }}
+            />
 
-              <ThemedButton
-                title="Log Out"
-                onPress={handleLogout}
-                variant="outline"
-                style={{ ...styles.button, marginTop: 8 }}
-              />
+            <ThemedButton
+              title="Log Out"
+              onPress={handleLogout}
+              variant="outline"
+              style={{ ...styles.button, marginTop: 8 }}
+            />
 
-              <View style={styles.section}>
-                <ThemedText type="subtitle">Data</ThemedText>
-                <ThemedButton title="Export Data" onPress={exportData} variant="outline" />
-                <ThemedButton title="Import Data" onPress={importData} variant="outline" />
-              </View>
-            </>
-          )}
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+            <View style={styles.section}>
+              <ThemedText type="subtitle">Data</ThemedText>
+              <ThemedButton title="Export Data" onPress={exportData} variant="outline" />
+              <ThemedButton title="Import Data" onPress={importData} variant="outline" />
+            </View>
+          </>
+        )}
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
   inner: {
     flex: 1,
     paddingHorizontal: 24,

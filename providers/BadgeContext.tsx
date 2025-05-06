@@ -1,6 +1,14 @@
-import { Badge, BadgeKey, BADGES, BadgeStatus, setBadgeStatus as persistBadgeStatus } from "@/utils/gamification";
+import { supabase } from "@/supabase";
+import {
+  Badge,
+  BadgeKey,
+  BADGES,
+  BadgeStatus,
+  fetchUserBadges,
+  setBadgeStatus as persistBadgeStatus,
+} from "@/utils/gamification";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import Toast from "react-native-toast-message";
 
 type BadgeContextType = {
@@ -18,26 +26,28 @@ export const BadgeProvider = ({ children }: { children: React.ReactNode }) => {
   const [shownToasts, setShownToasts] = useState<Set<BadgeKey>>(new Set());
 
   // Load badges and shown toast keys
-  // useEffect(() => {
-  //   const init = async () => {
-  //     const { data } = await supabase.auth.getSession();
-  //     if (!data.session?.access_token) {
-  //       console.log("User not logged in, skipping badge initialization");
-  //       return;
-  //     }
-  //     const stored = await fetchUserBadges();
-  //     setBadges(stored);
+  useEffect(() => {
+    const init = async () => {
+      const stored = await fetchUserBadges();
+      setBadges(stored);
 
-  //     // clear all shown
-  //     const shown = await AsyncStorage.getItem(SHOWN_TOASTS_KEY);
-  //     console.log("shown1", shown);
-  //     await AsyncStorage.removeItem(SHOWN_TOASTS_KEY);
-  //     await AsyncStorage.removeItem("badges");
-  //     if (shown) setShownToasts(new Set(JSON.parse(shown)));
-  //     console.log("shown2", shown);
-  //   };
-  //   init();
-  // }, []);
+      // clear all shown
+      const shown = await AsyncStorage.getItem(SHOWN_TOASTS_KEY);
+
+      // await AsyncStorage.removeItem(SHOWN_TOASTS_KEY);
+      await AsyncStorage.removeItem("badges");
+      if (shown) setShownToasts(new Set(JSON.parse(shown)));
+    };
+
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_IN") {
+        init();
+      } else if (event === "SIGNED_OUT") {
+        setBadges(BADGES);
+        setShownToasts(new Set());
+      }
+    });
+  }, []);
 
   const updateBadge = async (key: BadgeKey, status: BadgeStatus) => {
     const updated = {

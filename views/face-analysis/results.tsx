@@ -1,15 +1,15 @@
+import { useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, FlatList, Image, ScrollView, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { ActivityIndicator, FlatList, Image, ScrollView, StyleSheet, View } from "react-native";
 
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { EXERCISES, TASKS } from "@/constants/Exercises";
+import { Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { supabase } from "@/supabase";
 import { parseJSONCleaned } from "@/utils/json";
-import { useRouter } from "expo-router";
 
 const FACTOIDS = [
   "Facial symmetry is often linked to perceptions of attractiveness and health.",
@@ -35,12 +35,21 @@ interface Props {
   leftUri: string;
   rightUri: string;
   loading: boolean;
+  analysisResults: AnalysisResult | null;
   onResult: (data: AnalysisResult | null) => void;
   setLoading: (loading: boolean) => void;
 }
 
-export default function FaceAnalysisResultsView({ frontUri, leftUri, rightUri, loading, onResult, setLoading }: Props) {
-  const [result, setResult] = useState<AnalysisResult | null>(null);
+export default function FaceAnalysisResultsView({
+  frontUri,
+  leftUri,
+  rightUri,
+  loading,
+  analysisResults,
+  onResult,
+  setLoading,
+}: Props) {
+  const [result, setResult] = useState<AnalysisResult | null>(analysisResults);
   const router = useRouter();
 
   const accentColor = useThemeColor({}, "accent");
@@ -55,15 +64,20 @@ export default function FaceAnalysisResultsView({ frontUri, leftUri, rightUri, l
         factoidIndex = (factoidIndex + 1) % FACTOIDS.length;
         flatListRef.current.scrollToIndex({ index: factoidIndex, animated: true, viewPosition: 0.5 });
       }
-    }, 4000); // Change factoid every 4 seconds
+    }, 4000);
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
     let isMounted = true;
     (async () => {
-      setLoading(true); // Ensure loading is true at the start of analysis
-      const images: string[] = [frontUri ?? "", leftUri ?? "", rightUri ?? ""].filter((uri) => uri);
+      if (analysisResults?.recommendations) {
+        setResult(analysisResults);
+        return;
+      }
+
+      setLoading(true);
+      const images: string[] = [frontUri ?? "", leftUri ?? "", rightUri ?? ""].filter(Boolean);
 
       if (images.length < 3) {
         console.error("Not all images are available for analysis.");
@@ -98,7 +112,7 @@ Only output valid JSON with no explanations or surrounding text. This will be pa
 
         const res = await supabase.functions.invoke("openai", {
           body: {
-            name: "FaceSymmetryAnalysis", // More descriptive function name if you can change it
+            name: "FaceSymmetryAnalysis",
             prompt,
             images,
           },
@@ -106,14 +120,10 @@ Only output valid JSON with no explanations or surrounding text. This will be pa
 
         if (!isMounted) return;
 
-        const cleanedResponse = res.data?.result ?? res.data; // Access .result if present
-
-        if (!cleanedResponse) {
-          throw new Error("Empty response from AI function.");
-        }
+        const cleanedResponse = res.data?.result ?? res.data;
+        if (!cleanedResponse) throw new Error("Empty response from AI function.");
 
         const parsed = parseJSONCleaned(cleanedResponse) as AnalysisResult;
-        // Basic validation of parsed structure
         if (typeof parsed.symmetryScore !== "number" || !Array.isArray(parsed.observations)) {
           throw new Error("Parsed JSON does not match expected structure.");
         }
@@ -132,110 +142,152 @@ Only output valid JSON with no explanations or surrounding text. This will be pa
         }
       }
     })();
-
-    return () => {
-      isMounted = false;
-    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [frontUri, leftUri, rightUri]); // onResult can be memoized if it changes often
+  }, [frontUri, leftUri, rightUri]);
 
   const renderListItem = (item: string, index: number) => (
-    <ThemedText key={index} style={{ marginBottom: 6, fontSize: 15, lineHeight: 22 }}>
+    <ThemedText key={index} style={styles.listItem}>
       • {item}
     </ThemedText>
   );
 
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1 }}>
-        <ThemedView style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 24 }}>
-          <ThemedText type="title">Analyzing your face...</ThemedText>
-          <FlatList
-            ref={flatListRef}
-            data={FACTOIDS}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            pagingEnabled
-            keyExtractor={(_, i) => i.toString()}
-            renderItem={({ item }) => (
-              <ThemedText
-                style={{
-                  fontStyle: "italic",
-                  opacity: 0.7,
-                  fontSize: 14,
-                  width: 300,
-                  textAlign: "center",
-                  padding: 10,
-                }}
-              >
-                {item}
-              </ThemedText>
-            )}
-          />
-          <ActivityIndicator size="large" color={accentColor} style={{ marginTop: 24 }} />
-          <View style={{ flexDirection: "row", gap: 8, marginTop: 24 }}>
-            {[frontUri, leftUri, rightUri].map((uri, i) => (
-              <Image
-                key={i}
-                source={{ uri }}
-                style={{ width: 64, height: 64, borderRadius: 10, borderWidth: 1, borderColor }}
-              />
-            ))}
-          </View>
-        </ThemedView>
-      </SafeAreaView>
+      <ThemedView style={styles.loadingContainer}>
+        <ThemedText type="title">Analyzing your face...</ThemedText>
+        <FlatList
+          ref={flatListRef}
+          data={FACTOIDS}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          pagingEnabled
+          keyExtractor={(_, i) => i.toString()}
+          renderItem={({ item }) => <ThemedText style={styles.factoid}>{item}</ThemedText>}
+        />
+        <ActivityIndicator size="large" color={accentColor} style={styles.loadingIndicator} />
+        <View style={[styles.imageRow, { borderColor }]}>
+          {[frontUri, leftUri, rightUri].map((uri, i) => (
+            <Image key={i} source={{ uri }} style={[styles.faceImage, { borderColor }]} />
+          ))}
+        </View>
+      </ThemedView>
     );
   }
 
   if (!result) {
     return (
-      <SafeAreaView style={{ flex: 1 }}>
-        <ThemedView style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 24 }}>
-          <ThemedText type="title">Analysis Failed</ThemedText>
-          <ThemedText style={{ marginVertical: 12, textAlign: "center" }}>
-            Something went wrong while analyzing your images.
-          </ThemedText>
-          <ThemedButton title="Back to Home" onPress={() => router.replace("/(tabs)")} />
-        </ThemedView>
-      </SafeAreaView>
+      <ThemedView style={styles.loadingContainer}>
+        <ThemedText type="title">Analysis Failed</ThemedText>
+        <ThemedText style={styles.errorText}>Something went wrong while analyzing your images.</ThemedText>
+        <ThemedButton title="Back to Home" onPress={() => router.replace("/(tabs)")} />
+      </ThemedView>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 64 }}>
-        <ThemedText type="title" style={{ textAlign: "center", marginBottom: 24 }}>
-          Your Facial Analysis
-        </ThemedText>
+    <ScrollView contentContainerStyle={styles.resultContainer}>
+      <ThemedText type="title" style={styles.title}>
+        Your Facial Analysis
+      </ThemedText>
 
-        <View style={{ alignItems: "center", marginBottom: 32 }}>
-          <ThemedText style={{ fontSize: 16, marginBottom: 4 }}>Symmetry Score</ThemedText>
-          <ThemedText style={{ fontSize: 48, fontWeight: "bold", color: scoreColor, lineHeight: 48 }}>
-            {result.symmetryScore.toFixed(1)}
-          </ThemedText>
-          <ThemedText style={{ fontSize: 16, opacity: 0.6 }}>/ 5</ThemedText>
-        </View>
+      <View style={styles.scoreContainer}>
+        <ThemedText style={styles.scoreLabel}>Symmetry Score</ThemedText>
+        <ThemedText style={[styles.scoreValue, { color: scoreColor }]}>{result.symmetryScore.toFixed(1)}</ThemedText>
+        <ThemedText style={styles.scoreMax}>/ 5</ThemedText>
+      </View>
 
-        <ThemedText type="subtitle" style={{ marginBottom: 8 }}>
-          Profile Highlights
-        </ThemedText>
-        <ThemedText style={{ marginBottom: 6 }}>
-          <ThemedText style={{ fontWeight: "600" }}>Left:</ThemedText> {result.leftProfileDefinition}
-        </ThemedText>
-        <ThemedText style={{ marginBottom: 16 }}>
-          <ThemedText style={{ fontWeight: "600" }}>Right:</ThemedText> {result.rightProfileDefinition}
-        </ThemedText>
+      <ThemedText type="subtitle" style={styles.sectionTitle}>
+        Profile Highlights
+      </ThemedText>
+      <ThemedText style={styles.sectionText}>
+        <ThemedText style={styles.bold}>Left:</ThemedText> {result.leftProfileDefinition}
+      </ThemedText>
+      <ThemedText style={styles.sectionText}>
+        <ThemedText style={styles.bold}>Right:</ThemedText> {result.rightProfileDefinition}
+      </ThemedText>
 
-        <ThemedText type="subtitle" style={{ marginBottom: 8 }}>
-          Skin Assessment
-        </ThemedText>
-        <ThemedText style={{ marginBottom: 16 }}>{result.skinClarity}</ThemedText>
+      <ThemedText type="subtitle" style={styles.sectionTitle}>
+        Skin Assessment
+      </ThemedText>
+      <ThemedText style={styles.sectionText}>{result.skinClarity}</ThemedText>
 
-        <ThemedText type="subtitle" style={{ marginBottom: 8 }}>
-          Key Observations
-        </ThemedText>
-        {result.observations.map(renderListItem)}
-      </ScrollView>
-    </SafeAreaView>
+      <ThemedText type="subtitle" style={styles.sectionTitle}>
+        Key Observations
+      </ThemedText>
+      {result.observations.map(renderListItem)}
+    </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  factoid: {
+    fontStyle: "italic",
+    opacity: 0.7,
+    fontSize: 14,
+    width: 300,
+    textAlign: "center",
+    padding: Spacings.sm,
+  },
+  loadingIndicator: {
+    marginTop: Spacings.lg,
+  },
+  imageRow: {
+    flexDirection: "row",
+    gap: Spacings.sm,
+    marginTop: Spacings.lg,
+  },
+  faceImage: {
+    width: 64,
+    height: 64,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  errorText: {
+    marginVertical: Spacings.md,
+    textAlign: "center",
+  },
+  resultContainer: {
+    paddingTop: 0,
+    paddingBottom: 64,
+  },
+  title: {
+    textAlign: "center",
+    marginBottom: Spacings.lg,
+  },
+  scoreContainer: {
+    alignItems: "center",
+    marginBottom: Spacings.xl,
+  },
+  scoreLabel: {
+    fontSize: 16,
+    marginBottom: Spacings.xs,
+  },
+  scoreValue: {
+    fontSize: 48,
+    fontWeight: "bold",
+    lineHeight: 48,
+  },
+  scoreMax: {
+    fontSize: 16,
+    opacity: 0.6,
+  },
+  sectionTitle: {
+    marginBottom: Spacings.sm,
+  },
+  sectionText: {
+    marginBottom: Spacings.md,
+  },
+  bold: {
+    fontWeight: "600",
+  },
+  listItem: {
+    marginBottom: 6,
+    fontSize: 15,
+    lineHeight: 22,
+  },
+});

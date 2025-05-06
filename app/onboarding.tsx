@@ -41,7 +41,7 @@ const slides = [
     image: require("@/assets/images/ai-coach.png"),
     cta: {
       title: "See it in Action",
-      link: `/auth?redirectTo=/add-user-log`,
+      link: `/auth?redirectTo=/face-analysis`,
     },
   },
   {

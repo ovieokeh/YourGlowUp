@@ -140,18 +140,12 @@ const styles = StyleSheet.create({
   title: {
     marginBottom: Spacings.sm,
   },
-  statsGrid: {
-    gap: Spacings.sm,
-  },
+  statsGrid: {},
   card: {
     flexDirection: "row",
     alignItems: "center",
     padding: Spacings.sm,
     borderRadius: BorderRadii.sm,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07,
-    shadowRadius: 6,
-    elevation: 3,
   },
   cardLabel: {
     fontSize: 13,

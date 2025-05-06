@@ -1,5 +1,4 @@
 import Slider from "@react-native-community/slider";
-import * as FileSystem from "expo-file-system";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -48,6 +47,9 @@ export default function AddUserLogScreen() {
     x: 0,
     y: 0,
   });
+  const [isUploading, setIsUploading] = useState(false);
+
+  // useAwardEarnedBadges
 
   const borderColor = useThemeColor({}, "border");
   const inputTextColor = useThemeColor({}, "text");
@@ -77,14 +79,6 @@ export default function AddUserLogScreen() {
       return;
     }
 
-    let savedUri = photoUri;
-    if (photoUri) {
-      const filename = `log_${Date.now()}.jpg`;
-      const targetPath = FileSystem.documentDirectory + filename;
-      await FileSystem.copyAsync({ from: photoUri, to: targetPath });
-      savedUri = targetPath;
-    }
-
     await saveUserLog({
       dominantSide,
       chewingDuration,
@@ -92,7 +86,7 @@ export default function AddUserLogScreen() {
       gumChewingDuration,
       symmetryRating,
       notes,
-      photoUri: savedUri || undefined,
+      photoUri: photoUri || undefined,
       transform: transformForLog,
     })
       .then(() => {
@@ -234,18 +228,16 @@ export default function AddUserLogScreen() {
             />
 
             <ThemedText style={styles.label}>Progress Photo</ThemedText>
-            {photoUri ? (
-              <PhotoUpload
-                photoUri={photoUri}
-                onPickPhoto={handlePickPhoto}
-                onTransformChange={setTransformForLog}
-                initialTransform={transformForLog}
-              />
-            ) : (
-              <Pressable onPress={handlePickPhoto} style={[styles.photoButton, { borderColor }]}>
-                <ThemedText style={{ color: inputTextColor }}>Take Photo</ThemedText>
-              </Pressable>
-            )}
+
+            <PhotoUpload
+              photoUri={photoUri || null}
+              onPickPhoto={handlePickPhoto}
+              onTransformChange={setTransformForLog}
+              initialTransform={transformForLog}
+              loading={isUploading}
+              setLoading={setIsUploading}
+              allowTransform
+            />
 
             <View style={{ marginVertical: 24 }} ref={tipsRef}>
               <Collapsible title="Tips, Timeline, and What to Avoid" onPress={onTipsPress}>

@@ -6,7 +6,7 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useBadges } from "@/providers/BadgeContext";
-import { BadgeKey, BADGES, BadgeStatus, fetchUserXP } from "@/utils/gamification";
+import { BadgeKey, BadgeLevel, BADGES, BadgeStatus, fetchUserXP } from "@/utils/gamification";
 
 export const XPCounter = () => {
   const [xp, setXP] = useState<number>(0);
@@ -61,20 +61,47 @@ export const XPCounter = () => {
             </Pressable>
           </View>
           <ScrollView contentContainerStyle={styles.badgeGrid}>
-            {Object.values(BADGES).map((badge) => {
-              const earned = badges[badge.id as BadgeKey]?.status === BadgeStatus.EARNED;
-              return (
-                <View key={badge.name} style={[styles.badgeItem, { opacity: earned ? 1 : 0.4, borderColor: border }]}>
-                  <View style={styles.iconWrapper}>
-                    <IconSymbol name={badge.icon} size={28} color={earned ? accent : border} />
+            {Object.values(BADGES)
+              .sort((a, b) => {
+                const aStatus = badges[a.id as BadgeKey]?.status;
+                const bStatus = badges[b.id as BadgeKey]?.status;
+
+                const aLevel = a.level;
+                const bLevel = b.level;
+
+                // Sort by earned status: EARNED badges come first
+                if (aStatus === BadgeStatus.EARNED && bStatus !== BadgeStatus.EARNED) {
+                  return -1;
+                }
+                if (aStatus !== BadgeStatus.EARNED && bStatus === BadgeStatus.EARNED) {
+                  return 1;
+                }
+
+                // Then sort by level: BRONZE < SILVER < GOLD (GOLD appears last)
+                const levelOrder: Record<BadgeLevel, number> = {
+                  [BadgeLevel.BRONZE]: 0,
+                  [BadgeLevel.SILVER]: 1,
+                  [BadgeLevel.GOLD]: 2,
+                  [BadgeLevel.PLATINUM]: 3,
+                };
+
+                return levelOrder[aLevel] - levelOrder[bLevel];
+              })
+
+              .map((badge) => {
+                const earned = badges[badge.id as BadgeKey]?.status === BadgeStatus.EARNED;
+                return (
+                  <View key={badge.name} style={[styles.badgeItem, { opacity: earned ? 1 : 0.4, borderColor: border }]}>
+                    <View style={styles.iconWrapper}>
+                      <IconSymbol name={badge.icon} size={28} color={earned ? accent : border} />
+                    </View>
+                    <ThemedText type="defaultSemiBold" style={styles.badgeName} numberOfLines={1}>
+                      {badge.name}
+                    </ThemedText>
+                    <ThemedText style={styles.badgeDesc}>{badge.description}</ThemedText>
                   </View>
-                  <ThemedText type="defaultSemiBold" style={styles.badgeName} numberOfLines={1}>
-                    {badge.name}
-                  </ThemedText>
-                  <ThemedText style={styles.badgeDesc}>{badge.description}</ThemedText>
-                </View>
-              );
-            })}
+                );
+              })}
           </ScrollView>
         </SafeAreaView>
       </Modal>

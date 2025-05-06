@@ -16,11 +16,13 @@ import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { BorderRadii, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { useBadges } from "@/providers/BadgeContext";
 import { supabase } from "@/supabase";
 import { useSearchParams } from "expo-router/build/hooks";
 
 export default function AuthScreen() {
   const router = useRouter();
+  const { awardBadge } = useBadges();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
@@ -47,6 +49,7 @@ export default function AuthScreen() {
       }
       Alert.alert("Check your email for the confirmation link.");
       setLoading(false);
+      await awardBadge("new-beginnings");
       return;
     }
 

@@ -1,8 +1,8 @@
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
-import { Dimensions, FlatList, Image, Pressable, StyleSheet, View } from "react-native";
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import React, { useState } from "react";
+import { FlatList, Image, StyleSheet, View } from "react-native";
 
+import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedFabButton } from "@/components/ThemedFabButton";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
@@ -11,7 +11,6 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { getLogs, isExerciseLog, isUserLog, Log } from "@/utils/logs";
 
 const TABS = ["Self Reports", "Exercise Logs"] as const;
-const SCREEN_WIDTH = Dimensions.get("window").width;
 
 export function ProgressLogsView() {
   const router = useRouter();
@@ -37,31 +36,22 @@ export function ProgressLogsView() {
   const exerciseLogs = logs.filter(isExerciseLog);
   const userLogs = logs.filter(isUserLog);
 
-  const translateX = useSharedValue(0);
-  const tabWidth = SCREEN_WIDTH / TABS.length;
-
-  const underlineStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: withTiming(translateX.value, { duration: 200 }) }],
-  }));
-  useEffect(() => {
-    const index = TABS.indexOf(initialTab);
-    translateX.value = tabWidth * index;
-  }, [initialTab, tabWidth, translateX]);
-
   const handleTabPress = (tab: (typeof TABS)[number], index: number) => {
     setActiveTab(tab);
-    translateX.value = tabWidth * index;
   };
 
   return (
     <View style={{ flex: 1, paddingBottom: Spacings.xl * 2 }}>
       <View style={[styles.tabBar, { borderColor: underline }]}>
         {TABS.map((tab, idx) => (
-          <Pressable key={tab} style={styles.tabButton} onPress={() => handleTabPress(tab, idx)}>
-            <ThemedText style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab}</ThemedText>
-          </Pressable>
+          <ThemedButton
+            variant="outline"
+            key={tab}
+            onPress={() => handleTabPress(tab, idx)}
+            active={activeTab === tab}
+            title={tab}
+          />
         ))}
-        <Animated.View style={[styles.underline, { width: tabWidth, backgroundColor: underline }, underlineStyle]} />
       </View>
 
       {activeTab === "Self Reports" ? (
@@ -175,28 +165,12 @@ export function ProgressLogsView() {
 const styles = StyleSheet.create({
   tabBar: {
     flexDirection: "row",
-    position: "relative",
-    borderBottomWidth: 1,
-  },
-  tabButton: {
-    flex: 1,
-    paddingVertical: Spacings.md,
-    alignItems: "center",
-  },
-  tabText: {
-    fontSize: 16,
-  },
-  tabTextActive: {
-    fontWeight: "600",
-  },
-  underline: {
-    position: "absolute",
-    height: 2,
-    bottom: 0,
-    left: 0,
+    gap: Spacings.sm,
+    padding: Spacings.md,
   },
   list: {
-    padding: Spacings.lg,
+    padding: Spacings.md,
+    paddingTop: 0,
     paddingBottom: Spacings.xl * 2,
     gap: Spacings.md,
   },

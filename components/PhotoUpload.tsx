@@ -15,6 +15,8 @@ export interface PhotoUploadViewProps {
   initialTransform?: { scale: number; x: number; y: number };
   overlayImage?: number; // accepts require("@/assets/...") style images
   loading?: boolean;
+  showPreview?: boolean;
+  allowTransform?: boolean;
   setLoading?: React.Dispatch<React.SetStateAction<boolean>>;
   onPickPhoto: (photo: { uri: string; transform: { scale: number; x: number; y: number } } | null) => void;
   onTransformChange?: (transform: { scale: number; x: number; y: number }) => void;
@@ -26,6 +28,8 @@ export function PhotoUpload({
   photoUri,
   overlayImage,
   initialTransform,
+  showPreview = true,
+  allowTransform = false,
   loading,
   setLoading,
   onPickPhoto,
@@ -33,6 +37,7 @@ export function PhotoUpload({
 }: PhotoUploadViewProps) {
   const inputTextColor = useThemeColor({}, "text");
   const borderColor = useThemeColor({}, "border");
+  const gray10 = useThemeColor({}, "gray10");
 
   const scale = useSharedValue(initialTransform?.scale || 1);
   const translationX = useSharedValue(initialTransform?.x || 0);
@@ -215,7 +220,17 @@ export function PhotoUpload({
 
   return (
     <>
-      <View style={styles.container}>
+      <View
+        style={[
+          styles.container,
+          {
+            backgroundColor: gray10,
+            borderColor: borderColor,
+            borderWidth: 1,
+            borderRadius: BorderRadii.sm,
+          },
+        ]}
+      >
         {loading && (
           <ThemedText
             style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, textAlign: "center", zIndex: 10 }}
@@ -223,14 +238,19 @@ export function PhotoUpload({
             Uploading...
           </ThemedText>
         )}
-        <GestureHandlerRootView>
-          <GestureDetector gesture={Gesture.Simultaneous(pinchGesture, panGesture)}>
-            <Animated.Image source={{ uri: photoUri }} style={[styles.photo, animatedStyle]} resizeMode="cover" />
-          </GestureDetector>
-          {overlayImage && ( // Conditionally render overlayImage if provided
+        {showPreview && allowTransform ? ( // Only show the preview if showPreview is true
+          <GestureHandlerRootView>
+            <GestureDetector gesture={Gesture.Simultaneous(pinchGesture, panGesture)}>
+              <Animated.Image source={{ uri: photoUri }} style={[styles.photo, animatedStyle]} resizeMode="cover" />
+            </GestureDetector>
+          </GestureHandlerRootView>
+        ) : showPreview ? (
+          <Image source={{ uri: photoUri }} style={[styles.photo]} resizeMode="cover" />
+        ) : null}
+        {showPreview &&
+          overlayImage && ( // Conditionally render overlayImage if provided
             <Image source={overlayImage} style={styles.overlay} resizeMode="contain" />
           )}
-        </GestureHandlerRootView>
       </View>
       {actions}
     </>
@@ -241,15 +261,16 @@ const styles = StyleSheet.create({
   container: {
     position: "relative",
     overflow: "hidden",
-    width: "100%", // Ensure container takes width for photo
-    aspectRatio: 1, // Or a fixed height, depending on your layout needs
-    maxHeight: 400, // Match photo height
+    width: "100%",
     marginVertical: Spacings.sm,
-    borderRadius: BorderRadii.md, // Apply border radius to container if photo has it
+    borderRadius: BorderRadii.md,
   },
   photo: {
     width: "100%",
-    height: "100%",
+    minHeight: 180,
+    marginHorizontal: "auto",
+    alignSelf: "center",
+    objectFit: "contain",
   },
   photoButton: {
     borderWidth: 1,

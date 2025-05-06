@@ -59,7 +59,6 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    gap: 24,
   },
   row: {
     flexDirection: "row",

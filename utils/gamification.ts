@@ -295,10 +295,10 @@ export const badgeConditions: Record<BadgeKey, BadgeConditionFn> = {
   "established-task-master": ({ logs }) => count(logs, "task") >= 100,
 
   narcissus: ({ logs }) => count(logs, "exercise") >= 200 && count(logs, "user") >= 200,
+  "say-cheese": ({ logs }) => logs.some((log) => log.type === "user" && !!log.photoUri),
 
   // non-log based (example, you can check account creation, selfie taken, etc.)
   "new-beginnings": () => false,
-  "say-cheese": () => false,
   explorer: () => false,
 };
 

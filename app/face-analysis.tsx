@@ -5,6 +5,7 @@ import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 
+import { Spacings } from "@/constants/Theme";
 import FaceAnalysisActionsView from "@/views/face-analysis/actions";
 import FaceAnalysisFormView from "@/views/face-analysis/form";
 import FaceAnalysisResultsView from "@/views/face-analysis/results";
@@ -99,6 +100,7 @@ export default function FaceAnalysisScreen() {
               frontUri={photos.front?.uri || ""}
               leftUri={photos.left?.uri || ""}
               rightUri={photos.right?.uri || ""}
+              analysisResults={analysisResults}
               onResult={(results: any) => {
                 setAnalysisResults(results);
               }}
@@ -110,6 +112,17 @@ export default function FaceAnalysisScreen() {
         </ScrollView>
 
         <View style={styles.navRow}>
+          {step === "actions" && (
+            <ThemedButton
+              title={"Quit"}
+              onPress={() => {
+                router.replace("/(tabs)");
+              }}
+              variant="ghost"
+              style={styles.button}
+              disabled={loading}
+            />
+          )}
           <ThemedButton
             title={step === "form" ? "Quit" : "Back"}
             onPress={goBack}
@@ -117,6 +130,7 @@ export default function FaceAnalysisScreen() {
             style={styles.button}
             disabled={step !== "form" && loading}
           />
+
           {step !== "actions" && (
             <ThemedButton
               title={step === "results" ? "View Recommendations" : "Next"}
@@ -138,24 +152,26 @@ export default function FaceAnalysisScreen() {
 
 const styles = StyleSheet.create({
   scrollContainer: {
-    flexGrow: 1,
+    flex: 1,
     justifyContent: "center",
-    paddingBottom: 24,
+    padding: Spacings.md,
   },
   container: {
     flex: 1,
-    padding: 24,
+    padding: Spacings.sm,
+    paddingVertical: Spacings.md,
   },
   progressText: {
     textAlign: "center",
     fontSize: 14,
     fontWeight: "500",
-    marginBottom: 12,
+    marginBottom: Spacings.sm,
     opacity: 0.6,
   },
   navRow: {
     flexDirection: "row",
     justifyContent: "space-between",
+    paddingTop: Spacings.sm,
   },
   button: {
     minWidth: 120,

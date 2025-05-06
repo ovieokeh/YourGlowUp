@@ -1,5 +1,5 @@
 import React from "react";
-import { Image, ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 
 import { PhotoUpload, PhotoUploadViewProps } from "@/components/PhotoUpload";
 import { ThemedText } from "@/components/ThemedText";
@@ -121,10 +121,10 @@ function Field({
         onPickPhoto={onPick}
         onTransformChange={onTransformChange}
         initialTransform={photo?.transform}
+        // showPreview={false}
         loading={loading}
         setLoading={setLoading}
       />
-      {photo?.uri && <Image source={{ uri: photo.uri }} style={styles.thumbnail} />}
       {error && <ThemedText style={styles.errorText}>This view is required</ThemedText>}
     </View>
   );

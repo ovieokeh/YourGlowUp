@@ -57,14 +57,14 @@ Achieve your optimal facial structure and looks max using the power of gamificat
 
 These are the flows that need to be implemented in the app.
 
-- Every flow triggers either on first mount or from a previous flow. \* Every flow can be interrupted at any point. When explicitly interrupted, the flow will not trigger again unless the user resets the app data.
+- Every flow triggers either on first mount or from a previous flow. Every flow can be interrupted at any point. When explicitly interrupted, the flow will not trigger again unless the user resets the app data.
 
 Every flow will be in one of these states:
 
-- "not-started" \* the flow has not been triggered yet
-- "in-progress" \* the flow is currently in progress (in case the user switches to a different app or screen)
-- "completed" \* the flow has been completed successfully
-- "interrupted" \* the flow has been interrupted by the user (in case the user clicks end)
+- "not-started" the flow has not been triggered yet
+- "in-progress" the flow is currently in progress (in case the user switches to a different app or screen)
+- "completed" the flow has been completed successfully
+- "interrupted" the flow has been interrupted by the user (in case the user clicks end)
 
 ### App flows
 
@@ -113,7 +113,7 @@ Every flow will be in one of these states:
 - New self-reports Flow (new-self-reports-1)
 
   - First step (explain the self-reports flow, talk about why it's useful, and stress the importance of being honest)
-  - Second \* [fields.length] step (make the user fill each field while highlighting the fields and explaining them)
+  - Second [fields.length] step (make the user fill each field while highlighting the fields and explaining them)
   - Final step (when complete, reward the user with +50 points and the "Reporter" badge, and [
     - if image was uploaded, start the progress-tracking-1 flow
     - if image was not uploaded, start the progress-stats-1 flow
@@ -137,110 +137,99 @@ Every flow will be in one of these states:
 
 - Onboarding screen
 
-  - Splash screen \* DONE
-  - First welcome screen (welcome the user and one line hook about the app) \* DONE
-  - Second screen (ask the user to take a selfie or upload a photo with option to skip)
-  - Third screen (loading screen with 3 hooks cycling while the AI processes the image)
-  - Fourth screen (show the user the result of the AI analysis) (if quit at any point, add return-to-onboarding notification pipeline)
-  - Fifth screen (show the user the recommended exercises and products)
+  - Splash screen DONE
+  - First welcome screen (welcome the user and one line hook about the app) DONE
+  - Second screen (ask the user to take a selfie or upload a photo with option to skip) DONE
+  - Third screen (loading screen with 3 hooks cycling while the AI processes the image) DONE
+  - Fourth screen (show the user the result of the AI analysis) (if quit at any point, add return-to-onboarding notification pipeline) DONE
+  - Fifth screen (show the user the recommended exercises) DONE
   - Sixth screen (accept the recommendations and redirect to auth screen or quit app with sad face hook)
 
 - Auth Screen
 
-  - Create account screen (welcome the user and another one line hook about the app) \* DONE
-  - Sign in screen (welcome the user and another one line hook about the app) \* DONE
+  - Create account screen (welcome the user and another one line hook about the app) DONE
+  - Sign in screen (welcome the user and another one line hook about the app) DONE
 
 - Index Screen
 
-  - QuickStats card \* DONE
+  - QuickStats card DONE
   - CompleteTodayExercises card (highlight the first uncompleted exercise in recommended exercises)
-  - Recommended exercises card (rest of the recommended exercises)
+  - Recommended exercises card (rest of the recommended exercises) DONE
   - Products Upsell card (if any products are recommended in recommended exercises or AI analysis)
 
 - Exercises screen
 
   - Recommended exercises carousel
-  - Exercises list with filters (by category, by difficulty, by duration) \* PARTIALLY DONE (no filters yet)
-    - Exercise info cards with thumbnail, difficulty level, duration, and bookmark option \* DONE
+  - Exercises list with filters (by category, by difficulty, by duration) PARTIALLY DONE (no filters yet)
+    - Exercise info cards with thumbnail, difficulty level, duration, and bookmark option DONE
 
 - Exercise screen
 
-  - Exercise info card \* DONE
-  - Exercise controls (start/stop button, progress bar, timer) \* DONE
+  - Exercise info card DONE
+  - Exercise controls (start/stop button, progress bar, timer) DONE
 
 - New self report screen
 
-  - Self report fields (text, number, image) \* DONE
-  - Submit button \* DONE
+  - Self report fields (text, number, image) DONE
+  - Submit button DONE
 
 - Progress Logs screen
 
-  - Type tab \* DONE
+  - Type tab DONE
     - Self reports tab
     - Exercise logs tab
-  - Self reports list with filters (by date, by score) \* PARTIALLY DONE (no filters yet)
-    - Self report info cards \* DONE
-    - Floating action button (add new self report) \* DONE
+  - Self reports list with filters (by date, by score) PARTIALLY DONE (no filters yet)
+    - Self report info cards DONE
+    - Floating action button (add new self report) DONE
     - Example screenshot of list if no data is available yet
-  - Exercise logs list with filters (by date, by score) \* PARTIALLY DONE (no filters yet)
-    - Exercise info cards \* DONE
-    - Floating action button (add new exercise log) \* DONE
+  - Exercise logs list with filters (by date, by score) PARTIALLY DONE (no filters yet)
+    - Exercise info cards DONE
+    - Floating action button (add new exercise log) DONE
     - Example screenshot of list if no data is available yet
 
 - Progress Stats screen
 
-  - Date range picker \* DONE
-  - QuickStats card \* DONE
+  - Date range picker DONE
+  - QuickStats card DONE
     - Example screenshot of card if no data is available yet
-  - Stats charts (symmetry trend line chart, exercises breakdown pie chart) \* DONE
+  - Stats charts (symmetry trend line chart, exercises breakdown pie chart) DONE
     - Example screenshot of chart if no data is available yet
 
 - Progress tracking screen
 
-  - Date range picker \* DONE
-  - ProgressReview card with scrubber \* DONE
+  - Date range picker DONE
+  - ProgressReview card with scrubber DONE
     - Example gifs of progress review scrubbing if no data is available yet
-  - Badges
+  - Badges DONE
     - Also show unearned badges in grayscale
-  - Floating action button (add new self report) \* DONE
+  - Floating action button (add new self report) DONE
   - Glow-up card generator (exportable before/after image/video)
     - Choose photos, and metrics to include
     - Choose chart to include
 
 - Settings screen
 
-  - Type tab \* DONE
+  - Type tab DONE
     - App settings
     - Account settings
   - App settings view
-    - Theme selector \* DONE
+    - Theme selector DONE
     - Notifications settings (split by Challenges, Streaks, Weekly Summary)
-      - Push notifications \* DONE
+      - Push notifications DONE
       - Email notifications
     - Language selector
   - Account settings view
-    - Edit name \* DONE
-    - Logout button \* DONE
+    - Edit name DONE
+    - Logout button DONE
     - Switch to Pro account (link to Stripe checkout)
-    - Export/import data buttons \* DONE
+    - Export/import data buttons DONE
 
 - Marketplace screen
-  - Type tab
-    - Owned
-    - Explore
-  - Owned tools view
-    - Tool list with filters (by tags)
-      - Cards with image, name, rating, use-case tags, affiliate indicator
-      - With quantity, repurchase, and remove buttons
-  - Explore tools view
+  - Explore tools view DONE
     - Tool list with filters (by tags)
       - Tool info card
         - with purchase button (link to affiliate link)
         - add to Owned button (redirect to add-to-owned view)
-  - Add to owned view
-    - First step (explain the add to owned flow, talk about why it's useful, and stress the importance of being honest)
-    - Second step (make the user fill each field while highlighting the fields and explaining them)
-    - Final step (when complete, reward the user with +25 points and the "Collector" badge)
 
 ## Monetization
 
