@@ -273,3 +273,33 @@ export const getStreak = (logs: Log[]) => {
   }, 0);
   return streak;
 };
+
+type BadgeConditionFn = (params: { logs: Log[]; streak: number }) => boolean;
+
+export const badgeConditions: Record<BadgeKey, BadgeConditionFn> = {
+  "testing-waters": ({ logs }) => count(logs, "exercise") >= 1,
+  "face-gym-rat": ({ logs }) => count(logs, "exercise") >= 10,
+  "face-gym-enthusiast": ({ logs }) => count(logs, "exercise") >= 30,
+  "face-gym-sweat": ({ logs }) => count(logs, "exercise") >= 50,
+  "face-gym-obsessed": ({ logs }) => count(logs, "exercise") >= 100,
+
+  "testing-pen": ({ logs }) => count(logs, "user") >= 1,
+  "junior-reporter": ({ logs }) => count(logs, "user") >= 10,
+  "medior-reporter": ({ logs }) => count(logs, "user") >= 30,
+  "senior-reporter": ({ logs }) => count(logs, "user") >= 50,
+  "established-reporter": ({ logs }) => count(logs, "user") >= 100,
+
+  "beginner-task-master": ({ logs }) => count(logs, "task") >= 10,
+  "dilligent-task-master": ({ logs }) => count(logs, "task") >= 30,
+  "pro-task-master": ({ logs }) => count(logs, "task") >= 50,
+  "established-task-master": ({ logs }) => count(logs, "task") >= 100,
+
+  narcissus: ({ logs }) => count(logs, "exercise") >= 200 && count(logs, "user") >= 200,
+
+  // non-log based (example, you can check account creation, selfie taken, etc.)
+  "new-beginnings": () => false,
+  "say-cheese": () => false,
+  explorer: () => false,
+};
+
+const count = (logs: Log[], type: Log["type"]) => logs.filter((l) => l.type === type).length;

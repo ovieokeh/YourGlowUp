@@ -16,6 +16,7 @@ interface Props {
     left: boolean;
     right: boolean;
   };
+  loading?: boolean;
   setPhotos: React.Dispatch<
     React.SetStateAction<{
       front: { uri: string; transform?: any } | null;
@@ -24,10 +25,19 @@ interface Props {
     }>
   >;
   setErrors: React.Dispatch<React.SetStateAction<{ front: boolean; left: boolean; right: boolean }>>;
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   onTransformChange: (key: "front" | "left" | "right", transform: any) => void;
 }
 
-export default function FaceAnalysisFormView({ photos, errors, setErrors, setPhotos, onTransformChange }: Props) {
+export default function FaceAnalysisFormView({
+  photos,
+  errors,
+  loading,
+  setErrors,
+  setPhotos,
+  setLoading,
+  onTransformChange,
+}: Props) {
   const handlePick = async (
     key: "front" | "left" | "right",
     { uri, transform }: PhotoUploadViewProps["onPickPhoto"]["arguments"][0]
@@ -59,6 +69,8 @@ export default function FaceAnalysisFormView({ photos, errors, setErrors, setPho
         onPick={(data) => handlePick("front", data)}
         onTransformChange={(t) => handleTransformChange("front", t)}
         error={errors.front}
+        loading={loading}
+        setLoading={setLoading}
       />
 
       <Field
@@ -67,6 +79,8 @@ export default function FaceAnalysisFormView({ photos, errors, setErrors, setPho
         onPick={(data) => handlePick("left", data)}
         onTransformChange={(t) => handleTransformChange("left", t)}
         error={errors.left}
+        loading={loading}
+        setLoading={setLoading}
       />
 
       <Field
@@ -75,6 +89,8 @@ export default function FaceAnalysisFormView({ photos, errors, setErrors, setPho
         onPick={(data) => handlePick("right", data)}
         onTransformChange={(t) => handleTransformChange("right", t)}
         error={errors.right}
+        loading={loading}
+        setLoading={setLoading}
       />
     </ScrollView>
   );
@@ -86,12 +102,16 @@ function Field({
   onPick,
   onTransformChange,
   error,
+  loading = false,
+  setLoading,
 }: {
   label: string;
   photo: { uri: string; transform?: any } | null;
   onPick: PhotoUploadViewProps["onPickPhoto"];
   onTransformChange: (t: any) => void;
   error?: boolean;
+  loading?: boolean;
+  setLoading?: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   return (
     <View style={styles.field}>
@@ -101,6 +121,8 @@ function Field({
         onPickPhoto={onPick}
         onTransformChange={onTransformChange}
         initialTransform={photo?.transform}
+        loading={loading}
+        setLoading={setLoading}
       />
       {photo?.uri && <Image source={{ uri: photo.uri }} style={styles.thumbnail} />}
       {error && <ThemedText style={styles.errorText}>This view is required</ThemedText>}

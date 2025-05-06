@@ -1,10 +1,12 @@
-import { Tabs } from "expo-router";
+import { router, Tabs } from "expo-router";
 import React from "react";
-import { Platform } from "react-native";
+import { Platform, Pressable } from "react-native";
 
 import { BackButton } from "@/components/BackButton";
 import { HapticTab } from "@/components/HapticTab";
 import { IconSymbol } from "@/components/ui/IconSymbol";
+import { XPCounter } from "@/components/XPCounter";
+import { useAwardEarnedBadges } from "@/hooks/useAwardEarnedBadges";
 import { useThemeColor } from "@/hooks/useThemeColor";
 
 export default function TabLayout() {
@@ -12,6 +14,9 @@ export default function TabLayout() {
   const border = useThemeColor({}, "border");
   const tint = useThemeColor({}, "tint");
   const accent = useThemeColor({}, "accent");
+  const text = useThemeColor({}, "text");
+
+  useAwardEarnedBadges();
 
   return (
     <Tabs
@@ -39,15 +44,45 @@ export default function TabLayout() {
         options={{
           title: "Today",
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="calendar" color={color} />,
-          headerShown: false,
+          headerLeft: () => (
+            <Pressable
+              onPress={() => router.push("/(tabs)/settings")}
+              style={{
+                padding: 10,
+                borderRadius: 100,
+                marginRight: 10,
+              }}
+            >
+              <IconSymbol size={34} name="person.circle" color={text} />
+            </Pressable>
+          ),
+          headerRight: () => <XPCounter />,
+          headerStyle: {
+            shadowColor: "transparent",
+          },
         }}
       />
       <Tabs.Screen
         name="routines/index"
         options={{
           title: "Routines",
-          // href: null,
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="clock" color={color} />,
+          headerLeft: () => <BackButton />,
+        }}
+      />
+      <Tabs.Screen
+        name="routines/explore"
+        options={{
+          title: "Explore",
+          href: null,
+          headerLeft: () => <BackButton />,
+        }}
+      />
+      <Tabs.Screen
+        name="routines/[id]"
+        options={{
+          title: "Single Routine",
+          href: null,
           headerLeft: () => <BackButton />,
         }}
       />
@@ -60,13 +95,21 @@ export default function TabLayout() {
           headerShown: false,
         }}
       />
+      <Tabs.Screen
+        name="marketplace"
+        options={{
+          title: "Marketplace",
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="creditcard" color={color} />,
+        }}
+      />
 
       <Tabs.Screen
         name="settings"
         options={{
           title: "Settings",
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="gear" color={color} />,
-          headerShown: false,
+          headerLeft: () => <BackButton />,
+          href: null,
         }}
       />
       <Tabs.Screen

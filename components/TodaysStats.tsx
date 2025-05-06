@@ -8,7 +8,7 @@ import { Log, getLogs, isExerciseLog } from "@/utils/logs";
 
 import { BorderRadii, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { fetchUserXP, getStreak } from "@/utils/gamification";
+import { getStreak } from "@/utils/gamification";
 import { ThemedButton } from "./ThemedButton";
 import { ThemedView } from "./ThemedView";
 import { IconSymbol, IconSymbolName } from "./ui/IconSymbol";
@@ -16,7 +16,6 @@ import { IconSymbol, IconSymbolName } from "./ui/IconSymbol";
 export const TodaysStats: React.FC = () => {
   const [logs, setLogs] = useState<Log[]>([]);
 
-  const [xp, setXP] = useState(0);
   const router = useRouter();
 
   const wrapperBorder = useThemeColor({}, "border");
@@ -27,9 +26,6 @@ export const TodaysStats: React.FC = () => {
   useFocusEffect(
     useCallback(() => {
       getLogs(setLogs);
-      fetchUserXP().then((xpVal) => {
-        setXP(xpVal);
-      });
     }, [])
   );
 
@@ -62,7 +58,6 @@ export const TodaysStats: React.FC = () => {
       </ThemedText>
 
       <View style={styles.statsGrid}>
-        <StatCard icon="trophy" label="XP Earned" value={xp.toString()} color={tint} muted={muted} text={text} />
         <StatCard
           icon="calendar"
           label="Current Streak"

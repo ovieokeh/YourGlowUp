@@ -13,9 +13,12 @@ import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { addXP, LOG_TYPE_XP_MAP } from "@/utils/gamification";
 import { saveExerciseLog } from "@/utils/logs";
+import { useSearchParams } from "expo-router/build/hooks";
 
 export default function ExerciseSession() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
+  const searchParams = useSearchParams();
+  const routineId = searchParams.get("routineId") || "";
   const router = useRouter();
 
   const exercise = useMemo(() => EXERCISES.find((e) => e.id === slug || e.name === decodeURIComponent(slug)), [slug]);
@@ -82,9 +85,9 @@ export default function ExerciseSession() {
     }
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     if (!completed || !exercise) return;
-    saveExerciseLog(exercise.name, exercise.duration);
+    await saveExerciseLog(exercise.name, exercise.duration, routineId);
     addXP(LOG_TYPE_XP_MAP["exercise"] + exercise.duration)
       .catch((err) => {
         console.error("Error adding XP:", err);

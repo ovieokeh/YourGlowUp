@@ -1,4 +1,11 @@
+import { ThemeProviderCustom, useAppTheme } from "@/hooks/theme/context";
+import { BadgeProvider } from "@/providers/BadgeContext";
+import { supabase } from "@/supabase";
+import { initLogsTable } from "@/utils/logs";
+import { getOnboardingStatus, OnboardingStatus, setOnboardingStatus } from "@/utils/onboarding";
+import { initRoutinesTables } from "@/utils/routines";
 import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
+import { Buffer } from "buffer";
 import { useFonts } from "expo-font";
 import * as Notifications from "expo-notifications";
 import { Stack, useRouter } from "expo-router";
@@ -6,12 +13,9 @@ import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import "react-native-reanimated";
+import Toast from "react-native-toast-message";
 
-import { ThemeProviderCustom, useAppTheme } from "@/hooks/theme/context";
-import { supabase } from "@/supabase";
-import { initLogsTable } from "@/utils/logs";
-import { getOnboardingStatus, OnboardingStatus, setOnboardingStatus } from "@/utils/onboarding";
-import { initRoutinesLogsTable } from "@/utils/routines";
+global.Buffer = Buffer;
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -68,7 +72,7 @@ function App() {
 
   useEffect(() => {
     initLogsTable();
-    initRoutinesLogsTable();
+    initRoutinesTables();
     setOnboardingStatus("main-onboarding", {
       step: 0,
       status: OnboardingStatus.NOT_STARTED,
@@ -81,32 +85,35 @@ function App() {
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="onboarding" />
-        <Stack.Screen name="auth" />
-        <Stack.Screen
-          name="exercises"
-          options={{
-            headerShown: true,
-            title: "Exercises",
-            headerTitleAlign: "center",
-          }}
-        />
-        <Stack.Screen
-          name="(tabs)"
-          options={{
-            headerTitle: "Home",
-          }}
-        />
-        <Stack.Screen
-          name="face-analysis"
-          options={{
-            headerTitle: "Face Analysis",
-          }}
-        />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
+      <BadgeProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="onboarding" />
+          <Stack.Screen name="auth" />
+          <Stack.Screen
+            name="exercises"
+            options={{
+              headerShown: true,
+              title: "Exercises",
+              headerTitleAlign: "center",
+            }}
+          />
+          <Stack.Screen
+            name="(tabs)"
+            options={{
+              headerTitle: "Home",
+            }}
+          />
+          <Stack.Screen
+            name="face-analysis"
+            options={{
+              headerTitle: "Face Analysis",
+            }}
+          />
+          <Stack.Screen name="+not-found" />
+        </Stack>
+        <StatusBar style="auto" />
+        <Toast />
+      </BadgeProvider>
     </ThemeProvider>
   );
 }

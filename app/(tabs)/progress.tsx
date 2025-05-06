@@ -17,7 +17,7 @@ const TABS = ["Logs", "Stats", "Track"] as const;
 export default function ProgressScreen() {
   const SCREEN_WIDTH = useWindowDimensions().width;
   const params = useLocalSearchParams();
-  const initialTab = params.activeTab === "Stats" ? "Stats" : "Logs";
+  const initialTab = params.activeTab === "Logs" ? "Logs" : "Stats";
   const [activeTab, setActiveTab] = useState<(typeof TABS)[number]>(initialTab);
 
   const tabBorder = useThemeColor({ light: Colors.light.border, dark: Colors.dark.border }, "border");
@@ -55,13 +55,19 @@ export default function ProgressScreen() {
           ))}
           <Animated.View style={[styles.underline, { width: tabWidth, backgroundColor: underline }, underlineStyle]} />
         </View>
-        {activeTab === "Stats" ? (
-          <ProgressStatsView />
-        ) : activeTab === "Logs" ? (
-          <ProgressLogsView />
-        ) : (
-          <ProgressTrackView />
-        )}
+        <View
+          style={{
+            flex: 1,
+          }}
+        >
+          {activeTab === "Stats" ? (
+            <ProgressStatsView />
+          ) : activeTab === "Logs" ? (
+            <ProgressLogsView />
+          ) : (
+            <ProgressTrackView />
+          )}
+        </View>
       </ThemedView>
     </SafeAreaView>
   );

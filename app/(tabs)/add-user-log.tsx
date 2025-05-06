@@ -49,9 +49,6 @@ export default function AddUserLogScreen() {
     y: 0,
   });
 
-  console.log("AddUserLogScreen", {
-    transformForLog,
-  });
   const borderColor = useThemeColor({}, "border");
   const inputTextColor = useThemeColor({}, "text");
   const backgroundActive = useThemeColor({ light: Colors.light.accent, dark: Colors.dark.accent }, "accent");

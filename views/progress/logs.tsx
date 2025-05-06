@@ -17,7 +17,6 @@ export function ProgressLogsView() {
   const router = useRouter();
   const [logs, setLogs] = useState<Log[]>([]);
   const params = useLocalSearchParams();
-  console.log("params", params);
   const initialTab = params.logsTab === "Exercise Logs" ? "Exercise Logs" : "Self Reports";
 
   const [activeTab, setActiveTab] = useState<(typeof TABS)[number]>(initialTab);
@@ -55,7 +54,7 @@ export function ProgressLogsView() {
   };
 
   return (
-    <View style={{ paddingBottom: Spacings.xl * 2 }}>
+    <View style={{ flex: 1, paddingBottom: Spacings.xl * 2 }}>
       <View style={[styles.tabBar, { borderColor: underline }]}>
         {TABS.map((tab, idx) => (
           <Pressable key={tab} style={styles.tabButton} onPress={() => handleTabPress(tab, idx)}>

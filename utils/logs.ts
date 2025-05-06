@@ -32,14 +32,16 @@ export interface ExerciseLog {
   completedAt: string;
 }
 
-export const saveExerciseLog = (exercise: string, duration: number, routineId: string = "") => {
+export const saveExerciseLog = async (exercise: string, duration: number, routineId: string = "") => {
   const now = new Date().toISOString();
-  db.runSync(`INSERT INTO logs (routineId, type, exercise, duration, completedAt) VALUES ("exercise", ?, ?, ?, ?)`, [
+  db.runAsync(`INSERT INTO logs (type, routineId, exercise, duration, completedAt) VALUES ("exercise", ?, ?, ?, ?)`, [
     routineId,
     exercise,
     duration,
     now,
-  ]);
+  ]).catch((err) => {
+    console.error("Error saving exercise log", err);
+  });
 };
 
 export interface UserLogCreate {
@@ -63,7 +65,6 @@ export interface UserLog extends UserLogCreate {
 }
 export const saveUserLog = async (log: UserLogCreate) => {
   const now = new Date().toISOString();
-  console.log("Saving user log", log);
   return db.runAsync(
     `INSERT INTO logs 
        (type, dominantSide, chewingDuration, gumUsed, gumChewingDuration, symmetryRating, notes, photoUri, transform, completedAt)
@@ -105,22 +106,26 @@ export const isTaskLog = (log: Log): log is TaskLog => {
   return log.type === "task";
 };
 
-export const getLogs = (callback: (rows: Log[]) => void) => {
+export const getLogs = (callback?: (rows: Log[]) => void) => {
   const rows = db.getAllSync(`SELECT * FROM logs ORDER BY completedAt DESC;`) as Log[];
-  callback(
-    rows.map((row) => {
-      if (row && isUserLog(row)) {
-        return {
-          ...row,
-          transform: row.transform ? JSON.parse(row.transform as unknown as string) : undefined,
-        };
-      } else if (isExerciseLog(row)) {
-        return {
-          ...row,
-          exercise: row.exercise || "",
-        };
-      }
-      return row;
-    })
-  );
+  const processed = rows.map((row) => {
+    if (row && isUserLog(row)) {
+      return {
+        ...row,
+        transform: row.transform ? JSON.parse(row.transform as unknown as string) : undefined,
+      };
+    } else if (isExerciseLog(row)) {
+      return {
+        ...row,
+        exercise: row.exercise || "",
+      };
+    }
+    return row;
+  });
+  if (callback)
+    // Check if callback is defined before calling it
+
+    callback(processed);
+
+  return processed;
 };

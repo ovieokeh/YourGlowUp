@@ -8,14 +8,14 @@ import { ThemedView } from "@/components/ThemedView";
 import FaceAnalysisActionsView from "@/views/face-analysis/actions";
 import FaceAnalysisFormView from "@/views/face-analysis/form";
 import FaceAnalysisResultsView from "@/views/face-analysis/results";
-import { useRouter, useSearchParams } from "expo-router/build/hooks";
+import { router } from "expo-router";
+import { useSearchParams } from "expo-router/build/hooks";
 
 const STEPS = ["form", "results", "actions"] as const;
 type Step = (typeof STEPS)[number];
 
 export default function FaceAnalysisScreen() {
   const params = useSearchParams();
-  const router = useRouter();
   const activeTab = params.get("step") || "form";
   const [step, setStep] = useState<Step>(activeTab as Step);
   const [photos, setPhotos] = useState<{
@@ -37,6 +37,7 @@ export default function FaceAnalysisScreen() {
     right: false,
   });
   const [analysisResults, setAnalysisResults] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
 
   const stepIndex = STEPS.indexOf(step);
   const totalSteps = STEPS.length;
@@ -65,18 +66,19 @@ export default function FaceAnalysisScreen() {
   const goBack = () => {
     if (stepIndex > 0) {
       setStep(STEPS[stepIndex - 1]);
+    } else {
+      router.back();
     }
   };
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ThemedView style={styles.container}>
+        {/* Step Progress */}
+        <ThemedText style={styles.progressText}>
+          Step {stepIndex + 1} of {totalSteps}
+        </ThemedText>
         <ScrollView contentContainerStyle={styles.scrollContainer}>
-          {/* Step Progress */}
-          <ThemedText style={styles.progressText}>
-            Step {stepIndex + 1} of {totalSteps}
-          </ThemedText>
-
           {step === "form" && (
             <FaceAnalysisFormView
               photos={photos}
@@ -89,6 +91,7 @@ export default function FaceAnalysisScreen() {
               }}
               errors={errors}
               setErrors={setErrors}
+              setLoading={setLoading}
             />
           )}
           {step === "results" && (
@@ -98,25 +101,35 @@ export default function FaceAnalysisScreen() {
               rightUri={photos.right?.uri || ""}
               onResult={(results: any) => {
                 setAnalysisResults(results);
-                // setStep("actions");
               }}
+              loading={loading}
+              setLoading={setLoading}
             />
           )}
           {step === "actions" && <FaceAnalysisActionsView analysisResults={analysisResults} />}
         </ScrollView>
-        {/* Navigation */}
+
         <View style={styles.navRow}>
           <ThemedButton
-            title="Quit"
-            onPress={() => {
-              router.back();
-            }}
+            title={step === "form" ? "Quit" : "Back"}
+            onPress={goBack}
             variant="ghost"
             style={styles.button}
+            disabled={step !== "form" && loading}
           />
-
-          {step !== "form" && <ThemedButton title="Back" onPress={goBack} variant="ghost" style={styles.button} />}
-          {step !== "actions" && <ThemedButton title="Next" onPress={goNext} variant="solid" style={styles.button} />}
+          {step !== "actions" && (
+            <ThemedButton
+              title={step === "results" ? "View Recommendations" : "Next"}
+              onPress={goNext}
+              variant="solid"
+              style={styles.button}
+              disabled={
+                (step === "form" && (!photos.front || !photos.left || !photos.right)) ||
+                (step === "results" && !analysisResults) ||
+                loading
+              }
+            />
+          )}
         </View>
       </ThemedView>
     </SafeAreaView>

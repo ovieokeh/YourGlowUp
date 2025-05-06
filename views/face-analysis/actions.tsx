@@ -1,119 +1,163 @@
-import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import React, { useState } from "react";
+import { Image, Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
-import { BorderRadii, Spacings } from "@/constants/Theme";
+import { IconSymbol } from "@/components/ui/IconSymbol";
+import { EXERCISES, TASKS } from "@/constants/Exercises";
+import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { supabase } from "@/supabase";
-import { parseJSONCleaned } from "@/utils/json";
-import { saveRoutineLog } from "@/utils/routines";
+import { addRoutine } from "@/utils/routines";
+import { router } from "expo-router";
 
 interface FaceAnalysisActionsViewProps {
   analysisResults: {
     symmetry: string;
     jawline: string;
     skin: string;
-    recommendations: string;
+    recommendations: string[];
   };
 }
 
-export default function FaceAnalysisActionsView({ analysisResults }: FaceAnalysisActionsViewProps) {
-  const [routines, setRoutines] = useState<string[]>([]);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
-
-  const bg = useThemeColor({}, "background");
-  const border = useThemeColor({}, "border");
-  const text = useThemeColor({}, "text");
-  const accent = useThemeColor({}, "accent");
-
-  useEffect(() => {
-    const generateRoutines = async () => {
-      try {
-        const prompt = `Based on the following face analysis results, recommend 5 short facial exercise routines. Output a JSON array of routine names only.\n\nResults:\nSymmetry: ${analysisResults.symmetry}\nJawline: ${analysisResults.jawline}\nSkin: ${analysisResults.skin}\nRecommendations: ${analysisResults.recommendations}`;
-
-        const res = await supabase.functions.invoke("openai", { body: { prompt } });
-        const routinesParsed = parseJSONCleaned(res.data);
-
-        if (Array.isArray(routinesParsed)) {
-          setRoutines(routinesParsed);
-        } else {
-          Alert.alert("Invalid LLM response");
-        }
-      } catch {
-        Alert.alert("Error generating routines");
-      } finally {
-        setLoading(false);
+const RecomendationsRenderer = ({
+  analysisResults,
+  setSelected,
+  selected,
+}: {
+  analysisResults: FaceAnalysisActionsViewProps["analysisResults"];
+  setSelected: React.Dispatch<React.SetStateAction<Set<string>>>;
+  selected: Set<string>;
+}) => {
+  const toggleSelection = (id: string) => {
+    setSelected((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
       }
-    };
-
-    generateRoutines();
-  }, [analysisResults]);
-
-  const toggleSelect = (routine: string) => {
-    const newSet = new Set(selected);
-    if (newSet.has(routine)) newSet.delete(routine);
-    else newSet.add(routine);
-    setSelected(newSet);
+      return newSet;
+    });
   };
 
-  const handleConfirm = () => {
-    selected.forEach(saveRoutineLog);
-    router.replace("/(tabs)/progress?activeTab=Logs&logsTab=Routines");
+  const accent = useThemeColor({}, "accent");
+  const border = useThemeColor({}, "border");
+
+  return (
+    <View style={{ gap: Spacings.sm }}>
+      {analysisResults.recommendations.map((rec) => {
+        const exercise = EXERCISES.find((e) => e.id === rec);
+        const task = TASKS.find((t) => t.id === rec);
+        const item = exercise || task;
+
+        if (!item) return null;
+
+        return (
+          <Pressable
+            key={rec}
+            onPress={() => toggleSelection(rec)}
+            style={[
+              styles.itemRow,
+              {
+                borderColor: border,
+                backgroundColor: selected.has(rec) ? Colors.light.accent + "10" : "transparent",
+              },
+            ]}
+          >
+            <Image source={{ uri: item.featureImage }} style={styles.image} />
+            <View style={{ flex: 1 }}>
+              <ThemedText type="defaultSemiBold" style={{ marginBottom: 2 }}>
+                {item.name}
+              </ThemedText>
+              <ThemedText type="default" style={{ fontSize: 13 }} numberOfLines={2}>
+                {item.description}
+              </ThemedText>
+            </View>
+            <View
+              style={[
+                styles.checkbox,
+                {
+                  borderColor: selected.has(rec) ? accent : border,
+                  backgroundColor: selected.has(rec) ? accent : "transparent",
+                },
+              ]}
+            >
+              {selected.has(rec) && <IconSymbol name="checkmark" color="#fff" size={16} />}
+            </View>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+};
+
+export default function FaceAnalysisActionsView({ analysisResults }: FaceAnalysisActionsViewProps) {
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  const handleSaveRoutine = () => {
+    addRoutine({
+      routineId: "my-routine", // This should be generated or passed as a prop
+      name: "My Routine",
+      description: "Routine based on facial analysis",
+      steps: [...selected],
+      notificationTime: "09:00", // Default time for tasks
+    });
+
+    router.replace("/(tabs)/routines");
   };
 
   return (
-    <ThemedView style={styles.container}>
-      <ThemedText type="title" style={{ marginBottom: Spacings.md }}>
-        Recommended Routines
+    <View style={styles.container}>
+      <ThemedText type="title" style={{ marginHorizontal: "auto", marginBottom: Spacings.md }}>
+        Recommendations
       </ThemedText>
 
-      {loading ? (
-        <ThemedText>Generating routines...</ThemedText>
+      <ThemedText style={{ marginBottom: Spacings.lg }}>
+        Based on your analysis, we recommend the following exercises and tasks to improve your facial features:
+      </ThemedText>
+
+      {!analysisResults.recommendations?.length ? (
+        <ThemedText>No recommendations available. Please upload your photos and try again.</ThemedText>
       ) : (
-        <ScrollView contentContainerStyle={{ gap: Spacings.sm }}>
-          {routines.map((routine) => (
-            <Pressable
-              key={routine}
-              onPress={() => toggleSelect(routine)}
-              style={{
-                padding: Spacings.md,
-                borderWidth: 1,
-                borderRadius: BorderRadii.md,
-                borderColor: selected.has(routine) ? accent : border,
-                backgroundColor: selected.has(routine) ? accent + "20" : bg,
-              }}
-            >
-              <ThemedText style={{ color: text }}>{routine}</ThemedText>
-            </Pressable>
-          ))}
+        <ScrollView contentContainerStyle={{ paddingBottom: Spacings.xl }}>
+          <RecomendationsRenderer analysisResults={analysisResults} setSelected={setSelected} selected={selected} />
+
+          <ThemedButton
+            title="Save Routine"
+            onPress={handleSaveRoutine}
+            disabled={selected.size === 0}
+            variant="solid"
+            style={{ marginTop: Spacings.lg }}
+          />
         </ScrollView>
       )}
-
-      {!loading && (
-        <View style={{ marginTop: Spacings.lg, gap: Spacings.md }}>
-          <ThemedButton
-            title="Save Selected Routines"
-            icon="checkmark"
-            disabled={!selected.size}
-            onPress={handleConfirm}
-            variant="solid"
-          />
-          <ThemedButton title="Exit" variant="ghost" onPress={() => router.replace("/(tabs)")} />
-        </View>
-      )}
-    </ThemedView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    padding: Spacings.lg,
-    paddingBottom: Spacings.xl * 2,
     flex: 1,
+  },
+  itemRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: BorderRadii.md,
+    padding: Spacings.md,
+    gap: Spacings.md,
+  },
+  image: {
+    width: 44,
+    height: 44,
+    borderRadius: BorderRadii.sm,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
