@@ -1,9 +1,11 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
 import { PhotoUpload, PhotoUploadViewProps } from "@/components/PhotoUpload";
 import { ThemedText } from "@/components/ThemedText";
+import { IconSymbol } from "@/components/ui/IconSymbol";
 import { Spacings } from "@/constants/Theme";
+import { useThemeColor } from "@/hooks/useThemeColor";
 
 interface Props {
   photos: {
@@ -42,6 +44,8 @@ export default function FaceAnalysisFormView({
   setLoading,
   onTransformChange,
 }: Props) {
+  const textColor = useThemeColor({}, "text");
+  const gray10 = useThemeColor({}, "gray10");
   const handlePick = async (
     key: "front" | "left" | "right",
     { uri, transform }: PhotoUploadViewProps["onPickPhoto"]["arguments"][0]
@@ -57,15 +61,24 @@ export default function FaceAnalysisFormView({
     onTransformChange(key, transform);
   };
 
+  const hasAtLeastOnePhoto = useMemo(() => {
+    return !!photos.front?.uri || !!photos.left?.uri || !!photos.right?.uri;
+  }, [photos]);
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <ThemedText type="title" style={styles.title}>
-        Upload Your Face Views
-      </ThemedText>
-
-      <ThemedText style={styles.tipText}>
+      <ThemedText style={[styles.tipText]}>
         Make sure your face is centered, well-lit, and expressionless in each view.
       </ThemedText>
+
+      {hasAtLeastOnePhoto && (
+        <View style={{ gap: Spacings.sm, backgroundColor: gray10, padding: Spacings.sm, borderRadius: 6 }}>
+          <IconSymbol name="info.circle" size={16} color={textColor} />
+          <ThemedText style={[styles.tipText]}>
+            Click on the thumbnail to align your face with the overlay for best results.
+          </ThemedText>
+        </View>
+      )}
 
       <Field
         label="Front View"
@@ -157,9 +170,8 @@ const styles = StyleSheet.create({
     marginBottom: Spacings.lg,
   },
   tipText: {
-    fontSize: 14,
+    fontSize: 16,
     marginBottom: Spacings.md,
-    color: "gray",
   },
   field: {
     marginBottom: Spacings.lg,
