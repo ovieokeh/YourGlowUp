@@ -1,10 +1,13 @@
 import { Exercise, EXERCISES, Task, TASKS } from "@/constants/Exercises";
 import { db } from "../../utils/db";
+import { getLogs } from "../logs/logs";
 
-export const initRoutinesTables = () => {
+export const initRoutinesTables = (reset?: boolean) => {
   // reset all tables
-  // db.runSync(`DROP TABLE IF EXISTS routines;`);
-  // db.runSync(`DROP TABLE IF EXISTS routine_items;`);
+  if (reset) {
+    db.runSync(`DROP TABLE IF EXISTS routines;`);
+    db.runSync(`DROP TABLE IF EXISTS routine_items;`);
+  }
 
   db.runSync(
     `
@@ -13,7 +16,7 @@ CREATE TABLE IF NOT EXISTS routines (
   routineId TEXT UNIQUE,
   name TEXT,
   description TEXT,
-  steps TEXT,
+  items TEXT,
   addedAt TEXT
 );
   `
@@ -40,7 +43,7 @@ export interface Routine {
   routineId: string;
   name: string;
   description: string;
-  steps: string[];
+  itemsIds: string[];
 }
 
 export type RoutineTaskItem = Task & {
@@ -64,7 +67,7 @@ export interface RoutineWithItems extends Routine {
   items: RoutineItem[];
 }
 export const addRoutine = async (routine: Omit<Routine, "id">) => {
-  const items = routine.steps.map((itemId) => {
+  const items = routine.itemsIds.map((itemId) => {
     const item = EXERCISES.find((e) => e.itemId === itemId) || TASKS.find((t) => t.itemId === itemId);
     if (!item) return null;
 
@@ -82,11 +85,10 @@ export const addRoutine = async (routine: Omit<Routine, "id">) => {
     };
   });
 
-  const add = await db.runAsync(`INSERT INTO routines (routineId, name, description, steps) VALUES (?, ?, ?, ?)`, [
+  const add = await db.runAsync(`INSERT INTO routines (routineId, name, description) VALUES (?, ?, ?)`, [
     routine.routineId,
     routine.name,
     routine.description,
-    JSON.stringify(routine.steps),
   ]);
 
   for (const item of items) {
@@ -114,10 +116,11 @@ export const removeRoutine = async (routineId: string) => {
 };
 export const getUserRoutines = async () => {
   const rows = (await db.getAllAsync(`SELECT * FROM routines;`)) as Routine[];
-  const mappedRows = rows.map((row) => ({
-    ...row,
-    steps: JSON.parse(row.steps as unknown as string) as string[],
-  }));
+  const mappedRows =
+    rows.map((row) => ({
+      ...row,
+      items: JSON.parse(row.itemsIds as unknown as string) as string[],
+    })) || [];
 
   return mappedRows as Routine[];
 };
@@ -126,14 +129,14 @@ export const getRoutineById = async (routineId: string) => {
   const rows = (await db.getAllAsync(`SELECT * FROM routines WHERE routineId = ?`, [routineId])) as RoutineWithItems[];
   const mappedRows = rows.map((row) => ({
     ...row,
-    steps: JSON.parse(row.steps as unknown as string) as string[],
+    items: JSON.parse(row.items as unknown as string) as string[],
   }));
 
   for (const routine of mappedRows) {
     const items = (await db.getAllAsync(`SELECT * FROM routine_items WHERE routineId = ?`, [
       routine.routineId,
     ])) as RoutineItem[];
-    routine.items = items.map((item) => {
+    (routine as unknown as RoutineWithItems).items = items.map((item) => {
       const exercise = EXERCISES.find((e) => e.itemId === item.itemId);
       const task = TASKS.find((t) => t.itemId === item.itemId);
       if (exercise) {
@@ -155,46 +158,46 @@ export const getRoutineById = async (routineId: string) => {
     });
   }
 
-  return mappedRows[0] as RoutineWithItems;
+  return (mappedRows[0] as unknown as RoutineWithItems) || null;
 };
 export const updateRoutine = async (routineId: string, updatedRoutine: Partial<Routine>, replace?: boolean) => {
   try {
-    const { name, description, steps } = updatedRoutine;
+    const { name, description, itemsIds } = updatedRoutine;
     const originalRoutine = await getRoutineById(routineId);
 
     const finalName = name ?? originalRoutine.name;
     const finalDescription = description ?? originalRoutine.description;
-    const finalSteps = steps ?? originalRoutine.steps;
+    const finalItems = itemsIds ?? originalRoutine.itemsIds;
 
     if (!originalRoutine || originalRoutine.routineId !== routineId) {
       const add = await addRoutine({
         routineId,
         name: finalName,
         description: finalDescription,
-        steps: finalSteps,
+        itemsIds: finalItems,
       });
       return add;
     }
     let changes = 0;
 
-    const update = await db.runAsync(`UPDATE routines SET name = ?, description = ?, steps = ? WHERE routineId = ?`, [
+    const update = await db.runAsync(`UPDATE routines SET name = ?, description = ?, items = ? WHERE routineId = ?`, [
       finalName,
       finalDescription,
-      JSON.stringify(finalSteps),
+      JSON.stringify(finalItems),
       routineId,
     ]);
     changes = update.changes;
 
     if (replace) {
-      // remove items that are not in the new steps
-      const itemsToRemove = originalRoutine.items.filter((item) => !finalSteps.includes(item.itemId));
+      // remove items that are not in the new items
+      const itemsToRemove = originalRoutine.items.filter((item) => !finalItems.includes(item.itemId));
       for (const item of itemsToRemove) {
         await db.runAsync(`DELETE FROM routine_items WHERE itemId = ? AND routineId = ?`, [item.itemId, routineId]);
         changes++;
       }
     }
-    // add new items that are in the new steps
-    const itemsToAdd = finalSteps.filter((itemId) => !originalRoutine.items.some((item) => item.itemId === itemId));
+    // add new items that are in the new items
+    const itemsToAdd = finalItems.filter((itemId) => !originalRoutine.items.some((item) => item.itemId === itemId));
     for (const itemId of itemsToAdd) {
       const item = EXERCISES.find((e) => e.itemId === itemId) || TASKS.find((t) => t.itemId === itemId);
       if (!item) continue;
@@ -215,9 +218,9 @@ export const updateRoutine = async (routineId: string, updatedRoutine: Partial<R
       );
       changes++;
     }
-    // update items that are in the new steps
+    // update items that are in the new items
     for (const item of originalRoutine.items) {
-      if (finalSteps.includes(item.itemId)) {
+      if (finalItems.includes(item.itemId)) {
         const itemId = item.itemId;
         const itemData = EXERCISES.find((e) => e.itemId === itemId) || TASKS.find((t) => t.itemId === itemId);
         if (!itemData) continue;
@@ -241,31 +244,36 @@ export const updateRoutine = async (routineId: string, updatedRoutine: Partial<R
 };
 
 export const getRoutineItem = async (itemId: string, routineId: string) => {
-  const item = (await db.getFirstAsync(`SELECT * FROM routine_items WHERE itemId = ? AND routineId = ?`, [
-    itemId,
-    routineId,
-  ])) as RoutineItem;
-  console.log("item >>>>>", item);
-  if (!item) return null;
+  try {
+    const item = (await db.getFirstAsync(`SELECT * FROM routine_items WHERE itemId = ? AND routineId = ?`, [
+      itemId,
+      routineId,
+    ])) as RoutineItem;
+    console.log("item >>>>>", item);
+    if (!item) return null;
 
-  const exercise = EXERCISES.find((e) => e.itemId === item.itemId);
-  const task = TASKS.find((t) => t.itemId === item.itemId);
-  if (exercise) {
-    return {
-      ...exercise,
-      ...item,
-      notificationTimes: item.notificationTimes ? JSON.parse((item as any).notificationTimes) : null,
-      type: "exercise",
-    } as RoutineExerciseItem;
-  } else if (task) {
-    return {
-      ...task,
-      ...item,
-      notificationTimes: item.notificationTimes ? JSON.parse((item as any).notificationTimes) : null,
-      type: "task",
-    } as RoutineTaskItem;
+    const exercise = EXERCISES.find((e) => e.itemId === item.itemId);
+    const task = TASKS.find((t) => t.itemId === item.itemId);
+    if (exercise) {
+      return {
+        ...exercise,
+        ...item,
+        notificationTimes: item.notificationTimes ? JSON.parse((item as any).notificationTimes) : null,
+        type: "exercise",
+      } as RoutineExerciseItem;
+    } else if (task) {
+      return {
+        ...task,
+        ...item,
+        notificationTimes: item.notificationTimes ? JSON.parse((item as any).notificationTimes) : null,
+        type: "task",
+      } as RoutineTaskItem;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error getting routine item", error);
+    return null;
   }
-  return null;
 };
 
 export const updateRoutineItem = async (itemId: string, routineId: string, updatedItem: Partial<RoutineItem>) => {
@@ -282,4 +290,18 @@ export const updateRoutineItem = async (itemId: string, routineId: string, updat
     [finalName, finalDescription, JSON.stringify(finalNotificationTimes), itemId, routineId]
   );
   return update;
+};
+
+export const getPendingItemsToday = async (routineId: string) => {
+  const logs = await getLogs();
+  const today = new Date().toISOString().split("T")[0];
+  const items = (await db.getAllAsync(`SELECT * FROM routine_items WHERE routineId = ? AND addedAt LIKE ?`, [
+    routineId,
+    `${today}%`,
+  ])) as RoutineItem[];
+  const pendingItems = items.filter((item) => {
+    const itemDate = new Date(item.addedAt).toISOString().split("T")[0];
+    return itemDate === today && !logs.some((log) => ["task", "exercise"].includes(log.type));
+  });
+  return pendingItems;
 };

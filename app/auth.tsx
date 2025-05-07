@@ -61,6 +61,13 @@ export default function AuthScreen() {
       });
       setLoading(false);
       await awardBadge("new-beginnings");
+
+      if (redirectTo) {
+        router.replace(redirectTo);
+      } else {
+        router.replace("/(tabs)");
+      }
+
       return;
     }
 
@@ -104,8 +111,8 @@ export default function AuthScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
+    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
+      <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
         <View style={styles.inner}>
           <View style={{ alignItems: "center", gap: Spacings.sm, marginBottom: Spacings.lg }}>
             <ThemedText type="title" style={{ marginHorizontal: "auto" }}>
@@ -169,8 +176,8 @@ export default function AuthScreen() {
             </ThemedText>
           </Pressable>
         </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
 

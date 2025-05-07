@@ -29,7 +29,7 @@ export default function HomeScreen() {
           routineId: "my-routine",
           name: "My Routine",
           description: "Your default routine",
-          steps: [""],
+          steps: ["tongue-posture"],
         });
       }
     }, [mutate, routine, routineQuery.isSuccess])

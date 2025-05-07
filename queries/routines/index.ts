@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   addRoutine,
+  getPendingItemsToday,
   getRoutineById,
   getRoutineItem,
   getUserRoutines,
@@ -80,5 +81,13 @@ export const useUpdateRoutineItem = (itemId: string, routineId: string) => {
       // Invalidate the query to refetch the data
       queryClient.invalidateQueries({ queryKey: ["routines"] });
     },
+  });
+};
+
+export const useGetPendingItemsToday = (routineId: string) => {
+  return useQuery({
+    queryKey: ["routines", "pending"],
+    queryFn: () => getPendingItemsToday(routineId),
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };

@@ -1,14 +1,15 @@
 import { useBadges } from "@/providers/BadgeContext";
 import { badgeConditions, BadgeKey, BadgeStatus, getStreak } from "@/queries/gamification/gamification";
 import { useGetLogs } from "@/queries/logs";
-import { useEffect } from "react";
+import { useFocusEffect } from "expo-router";
+import { useMemo } from "react";
 
 export const useAwardEarnedBadges = () => {
   const logsQuery = useGetLogs();
-  const logs = logsQuery.data || [];
+  const logs = useMemo(() => logsQuery.data || [], [logsQuery.data]);
   const { awardBadge, badges } = useBadges();
 
-  useEffect(() => {
+  useFocusEffect(() => {
     const checkAndAward = async () => {
       const streak = getStreak(logs);
       const current = badges;
@@ -25,7 +26,13 @@ export const useAwardEarnedBadges = () => {
       }
     };
 
+    const interval = setInterval(() => {
+      checkAndAward();
+    }, 1000 * 60 * 5); // Check every 5 minutes
+
     checkAndAward();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [logs]);
+    return () => {
+      clearInterval(interval);
+    };
+  });
 };

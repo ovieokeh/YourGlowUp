@@ -50,7 +50,7 @@ export const XPCounter = () => {
               {xpCounterUnit}
             </View>
             <Pressable onPress={() => setModalVisible(false)}>
-              <IconSymbol name="arrow.down" size={28} color={textColor} />
+              <IconSymbol name="arrow.down" size={18} color={textColor} />
             </Pressable>
           </View>
           <ScrollView contentContainerStyle={styles.badgeGrid}>

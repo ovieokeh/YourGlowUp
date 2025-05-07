@@ -20,7 +20,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { saveUserLog } from "@/queries/logs/logs";
+import { useSaveUserLog } from "@/queries/logs";
 import Toast from "react-native-toast-message";
 
 const TIPS = [
@@ -51,6 +51,8 @@ export default function AddUserLogScreen() {
 
   const borderColor = useThemeColor({}, "border");
   const inputTextColor = useThemeColor({}, "text");
+
+  const saveUserLogMutation = useSaveUserLog();
 
   const resetForm = () => {
     setDominantSide("unsure");
@@ -83,16 +85,17 @@ export default function AddUserLogScreen() {
       return;
     }
 
-    await saveUserLog({
-      dominantSide,
-      chewingDuration,
-      gumUsed,
-      gumChewingDuration,
-      symmetryRating,
-      notes,
-      photoUri: photoUri || undefined,
-      transform: transformForLog,
-    })
+    await saveUserLogMutation
+      .mutateAsync({
+        dominantSide,
+        chewingDuration,
+        gumUsed,
+        gumChewingDuration,
+        symmetryRating,
+        notes,
+        photoUri: photoUri || undefined,
+        transform: transformForLog,
+      })
       .then(() => {
         resetForm();
         router.replace("/(tabs)/progress?activeTab=Logs&logsTab=Self%20Reports");
@@ -118,7 +121,9 @@ export default function AddUserLogScreen() {
           <ThemedView style={styles.container}>
             <ThemedText style={styles.title}>Assess your progress today</ThemedText>
 
-            <ThemedText style={{ ...styles.label, marginTop: 0 }}>Dominant Chewing Side</ThemedText>
+            <ThemedText style={{ ...styles.label, marginTop: 0 }}>
+              Which side did you chew with the most today?
+            </ThemedText>
             <View style={styles.tabsRow}>
               {["unsure", "left", "right", "both"].map((side) => (
                 <ThemedButton
@@ -136,7 +141,7 @@ export default function AddUserLogScreen() {
               ))}
             </View>
 
-            <ThemedText style={styles.label}>Chewing Duration (min)</ThemedText>
+            <ThemedText style={styles.label}>How long in total did you chew for? (in minutes)</ThemedText>
             <View style={styles.sliderRow}>
               <Slider
                 style={{ flex: 1 }}
@@ -154,11 +159,11 @@ export default function AddUserLogScreen() {
               />
             </View>
 
-            <Checkbox label="Used Chewing Gum" onPress={() => setGumUsed((v) => !v)} checked={gumUsed} />
+            <Checkbox label="Did you use a chewing gum?" onPress={() => setGumUsed((v) => !v)} checked={gumUsed} />
 
             {gumUsed && (
               <View>
-                <ThemedText style={styles.label}>Gum Chewing Duration (min)</ThemedText>
+                <ThemedText style={styles.label}>How long did you chew the chewing gum for? (in minutes)</ThemedText>
                 <View style={styles.sliderRow}>
                   <Slider
                     style={{ flex: 1 }}
@@ -178,27 +183,7 @@ export default function AddUserLogScreen() {
               </View>
             )}
 
-            <ThemedText style={styles.label}>Symmetry Rating</ThemedText>
-            <View style={styles.tabsRow}>
-              {[1, 2, 3, 4, 5].map((num) => (
-                <ThemedButton
-                  key={num}
-                  title={`${num}${num === 1 ? " (Low)" : num === 3 ? " (Mid)" : num === 5 ? " (High)" : ""}`}
-                  onPress={() => setSymmetryRating(num)}
-                  style={{
-                    borderColor,
-                    ...styles.tab,
-                  }}
-                  textStyle={{
-                    fontSize: 14,
-                  }}
-                  variant="ghost"
-                  active={symmetryRating === num}
-                />
-              ))}
-            </View>
-
-            <ThemedText style={styles.label}>Notes</ThemedText>
+            <ThemedText style={styles.label}>Would you like to share anything else about today?</ThemedText>
             <TextInput
               multiline
               numberOfLines={4}

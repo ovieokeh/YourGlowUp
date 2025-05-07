@@ -28,7 +28,10 @@ export const TaskCard = ({ item, allowCompletion, handlePress }: TaskCardProps) 
   const saveTaskLogMutation = useSaveTaskLog();
 
   const handleTaskCompletion = async () => {
-    await saveTaskLogMutation.mutateAsync(item.name);
+    await saveTaskLogMutation.mutateAsync({
+      task: item.name,
+      note: "",
+    });
     Toast.show({
       type: "success",
       text1: "Task completed",

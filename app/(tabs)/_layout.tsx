@@ -9,6 +9,21 @@ import { XPCounter } from "@/components/XPCounter";
 import { useAwardEarnedBadges } from "@/hooks/useAwardEarnedBadges";
 import { useThemeColor } from "@/hooks/useThemeColor";
 
+const SettingsButton = () => {
+  const accent = useThemeColor({}, "accent");
+
+  return (
+    <Pressable
+      onPress={() => router.push("/settings")}
+      style={{
+        padding: 10,
+        borderRadius: 100,
+      }}
+    >
+      <IconSymbol size={34} name="person.circle" color={accent} />
+    </Pressable>
+  );
+};
 export default function TabLayout() {
   const background = useThemeColor({}, "background");
   const border = useThemeColor({}, "border");
@@ -23,6 +38,8 @@ export default function TabLayout() {
         tabBarActiveTintColor: accent,
         tabBarInactiveTintColor: tint,
         tabBarButton: HapticTab,
+        headerLeft: () => <SettingsButton />,
+        headerRight: () => <XPCounter />,
         tabBarStyle: Platform.select({
           default: {},
           ios: {
@@ -43,18 +60,7 @@ export default function TabLayout() {
         options={{
           title: "Today",
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="calendar" color={color} />,
-          headerLeft: () => (
-            <Pressable
-              onPress={() => router.push("/(tabs)/settings")}
-              style={{
-                padding: 10,
-                borderRadius: 100,
-              }}
-            >
-              <IconSymbol size={34} name="person.circle" color={accent} />
-            </Pressable>
-          ),
-          headerRight: () => <XPCounter />,
+
           headerStyle: {
             shadowColor: "transparent",
           },
@@ -87,9 +93,7 @@ export default function TabLayout() {
         name="progress"
         options={{
           title: "Progress",
-          headerLeft: () => <BackButton />,
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="chart.xyaxis.line" color={color} />,
-          headerShown: false,
         }}
       />
       <Tabs.Screen
@@ -97,24 +101,6 @@ export default function TabLayout() {
         options={{
           title: "Marketplace",
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="creditcard" color={color} />,
-        }}
-      />
-
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: "Settings",
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="gear" color={color} />,
-          headerLeft: () => <BackButton />,
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="add-user-log"
-        options={{
-          title: "Add Log",
-          href: null,
-          headerLeft: () => <BackButton />,
         }}
       />
     </Tabs>

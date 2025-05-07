@@ -2,8 +2,9 @@ import { BackButton } from "@/components/BackButton";
 import { ThemeProviderCustom, useAppTheme } from "@/hooks/theme/context";
 import { BadgeProvider } from "@/providers/BadgeContext";
 import { queryClient } from "@/queries";
+import { resetBadges, resetXP } from "@/queries/gamification/gamification";
 import { initLogsTable } from "@/queries/logs/logs";
-import { getOnboardingStatus, OnboardingStatus } from "@/queries/onboarding/onboarding";
+import { getOnboardingStatus, OnboardingStatus, setOnboardingStatus } from "@/queries/onboarding/onboarding";
 import { initRoutinesTables } from "@/queries/routines/routines";
 import { supabase } from "@/supabase";
 import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
@@ -74,14 +75,17 @@ function App() {
   }, [loaded]);
 
   useEffect(() => {
-    initLogsTable();
-    initRoutinesTables();
-    // resetBadges();
-    // resetXP();
-    // setOnboardingStatus("main-onboarding", {
-    //   step: 0,
-    //   status: OnboardingStatus.NOT_STARTED,
-    // });
+    const nuke = async () => {
+      initLogsTable(true);
+      initRoutinesTables(true);
+      await resetBadges();
+      await resetXP();
+      setOnboardingStatus("main-onboarding", {
+        step: 0,
+        status: OnboardingStatus.NOT_STARTED,
+      });
+    };
+    nuke();
   }, []);
 
   if (!loaded) {
@@ -99,7 +103,15 @@ function App() {
               name="add-user-log"
               options={{
                 headerShown: true,
-                title: "Add a self log",
+                title: "Add log",
+                headerTitleAlign: "center",
+              }}
+            />
+            <Stack.Screen
+              name="settings"
+              options={{
+                headerShown: true,
+                title: "Controls",
                 headerTitleAlign: "center",
               }}
             />

@@ -11,6 +11,7 @@ import { ThemedTextInput } from "@/components/ThemedTextInput";
 import { Exercise, EXERCISES, Task, TASKS } from "@/constants/Exercises";
 import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { ThemedView } from "./ThemedView";
 
 interface Props {
   visible: boolean;
@@ -61,98 +62,113 @@ export const RoutineItemsModal = ({ visible, selectedIds, onClose, onSave }: Pro
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="formSheet">
-      <View style={styles.header}>
-        <ThemedText type="subtitle" style={{ flex: 1 }}>
-          Update Routine
-        </ThemedText>
-        <TouchableOpacity onPress={onClose} style={{ alignSelf: "flex-end", marginLeft: "auto" }}>
-          <Ionicons name="close" size={24} color={textColor} />
-        </TouchableOpacity>
-      </View>
+      <ThemedView style={styles.container}>
+        <ThemedView style={{ gap: Spacings.sm }}>
+          <View style={styles.header}>
+            <ThemedText type="subtitle" style={{ flex: 1 }}>
+              Update Routine
+            </ThemedText>
+            <TouchableOpacity onPress={onClose} style={{ alignSelf: "flex-end", marginLeft: "auto" }}>
+              <Ionicons name="close" size={24} color={textColor} />
+            </TouchableOpacity>
+          </View>
 
-      <View style={styles.searchRow}>
-        <ThemedTextInput value={query} onChangeText={setQuery} placeholder="Search..." style={[styles.input]} />
+          <View style={styles.searchRow}>
+            <ThemedTextInput value={query} onChangeText={setQuery} placeholder="Search..." style={[styles.input]} />
+            <ThemedButton
+              title=""
+              disabled={!query}
+              onPress={() => setQuery("")}
+              style={styles.clearButton}
+              icon="x.circle"
+              variant="ghost"
+            />
+          </View>
+
+          <View style={styles.filters}>
+            <ThemedPicker
+              items={[
+                { label: "All Types", value: "all" as const },
+                { label: "Exercises", value: "exercise" as const },
+                { label: "Tasks", value: "task" as const },
+              ]}
+              selectedValue={typeFilter}
+              onValueChange={(v) => setTypeFilter(v)}
+              style={styles.picker}
+            />
+            <ThemedPicker
+              items={[{ label: "All Areas", value: "all" }, ...areas.map((area) => ({ label: area, value: area }))]}
+              selectedValue={areaFilter}
+              onValueChange={(v) => setAreaFilter(v)}
+              style={styles.picker}
+            />
+          </View>
+        </ThemedView>
+
+        <FlatList
+          data={matches}
+          keyExtractor={(item) => item.itemId}
+          numColumns={2}
+          columnWrapperStyle={{ gap: Spacings.sm }}
+          contentContainerStyle={{ padding: Spacings.md, paddingBottom: 96 }}
+          renderItem={({ item }) => {
+            const isSelected = selected.has(item.itemId);
+            return (
+              <View style={[styles.item, { borderColor }]}>
+                {item.featureImage && (
+                  <Image
+                    source={item.featureImage}
+                    style={{ width: "100%", height: 120, borderRadius: BorderRadii.sm }}
+                    contentFit="cover"
+                  />
+                )}
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                  <ThemedText type="defaultSemiBold">{item.name}</ThemedText>
+                </View>
+                <ThemedText style={{ opacity: 0.6 }}>{item.area}</ThemedText>
+
+                <View style={{ marginTop: Spacings.sm }}>
+                  <ThemedButton
+                    variant="ghost"
+                    title={isSelected ? "Remove" : "Add"}
+                    onPress={() => toggleSelect(item.itemId)}
+                    icon="plus.circle"
+                    textStyle={{ color: isSelected ? Colors.light.danger : Colors.light.accent }}
+                  />
+                </View>
+              </View>
+            );
+          }}
+        />
+
         <ThemedButton
-          title=""
-          disabled={!query}
-          onPress={() => setQuery("")}
-          style={styles.clearButton}
-          icon="x.circle"
-          variant="ghost"
+          title={`Add ${selected.size} to Routine`}
+          onPress={handleSave}
+          style={styles.saveButton}
+          disabled={selected.size === 0}
         />
-      </View>
-
-      <View style={styles.filters}>
-        <ThemedPicker
-          items={[
-            { label: "All Types", value: "all" as const },
-            { label: "Exercises", value: "exercise" as const },
-            { label: "Tasks", value: "task" as const },
-          ]}
-          selectedValue={typeFilter}
-          onValueChange={(v) => setTypeFilter(v)}
-          style={styles.picker}
-        />
-        <ThemedPicker
-          items={[{ label: "All Areas", value: "all" }, ...areas.map((area) => ({ label: area, value: area }))]}
-          selectedValue={areaFilter}
-          onValueChange={(v) => setAreaFilter(v)}
-          style={styles.picker}
-        />
-      </View>
-
-      <FlatList
-        data={matches}
-        keyExtractor={(item) => item.itemId}
-        numColumns={2}
-        columnWrapperStyle={{ gap: Spacings.sm }}
-        contentContainerStyle={{ padding: Spacings.md, paddingBottom: 96 }}
-        renderItem={({ item }) => {
-          const isSelected = selected.has(item.itemId);
-          return (
-            <View style={[styles.item, { borderColor }]}>
-              {item.featureImage && (
-                <Image
-                  source={item.featureImage}
-                  style={{ width: "100%", height: 120, borderRadius: BorderRadii.sm }}
-                  contentFit="cover"
-                />
-              )}
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                <ThemedText type="defaultSemiBold">{item.name}</ThemedText>
-              </View>
-              <ThemedText style={{ opacity: 0.6 }}>{item.area}</ThemedText>
-
-              <View style={{ marginTop: Spacings.sm }}>
-                <ThemedButton
-                  variant="ghost"
-                  title={isSelected ? "Remove" : "Add"}
-                  onPress={() => toggleSelect(item.itemId)}
-                  icon="plus.circle"
-                  textStyle={{ color: isSelected ? Colors.light.danger : Colors.light.accent }}
-                />
-              </View>
-            </View>
-          );
-        }}
-      />
-
-      <ThemedButton
-        title={`Add ${selected.size} to Routine`}
-        onPress={handleSave}
-        style={styles.saveButton}
-        disabled={selected.size === 0}
-      />
+      </ThemedView>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingBottom: Spacings.xl * 2,
+    gap: Spacings.md,
+  },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     padding: Spacings.lg,
+  },
+  clearButton: {
+    position: "absolute",
+    right: 0,
+    bottom: "8%",
+    paddingHorizontal: Spacings.sm,
   },
   searchRow: {
     flexDirection: "row",
@@ -163,12 +179,6 @@ const styles = StyleSheet.create({
   input: {
     borderRadius: BorderRadii.sm,
     maxWidth: "90%",
-  },
-  clearButton: {
-    position: "absolute",
-    right: "2%",
-    bottom: "30%",
-    paddingHorizontal: Spacings.sm,
   },
   filters: {
     flexDirection: "row",

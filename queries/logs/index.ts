@@ -54,7 +54,7 @@ export const useSaveTaskLog = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationKey: ["logs"],
-    mutationFn: (task: string) => saveTaskLog(task),
+    mutationFn: ({ task, note }: { task: string; note?: string }) => saveTaskLog(task, note),
     onSuccess: () => {
       // Invalidate the query to refetch the data
       queryClient.invalidateQueries({ queryKey: ["logs"] });

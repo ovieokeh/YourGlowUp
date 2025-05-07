@@ -1,8 +1,10 @@
 import { db } from "../../utils/db";
 
-export const initLogsTable = () => {
-  // drop the table if it exists
-  // db.execSync("DROP TABLE IF EXISTS logs;");
+export const initLogsTable = (reset?: boolean) => {
+  if (reset) {
+    // drop the table if it exists
+    db.execSync("DROP TABLE IF EXISTS logs;");
+  }
   // create the table
   db.execSync(
     `CREATE TABLE IF NOT EXISTS logs (
@@ -91,9 +93,9 @@ export interface TaskLog {
   task: string;
   completedAt: string;
 }
-export const saveTaskLog = async (task: string) => {
+export const saveTaskLog = async (task: string, note?: string) => {
   const now = new Date().toISOString();
-  db.runAsync(`INSERT INTO logs (type, task, completedAt) VALUES ("task", ?, ?)`, [task, now]);
+  db.runAsync(`INSERT INTO logs (type, task, notes, completedAt) VALUES ("task", ?, ?, ?)`, [task, note ?? "", now]);
 };
 
 export type Log = UserLog | ExerciseLog | TaskLog;

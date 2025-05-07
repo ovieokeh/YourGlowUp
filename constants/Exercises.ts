@@ -1,16 +1,20 @@
-export interface Exercise {
+interface SharedExerciseAndTask {
   itemId: string;
-  type: "exercise";
+  type: "exercise" | "task";
   name: string;
   area: string;
-  duration: number;
   description: string;
-  instructions: string[];
+  notificationTimes?: string[] | null;
+  itemsNeeded?: string[];
+}
+
+export interface Exercise extends SharedExerciseAndTask {
+  type: "exercise";
+  duration: number;
   featureImage: string;
   animation: string;
   color: string;
-  itemsNeeded?: string[];
-  notificationTimes?: string[] | null;
+  instructions: string[];
 }
 
 export const EXERCISES: Exercise[] = [
@@ -71,25 +75,6 @@ export const EXERCISES: Exercise[] = [
     color: "#00BFFF",
   },
   {
-    itemId: "chewing",
-    type: "exercise",
-    name: "Chewing (Mastic Gum)",
-    area: "Masseter hypertrophy",
-    duration: 300,
-    description: "Chewing tough gum targets the masseter muscles, enhancing jawline definition.",
-    instructions: [
-      "Use a piece of firm mastic gum.",
-      "Chew evenly on both sides.",
-      "Focus on controlled, deliberate motion.",
-    ],
-    featureImage:
-      "https://lvaengmvyffyrughoqmc.supabase.co/storage/v1/object/public/app-assets/images/chewing-feature-image.png",
-    animation:
-      "https://lvaengmvyffyrughoqmc.supabase.co/storage/v1/object/public/app-assets/images/chewing-feature-image.png",
-    color: "#DCFF00",
-    itemsNeeded: ["gum"],
-  },
-  {
     itemId: "fish-face",
     type: "exercise",
     name: "Fish Face",
@@ -141,20 +126,26 @@ export const EXERCISES: Exercise[] = [
   },
 ];
 
-export interface Task {
-  itemId: string;
+interface TaskQuestion {
+  questionId: string;
+  question: string;
+  answer: string;
+  answerType: "text" | "number" | "boolean" | "select";
+  options?: string[];
+  required?: boolean;
+  min?: number;
+  max?: number;
+  minLength?: number;
+  maxLength?: number;
+  placeholder?: string;
+}
+export interface Task extends SharedExerciseAndTask {
   type: "task";
-  name: string;
-  area: string;
-  description: string;
-  frequency?: number;
-  duration?: number;
   featureImage?: string;
   animation?: string;
-  instructions?: string[];
   color?: string;
-  itemsNeeded?: string[];
-  notificationTimes?: string[] | null;
+  questions?: TaskQuestion[];
+  instructions?: string[];
 }
 export const TASKS: Task[] = [
   {
@@ -162,7 +153,6 @@ export const TASKS: Task[] = [
     type: "task",
     name: "Cleanse",
     area: "Facial Care",
-    frequency: 5,
     description: "Wash your face with a gentle cleanser to remove impurities.",
     instructions: [
       "Use lukewarm water to wet your face.",
@@ -183,7 +173,6 @@ export const TASKS: Task[] = [
     type: "task",
     name: "Exfoliate",
     area: "Facial Care",
-    frequency: 10,
     description: "Exfoliate your skin to remove dead cells and promote cell turnover.",
     instructions: [
       "Apply a small amount of exfoliator to your fingertips.",
@@ -203,7 +192,6 @@ export const TASKS: Task[] = [
     type: "task",
     name: "Apply Serum",
     area: "Facial Care",
-    frequency: 1,
     description: "Apply a hydrating serum to nourish your skin.",
     instructions: [
       "Take a few drops of serum on your fingertips.",
@@ -222,7 +210,6 @@ export const TASKS: Task[] = [
     type: "task",
     name: "Moisturize",
     area: "Facial Care",
-    frequency: 2,
     description: "Use a moisturizer to lock in hydration.",
     instructions: [
       "Take a small amount of moisturizer on your fingertips.",
@@ -236,7 +223,6 @@ export const TASKS: Task[] = [
     type: "task",
     name: "Apply Sunscreen",
     area: "Facial Care",
-    duration: 5,
     description: "Protect your skin with sunscreen.",
     instructions: [
       "Take a generous amount of sunscreen on your fingertips.",
@@ -255,7 +241,6 @@ export const TASKS: Task[] = [
     type: "task",
     name: "Hydrate",
     area: "Hydration",
-    frequency: 30,
     description: "Drink a glass of water to stay hydrated.",
     featureImage:
       "https://lvaengmvyffyrughoqmc.supabase.co/storage/v1/object/public/app-assets/images/hydrate-feature-image.png",
@@ -264,35 +249,52 @@ export const TASKS: Task[] = [
     color: "#00FF00",
     notificationTimes: ["random"],
   },
-];
-
-export const ROUTINES = [
   {
-    itemId: "morning-routine",
-    name: "Morning Routine",
-    description: "A routine for facial care and exercises to start your day.",
-    notificationTime: "08:00",
-    steps: ["cleanse", "serum", "moisturize", "sunscreen", "smile-symmetry"],
-  },
-  {
-    itemId: "self-love-routine",
-    name: "Self-Love Routine",
-    description: "A routine for keeping your skin and mind healthy.",
-    notificationTime: "random",
-    steps: ["hydrate", "breath", "tongue-posture"],
-  },
-  {
-    itemId: "evening-routine",
-    name: "Evening Routine",
-    description: "A routine for facial care and exercises to end your day.",
-    notificationTime: "20:00",
-    steps: ["cleanse", "exfoliate", "serum", "moisturize", "fish-face", "chewing"],
-  },
-  {
-    itemId: "workout-routine",
-    name: "Workout Routine",
-    description: "A routine for facial exercises to enhance your workout.",
-    notificationTime: "07:00",
-    steps: ["tongue-posture", "chin-tuck", "jaw-push-resist"],
+    itemId: "chewing",
+    type: "task",
+    name: "Chewing (Mastic Gum)",
+    area: "Masseter hypertrophy",
+    description: "Chewing tough gum targets the masseter muscles, enhancing jawline definition.",
+    instructions: [
+      "Use a piece of firm mastic gum.",
+      "Chew evenly on both sides.",
+      "Focus on controlled, deliberate motion.",
+    ],
+    featureImage:
+      "https://lvaengmvyffyrughoqmc.supabase.co/storage/v1/object/public/app-assets/images/chewing-feature-image.png",
+    animation:
+      "https://lvaengmvyffyrughoqmc.supabase.co/storage/v1/object/public/app-assets/images/chewing-feature-image.png",
+    color: "#DCFF00",
+    itemsNeeded: ["gum"],
+    notificationTimes: ["random"],
+    questions: [
+      {
+        questionId: "dominantSide",
+        question: "How long did you chew?",
+        answer: "",
+        answerType: "number",
+        min: 1,
+        max: 120,
+        required: true,
+        placeholder: "Duration in minutes",
+      },
+      {
+        questionId: "gumUsed",
+        question: "Did you use gum?",
+        answer: "",
+        answerType: "boolean",
+        required: true,
+      },
+      {
+        questionId: "gumChewingDuration",
+        question: "How long did you chew gum?",
+        answer: "",
+        answerType: "number",
+        min: 1,
+        max: 120,
+        required: false,
+        placeholder: "Duration in minutes",
+      },
+    ],
   },
 ];

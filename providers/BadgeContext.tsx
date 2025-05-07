@@ -1,6 +1,6 @@
 import { useGetShownToasts, useGetUserBadges, useSetBadgeStatus, useSetShownToasts } from "@/queries/gamification";
 import { Badge, BadgeKey, BADGES, BadgeStatus } from "@/queries/gamification/gamification";
-import React, { createContext, useContext, useMemo } from "react";
+import React, { createContext, useCallback, useContext, useMemo } from "react";
 import Toast from "react-native-toast-message";
 
 type BadgeContextType = {
@@ -33,33 +33,42 @@ export const BadgeProvider = ({ children }: { children: React.ReactNode }) => {
     return BADGES;
   }, [userBadges]);
 
-  const updateBadge = async (key: BadgeKey, status: BadgeStatus) => {
-    await setBadgesMutation.mutateAsync({ key, status });
-  };
+  const updateBadge = useCallback(
+    async (key: BadgeKey, status: BadgeStatus) => {
+      await setBadgesMutation.mutateAsync({ key, status });
+    },
+    [setBadgesMutation]
+  );
 
-  const saveShownToast = async (key: BadgeKey) => {
-    const updated = new Set(shownToasts).add(key);
-    await setShownToastsMutation.mutateAsync(updated);
-  };
+  const saveShownToast = useCallback(
+    async (key: BadgeKey) => {
+      const updated = new Set(shownToasts).add(key);
+      await setShownToastsMutation.mutateAsync(updated);
+    },
+    [shownToasts, setShownToastsMutation]
+  );
 
-  const awardBadge = async (key: BadgeKey) => {
-    const badge = badges[key];
-    if (!badge || badge.status === BadgeStatus.EARNED) return;
+  const awardBadge = useCallback(
+    async (key: BadgeKey) => {
+      const badge = badges[key];
+      if (!badge || badge.status === BadgeStatus.EARNED) return;
 
-    await updateBadge(key, BadgeStatus.EARNED);
+      await updateBadge(key, BadgeStatus.EARNED);
 
-    if (!shownToasts.has(key)) {
-      Toast.show({
-        type: "success",
-        text1: `🏅 ${badge.name} Unlocked!`,
-        text2: badge.description,
-        onPress: () => {
-          // e.g. showBadgeModal(); implement in UI logic
-        },
-      });
-      await saveShownToast(key);
-    }
-  };
+      if (!shownToasts.has(key)) {
+        Toast.show({
+          type: "success",
+          text1: `🏅 ${badge.name} Unlocked!`,
+          text2: badge.description,
+          onPress: () => {
+            // e.g. showBadgeModal(); implement in UI logic
+          },
+        });
+        await saveShownToast(key);
+      }
+    },
+    [badges, shownToasts, updateBadge, saveShownToast]
+  );
 
   const hasBadge = (key: BadgeKey) => badges[key]?.status === BadgeStatus.EARNED;
 

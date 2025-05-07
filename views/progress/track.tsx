@@ -80,7 +80,7 @@ export function ProgressTrackView() {
 
         <ThemedFabButton
           icon="camera"
-          title="Add a self-report log"
+          title="Add log"
           onPress={() => {
             router.push({
               pathname: "/add-user-log",

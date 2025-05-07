@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
     maxWidth: "90%",
   },
   searchControls: {
-    flexDirection: "column",
+    gap: Spacings.sm,
     marginBottom: Spacings.md,
   },
   searchRow: {
@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
   clearButton: {
     position: "absolute",
     right: "-4%",
-    bottom: "30%",
+    bottom: "8%",
     paddingHorizontal: Spacings.sm,
   },
   filters: {

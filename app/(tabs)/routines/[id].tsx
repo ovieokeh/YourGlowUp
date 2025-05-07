@@ -10,7 +10,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useGetRoutineById, useUpdateRoutine } from "@/queries/routines";
+import { useGetPendingItemsToday, useGetRoutineById, useUpdateRoutine } from "@/queries/routines";
 import { isRoutineExerciseItem, isRoutineTaskItem } from "@/queries/routines/routines";
 import { useLocalSearchParams } from "expo-router/build/hooks";
 import { useState } from "react";
@@ -22,6 +22,9 @@ export default function RoutinesSingleScreen() {
 
   const routineQuery = useGetRoutineById(id);
   const { data: routine, isLoading } = routineQuery;
+
+  const pendingItemsQuery = useGetPendingItemsToday(id);
+  const { data: pendingItems } = pendingItemsQuery;
 
   const backgroundColor = useThemeColor({}, "background");
   const borderColor = useThemeColor({}, "border");
@@ -53,6 +56,8 @@ export default function RoutinesSingleScreen() {
   const exercises = routine?.items?.filter(isRoutineExerciseItem) || [];
   const tasks = routine?.items?.filter(isRoutineTaskItem) || [];
 
+  const hasPendingItems = (pendingItems?.length ?? 0) > 0;
+
   return (
     <ThemedView style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.container}>
@@ -61,12 +66,16 @@ export default function RoutinesSingleScreen() {
 
         <View style={{ flexDirection: "row", gap: Spacings.sm, marginBottom: Spacings.md }}>
           <ThemedButton
-            variant="solid"
-            title="Analyse Face"
+            variant="outline"
+            title={hasPendingItems ? "Start next exercise" : "View your progress"}
             onPress={() => {
-              router.push("/face-analysis");
+              if (hasPendingItems) {
+                router.push({
+                  pathname: "/exercise/[slug]",
+                  params: { slug: encodeURIComponent(pendingItems![0].name), routineId: routine?.routineId },
+                });
+              } else router.push("/(tabs)/progress");
             }}
-            icon="wand.and.stars"
           />
         </View>
 
@@ -105,8 +114,8 @@ export default function RoutinesSingleScreen() {
               item={item}
               handlePress={() =>
                 router.push({
-                  pathname: "/exercise/[slug]",
-                  params: { slug: encodeURIComponent(item.name), routineId: routine?.routineId },
+                  pathname: "/edit-routine-item",
+                  params: { id: item.itemId, routineId: routine?.routineId },
                 })
               }
             />
@@ -117,6 +126,14 @@ export default function RoutinesSingleScreen() {
             </ThemedText>
           )}
         </View>
+        <ThemedButton
+          variant="solid"
+          title="Generate AI Routine"
+          onPress={() => {
+            router.push("/face-analysis");
+          }}
+          icon="wand.and.stars"
+        />
       </ScrollView>
       <ThemedFabButton
         variant="outline"
@@ -140,7 +157,7 @@ export default function RoutinesSingleScreen() {
           updateRoutineMutation
             .mutateAsync({
               replace: true,
-              steps: [...routine.items.map((item) => item.itemId), ...items.map((item) => item.itemId)],
+              itemsIds: [...routine.items.map((item) => item.itemId), ...items.map((item) => item.itemId)],
             })
             .then(() => {
               setShowSelector(false);
