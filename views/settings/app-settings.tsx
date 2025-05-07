@@ -8,7 +8,7 @@ import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemePreference, useAppTheme } from "@/hooks/theme/context";
-import { getLogs, isUserLog, Log } from "@/utils/logs";
+import { getLogs, isUserLog, UserLog } from "@/queries/logs/logs";
 
 const NOTIF_ENABLED_KEY = "settings.notifications.enabled";
 
@@ -52,8 +52,8 @@ export default function AppSettingsView() {
     const hour = time.getHours();
     const minute = time.getMinutes();
 
-    const logs = await new Promise<Log[]>((resolve) => getLogs(resolve));
-    const userLogs = logs.filter(isUserLog);
+    const logs = await getLogs();
+    const userLogs = logs.filter(isUserLog) as UserLog[];
     const totalLogs = userLogs.length;
     const avgRating = (userLogs.reduce((sum, log) => sum + log.symmetryRating, 0) / (totalLogs || 1)).toFixed(1);
 

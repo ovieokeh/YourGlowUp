@@ -7,8 +7,8 @@ import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { BorderRadii, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { ExerciseLog, getLogsByExercise } from "@/utils/logs";
-import { RoutineExerciseItem } from "@/utils/routines";
+import { ExerciseLog, getLogsByExercise } from "@/queries/logs/logs";
+import { RoutineExerciseItem } from "@/queries/routines/routines";
 
 interface ExerciseCardProps {
   item: RoutineExerciseItem;
@@ -64,12 +64,13 @@ export const ExerciseCard = ({ item, handlePress }: ExerciseCardProps) => {
       <Image source={{ uri: item.featureImage }} style={styles.image} contentFit="cover" />
       <View style={styles.horizontalCard}>
         <View style={styles.row}>
+          <ThemedText style={styles.exerciseArea}>{item.area}</ThemedText>
+          <ThemedText>-</ThemedText>
           <View style={styles.row}>
             <IconSymbol name="clock" size={14} color={textColor} />
             <ThemedText style={[styles.description, { opacity: 0.7 }]}>{readableDuration(item.duration)}</ThemedText>
           </View>
 
-          <ThemedText>-</ThemedText>
           {item.notificationTime ? (
             <>
               <View style={styles.row}>
@@ -79,7 +80,6 @@ export const ExerciseCard = ({ item, handlePress }: ExerciseCardProps) => {
               <ThemedText>-</ThemedText>
             </>
           ) : null}
-          <ThemedText style={styles.exerciseArea}>{item.area}</ThemedText>
         </View>
         <ThemedText style={styles.exerciseName}>{item.name}</ThemedText>
 

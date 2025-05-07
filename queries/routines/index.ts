@@ -1,0 +1,55 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { addRoutine, getRoutineById, getUserRoutines, removeRoutine, Routine, updateRoutine } from "./routines";
+
+export const useGetRoutines = () => {
+  return useQuery({
+    queryKey: ["routines"],
+    queryFn: getUserRoutines,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+export const useGetRoutineById = (routineId: string) => {
+  return useQuery({
+    queryKey: ["routines", routineId],
+    queryFn: () => getRoutineById(routineId),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+export const useAddRoutine = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: ["routines"],
+    mutationFn: (newRoutine: Omit<Routine, "id">) => addRoutine(newRoutine),
+    onSuccess: () => {
+      // Invalidate the query to refetch the data
+      queryClient.invalidateQueries({ queryKey: ["routines"] });
+    },
+  });
+};
+
+export const useRemoveRoutine = (routineId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: ["routines", routineId],
+    mutationFn: () => removeRoutine(routineId),
+    onSuccess: () => {
+      // Invalidate the query to refetch the data
+      queryClient.invalidateQueries({ queryKey: ["routines"] });
+    },
+  });
+};
+
+export const useUpdateRoutine = (routineId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: ["routines", routineId],
+    mutationFn: (updatedRoutine: Partial<Routine> & { replace?: boolean }) =>
+      updateRoutine(routineId, updatedRoutine, updatedRoutine.replace),
+    onSuccess: () => {
+      // Invalidate the query to refetch the data
+      queryClient.invalidateQueries({ queryKey: ["routines"] });
+    },
+  });
+};

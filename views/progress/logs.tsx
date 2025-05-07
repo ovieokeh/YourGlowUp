@@ -1,4 +1,4 @@
-import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import { FlatList, Image, StyleSheet, View } from "react-native";
 
@@ -8,13 +8,15 @@ import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { getLogs, isExerciseLog, isUserLog, Log } from "@/utils/logs";
+import { useGetLogs } from "@/queries/logs";
+import { ExerciseLog, isExerciseLog, isUserLog, UserLog } from "@/queries/logs/logs";
 
 const TABS = ["Self Reports", "Exercise Logs"] as const;
 
 export function ProgressLogsView() {
   const router = useRouter();
-  const [logs, setLogs] = useState<Log[]>([]);
+  const logsQuery = useGetLogs();
+  const logs = logsQuery.data || [];
   const params = useLocalSearchParams();
   const initialTab = params.logsTab === "Exercise Logs" ? "Exercise Logs" : "Self Reports";
 
@@ -27,14 +29,8 @@ export function ProgressLogsView() {
   const success = useThemeColor({}, "success");
   const danger = useThemeColor({}, "danger");
 
-  useFocusEffect(
-    React.useCallback(() => {
-      getLogs(setLogs);
-    }, [])
-  );
-
-  const exerciseLogs = logs.filter(isExerciseLog);
-  const userLogs = logs.filter(isUserLog);
+  const exerciseLogs = logs.filter(isExerciseLog) as ExerciseLog[];
+  const userLogs = logs.filter(isUserLog) as UserLog[];
 
   const handleTabPress = (tab: (typeof TABS)[number], index: number) => {
     setActiveTab(tab);

@@ -19,8 +19,8 @@ import { AccountBenefits } from "@/components/AccountBenefits";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { getLogs, isUserLog, Log, saveExerciseLog, saveUserLog, UserLog } from "@/queries/logs/logs";
 import { supabase } from "@/supabase";
-import { getLogs, isUserLog, Log, saveExerciseLog, saveUserLog } from "@/utils/logs";
 import Toast from "react-native-toast-message";
 
 const NOTIF_ENABLED_KEY = "settings.notifications.enabled";
@@ -100,61 +100,61 @@ export default function AccountView() {
   }
 
   const exportData = async () => {
-    getLogs(async (logs) => {
-      const IMAGE_URI_BLOB_MAP: Record<string, string> = {};
-      const imagesBase64Blobs = logs
-        .filter(isUserLog)
-        .filter((log) => log.photoUri)
-        .map(async (log) => {
-          const uri = log.photoUri!;
-          const base64 = FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
-          return base64.then((base64String) => {
-            IMAGE_URI_BLOB_MAP[uri] = base64String;
-            return `data:image/jpg;base64,${base64String}`;
-          });
-        });
-      await Promise.allSettled(imagesBase64Blobs);
-      const notificationsEnabled = await AsyncStorage.getItem(NOTIF_ENABLED_KEY);
-      const notificationTimeRaw = await AsyncStorage.getItem(NOTIF_TIME_KEY);
-      const notificationTime = notificationTimeRaw ? new Date(notificationTimeRaw) : new Date();
-      const settingsData = {
-        notificationsEnabled,
-        notificationTime: notificationTime.toISOString(),
-        logs,
-        IMAGE_URI_BLOB_MAP,
-      };
-      const data = JSON.stringify(settingsData, null, 2);
+    const logs = await getLogs();
 
-      const baseDirectory = FileSystem.documentDirectory;
-      const path = baseDirectory + "symmetry-export.json";
-      FileSystem.writeAsStringAsync(path, data)
-        .then(() => {
-          Alert.alert("Export Successful", "Your data has been exported.");
-        })
-        .catch((error) => {
-          console.error("Error exporting data:", error);
-          Alert.alert("Export Failed", "An error occurred while exporting your data.");
+    const IMAGE_URI_BLOB_MAP: Record<string, string> = {};
+    const userLogs = logs.filter(isUserLog) as UserLog[];
+    const imagesBase64Blobs = userLogs
+      .filter((log) => log.photoUri)
+      .map(async (log) => {
+        const uri = log.photoUri!;
+        const base64 = FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+        return base64.then((base64String) => {
+          IMAGE_URI_BLOB_MAP[uri] = base64String;
+          return `data:image/jpg;base64,${base64String}`;
         });
-      Sharing.shareAsync(path)
-        .then(() => {
-          Toast.show({
-            type: "success",
-            text1: "Share Successful",
-            text2: "Your data has been shared.",
-            position: "bottom",
-          });
-          FileSystem.deleteAsync(path).catch(console.error);
-        })
-        .catch((error) => {
-          console.error("Error sharing file:", error);
-          Toast.show({
-            type: "error",
-            text1: "Share Failed",
-            text2: "An error occurred while sharing your data.",
-            position: "bottom",
-          });
+      });
+    await Promise.allSettled(imagesBase64Blobs);
+    const notificationsEnabled = await AsyncStorage.getItem(NOTIF_ENABLED_KEY);
+    const notificationTimeRaw = await AsyncStorage.getItem(NOTIF_TIME_KEY);
+    const notificationTime = notificationTimeRaw ? new Date(notificationTimeRaw) : new Date();
+    const settingsData = {
+      notificationsEnabled,
+      notificationTime: notificationTime.toISOString(),
+      logs,
+      IMAGE_URI_BLOB_MAP,
+    };
+    const data = JSON.stringify(settingsData, null, 2);
+
+    const baseDirectory = FileSystem.documentDirectory;
+    const path = baseDirectory + "symmetry-export.json";
+    FileSystem.writeAsStringAsync(path, data)
+      .then(() => {
+        Alert.alert("Export Successful", "Your data has been exported.");
+      })
+      .catch((error) => {
+        console.error("Error exporting data:", error);
+        Alert.alert("Export Failed", "An error occurred while exporting your data.");
+      });
+    Sharing.shareAsync(path)
+      .then(() => {
+        Toast.show({
+          type: "success",
+          text1: "Share Successful",
+          text2: "Your data has been shared.",
+          position: "bottom",
         });
-    });
+        FileSystem.deleteAsync(path).catch(console.error);
+      })
+      .catch((error) => {
+        console.error("Error sharing file:", error);
+        Toast.show({
+          type: "error",
+          text1: "Share Failed",
+          text2: "An error occurred while sharing your data.",
+          position: "bottom",
+        });
+      });
   };
 
   const importData = async () => {

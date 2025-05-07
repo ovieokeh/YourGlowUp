@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { IconSymbolName } from "@/components/ui/IconSymbol";
-import { Log } from "./logs";
+import { Log } from "../logs/logs";
 
 export enum BadgeStatus {
   NOT_EARNED = "NOT_EARNED",
@@ -223,6 +223,21 @@ export const setBadgeStatus = async (key: BadgeKey, status: BadgeStatus) => {
   }
 };
 
+export const resetBadges = async () => {
+  try {
+    const badges = Object.keys(BADGES).reduce((acc, key) => {
+      acc[key as BadgeKey] = {
+        ...BADGES[key as BadgeKey],
+        status: BadgeStatus.NOT_EARNED,
+      };
+      return acc;
+    }, {} as Record<BadgeKey, Badge>);
+    await AsyncStorage.setItem(BADGES_KEY, JSON.stringify(badges));
+  } catch (error) {
+    console.error("Error resetting badges:", error);
+  }
+};
+
 const XP_KEY = "xp";
 export const fetchUserXP = async (): Promise<number> => {
   try {
@@ -303,3 +318,24 @@ export const badgeConditions: Record<BadgeKey, BadgeConditionFn> = {
 };
 
 const count = (logs: Log[], type: Log["type"]) => logs.filter((l) => l.type === type).length;
+
+const SHOWN_TOASTS_KEY = "shown_toasts";
+export const getShownToasts = async (): Promise<Set<BadgeKey>> => {
+  try {
+    const shown = await AsyncStorage.getItem(SHOWN_TOASTS_KEY);
+    if (shown) {
+      return new Set(JSON.parse(shown));
+    }
+    return new Set();
+  } catch (error) {
+    console.error("Error fetching shown toasts:", error);
+    return new Set();
+  }
+};
+export const setShownToasts = async (shown: Set<BadgeKey>) => {
+  try {
+    await AsyncStorage.setItem(SHOWN_TOASTS_KEY, JSON.stringify(Array.from(shown)));
+  } catch (error) {
+    console.error("Error setting shown toasts:", error);
+  }
+};

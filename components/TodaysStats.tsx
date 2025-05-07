@@ -1,20 +1,22 @@
 import { formatDistanceToNow } from "date-fns";
-import { useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback, useMemo, useState } from "react";
+import { useRouter } from "expo-router";
+import React, { useMemo } from "react";
 import { Image, StyleSheet, View } from "react-native";
 
 import { ThemedText } from "@/components/ThemedText";
-import { Log, getLogs, isExerciseLog, isTaskLog } from "@/utils/logs";
+import { isExerciseLog, isTaskLog } from "@/queries/logs/logs";
 
 import { BorderRadii, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { getStreak } from "@/utils/gamification";
+import { getStreak } from "@/queries/gamification/gamification";
+import { useGetLogs } from "@/queries/logs";
 import { ThemedButton } from "./ThemedButton";
 import { ThemedView } from "./ThemedView";
 import { IconSymbol, IconSymbolName } from "./ui/IconSymbol";
 
 export const TodaysStats: React.FC = () => {
-  const [logs, setLogs] = useState<Log[]>([]);
+  const logsQuery = useGetLogs();
+  const logs = useMemo(() => logsQuery.data || [], [logsQuery.data]);
 
   const router = useRouter();
 
@@ -22,12 +24,6 @@ export const TodaysStats: React.FC = () => {
   const muted = useThemeColor({}, "muted");
   const text = useThemeColor({}, "text");
   const tint = useThemeColor({}, "tint");
-
-  useFocusEffect(
-    useCallback(() => {
-      getLogs(setLogs);
-    }, [])
-  );
 
   const streak = useMemo(() => {
     return getStreak(logs);

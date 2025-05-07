@@ -2,7 +2,6 @@ import Slider from "@react-native-community/slider";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-  findNodeHandle,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -21,7 +20,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { saveUserLog } from "@/utils/logs";
+import { saveUserLog } from "@/queries/logs/logs";
 import Toast from "react-native-toast-message";
 
 const TIPS = [
@@ -52,9 +51,6 @@ export default function AddUserLogScreen() {
 
   const borderColor = useThemeColor({}, "border");
   const inputTextColor = useThemeColor({}, "text");
-
-  const scrollViewRef = React.useRef<ScrollView>(null);
-  const tipsRef = React.useRef<View>(null);
 
   const resetForm = () => {
     setDominantSide("unsure");
@@ -115,22 +111,10 @@ export default function AddUserLogScreen() {
     setPhotoUri(uri);
   };
 
-  const onTipsPress = () => {
-    if (tipsRef.current && !!scrollViewRef.current) {
-      const nodeHandle = findNodeHandle(tipsRef.current);
-      if (!nodeHandle) return;
-      // measureLayout(relativeToNativeNode, callback)
-      tipsRef.current.measureLayout(nodeHandle, (_x, y) => {
-        // scroll so the tips section sits 20px from top
-        scrollViewRef.current?.scrollTo({ y: y - 20, animated: true });
-      });
-    }
-  };
-
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
-        <ScrollView ref={scrollViewRef}>
+        <ScrollView>
           <ThemedView style={styles.container}>
             <ThemedText style={styles.title}>Assess your progress today</ThemedText>
 
@@ -237,8 +221,8 @@ export default function AddUserLogScreen() {
               allowTransform
             />
 
-            <View style={{ marginVertical: 24 }} ref={tipsRef}>
-              <Collapsible title="Tips, Timeline, and What to Avoid" onPress={onTipsPress}>
+            <View style={{ marginVertical: 24 }}>
+              <Collapsible title="Tips, Timeline, and What to Avoid">
                 {TIPS.map((tip, index) => (
                   <ThemedText key={index} style={{ marginBottom: 8 }}>
                     {index + 1}. {tip}

@@ -1,13 +1,12 @@
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { getLogsByTask, saveTaskLog, TaskLog } from "@/utils/logs";
-import { RoutineTaskItem } from "@/utils/routines";
+import { getLogsByTask, saveTaskLog, TaskLog } from "@/queries/logs/logs";
+import { RoutineTaskItem } from "@/queries/routines/routines";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { BorderRadii, Spacings } from "@/constants/Theme";
 import Toast from "react-native-toast-message";
-import { Checkbox } from "./Checkbox";
 import { ThemedButton } from "./ThemedButton";
 import { ThemedText } from "./ThemedText";
 import { IconSymbol } from "./ui/IconSymbol";
@@ -49,26 +48,17 @@ export const TaskCard = ({ item, handlePress }: TaskCardProps) => {
     return logs.filter((log) => log.completedAt.startsWith(today));
   }, [logs]);
 
-  return (
-    <View
-      style={[styles.card, { backgroundColor: cardBg, borderColor: todayLogs.length > 0 ? successColor : cardBorder }]}
-    >
-      <Checkbox
-        onPress={() => {}}
-        checked={todayLogs.length > 0}
-        style={{
-          width: 28,
-          height: 28,
-          borderRadius: BorderRadii.sm,
-        }}
-      />
+  const hasTodayLogs = todayLogs.length > 0;
 
+  return (
+    <View style={[styles.card, { backgroundColor: cardBg, borderColor: hasTodayLogs ? successColor : cardBorder }]}>
       <View
         style={{
           padding: Spacings.sm,
         }}
       >
         <View style={styles.row}>
+          <ThemedText style={styles.exerciseArea}>{item.area}</ThemedText>
           {item.notificationTime ? (
             <View style={styles.row}>
               <IconSymbol name={"alarm"} size={16} color={textColor} />
@@ -76,11 +66,10 @@ export const TaskCard = ({ item, handlePress }: TaskCardProps) => {
             </View>
           ) : null}
           <ThemedText>-</ThemedText>
-          <ThemedText style={styles.exerciseArea}>{item.area}</ThemedText>
         </View>
         <ThemedText style={styles.exerciseName}>{item.name}</ThemedText>
 
-        {todayLogs.length > 0 && (
+        {hasTodayLogs && (
           <View style={styles.row}>
             <ThemedText style={[styles.description, { opacity: 0.5 }]}>
               Completed {todayLogs.length} {todayLogs.length > 1 ? "times" : "time"} today already
@@ -92,7 +81,7 @@ export const TaskCard = ({ item, handlePress }: TaskCardProps) => {
       <ThemedButton
         onPress={handleTaskCompletion}
         variant="ghost"
-        icon="checkmark"
+        icon={hasTodayLogs ? "arrow.circlepath" : "checkmark.circle"}
         iconPlacement="right"
         style={{
           marginLeft: "auto",

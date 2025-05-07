@@ -9,7 +9,6 @@ export const BackButton = () => {
   const searchParams = useSearchParams();
   const lastPage = searchParams.get("lastPage") || null;
 
-  console.log("Back button pressed", lastPage);
   const handleBack = () => {
     if (!lastPage && router.canGoBack()) {
       router.back();

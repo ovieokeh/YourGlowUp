@@ -121,17 +121,6 @@ export default function FaceAnalysisScreen() {
         </ScrollView>
 
         <View style={styles.navRow}>
-          {step === "actions" && (
-            <ThemedButton
-              title={"Quit"}
-              onPress={() => {
-                router.replace("/(tabs)");
-              }}
-              variant="ghost"
-              style={styles.button}
-              disabled={loading}
-            />
-          )}
           <ThemedButton
             title={step === "form" ? "Quit" : "Back"}
             onPress={goBack}
@@ -151,6 +140,18 @@ export default function FaceAnalysisScreen() {
                 (step === "results" && !analysisResults) ||
                 loading
               }
+            />
+          )}
+
+          {step === "actions" && (
+            <ThemedButton
+              title={"Quit"}
+              onPress={() => {
+                router.replace("/(tabs)");
+              }}
+              variant="ghost"
+              style={styles.button}
+              disabled={loading}
             />
           )}
         </View>

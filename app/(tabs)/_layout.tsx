@@ -41,7 +41,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Your Glow Up",
+          title: "Today",
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="calendar" color={color} />,
           headerLeft: () => (
             <Pressable
@@ -63,7 +63,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="routines/index"
         options={{
-          title: "Routines",
+          title: "Routine",
+          href: null,
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="clock" color={color} />,
         }}
       />
@@ -79,8 +80,7 @@ export default function TabLayout() {
         name="routines/[id]"
         options={{
           title: "Single Routine",
-          href: null,
-          headerLeft: () => <BackButton />,
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="clock" color={color} />,
         }}
       />
       <Tabs.Screen

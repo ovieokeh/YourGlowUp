@@ -1,5 +1,5 @@
-import { useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback, useMemo, useState } from "react";
+import { useRouter } from "expo-router";
+import React, { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import { ProgressReview } from "@/components/ProgressReview";
@@ -8,25 +8,21 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { getLogs, isUserLog, Log } from "@/utils/logs";
+import { useGetLogs } from "@/queries/logs";
+import { isUserLog, UserLog } from "@/queries/logs/logs";
 
 const RANGE_OPTIONS = ["7d", "30d", "3mo", "all"];
 
 export function ProgressTrackView() {
   const router = useRouter();
-  const [logs, setLogs] = useState<Log[]>([]);
+  const logsQuery = useGetLogs();
+  const logs = useMemo(() => logsQuery.data || [], [logsQuery.data]);
   const [range, setRange] = useState<"7d" | "30d" | "3mo" | "all">("30d");
 
   const now = useMemo(() => new Date(), []);
   const textColor = useThemeColor({}, "text");
   const borderColor = useThemeColor({}, "border");
   const accentColor = useThemeColor({}, "accent");
-
-  useFocusEffect(
-    useCallback(() => {
-      getLogs(setLogs);
-    }, [])
-  );
 
   const rangeStart = useMemo(() => {
     const d = new Date(now);
@@ -38,7 +34,8 @@ export function ProgressTrackView() {
   }, [now, range]);
 
   const filtered = useMemo(
-    () => logs.filter((l) => (rangeStart ? new Date(l.completedAt) >= rangeStart! : true)),
+    () =>
+      logs.filter(isUserLog).filter((l) => (rangeStart ? new Date(l.completedAt) >= rangeStart! : true)) as UserLog[],
     [logs, rangeStart]
   );
 
@@ -86,7 +83,7 @@ export function ProgressTrackView() {
           title="Add a self-report log"
           onPress={() => {
             router.push({
-              pathname: "/(tabs)/add-user-log",
+              pathname: "/add-user-log",
               params: { activeTab: "Self Reports" },
             });
           }}

@@ -12,7 +12,7 @@ export function parseJSONCleaned(raw: string): any | null {
     // Step 2: Try direct JSON parse
     try {
       return JSON.parse(cleaned);
-    } catch (_) {}
+    } catch {}
 
     // Step 3: Try to extract JSON from inside escaped quotes
     try {
@@ -22,7 +22,7 @@ export function parseJSONCleaned(raw: string): any | null {
         .replace(/\\n/g, "") // remove newline escapes
         .trim();
       return JSON.parse(unescaped);
-    } catch (_) {}
+    } catch {}
 
     // Step 4: Use regex to extract closest `{...}` or `[...]` block
     const match = cleaned.match(/({[\s\S]+})|(\[[\s\S]+\])/);

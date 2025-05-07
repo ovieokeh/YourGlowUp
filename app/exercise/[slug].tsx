@@ -11,8 +11,9 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { EXERCISES } from "@/constants/Exercises";
 import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { addXP, LOG_TYPE_XP_MAP } from "@/utils/gamification";
-import { saveExerciseLog } from "@/utils/logs";
+import { useAddXP } from "@/queries/gamification";
+import { LOG_TYPE_XP_MAP } from "@/queries/gamification/gamification";
+import { saveExerciseLog } from "@/queries/logs/logs";
 import { useSearchParams } from "expo-router/build/hooks";
 import Toast from "react-native-toast-message";
 
@@ -21,6 +22,7 @@ export default function ExerciseSession() {
   const searchParams = useSearchParams();
   const routineId = searchParams.get("routineId") || "";
   const router = useRouter();
+  const addXPMutation = useAddXP();
 
   const exercise = useMemo(
     () => EXERCISES.find((e) => e.itemId === slug || e.name === decodeURIComponent(slug)),
@@ -98,7 +100,8 @@ export default function ExerciseSession() {
   const handleComplete = async () => {
     if (!exercise) return;
     await saveExerciseLog(exercise.name, exercise.duration, routineId);
-    addXP(LOG_TYPE_XP_MAP["exercise"] + exercise.duration)
+    addXPMutation
+      .mutateAsync(LOG_TYPE_XP_MAP["exercise"] + exercise.duration)
       .catch((err) => {
         console.error("Error adding XP:", err);
       })

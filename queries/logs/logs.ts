@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { db } from "../../utils/db";
 
 export const initLogsTable = () => {
   // drop the table if it exists
@@ -107,8 +107,8 @@ export const isTaskLog = (log: Log): log is TaskLog => {
   return log.type === "task";
 };
 
-export const getLogs = (callback?: (rows: Log[]) => void) => {
-  const rows = db.getAllSync(`SELECT * FROM logs ORDER BY completedAt DESC;`) as Log[];
+export const getLogs = async () => {
+  const rows = (await db.getAllAsync(`SELECT * FROM logs ORDER BY completedAt DESC;`)) as Log[];
   const processed = rows.map((row) => {
     if (row && isUserLog(row)) {
       return {
@@ -123,18 +123,14 @@ export const getLogs = (callback?: (rows: Log[]) => void) => {
     }
     return row;
   });
-  if (callback)
-    // Check if callback is defined before calling it
-
-    callback(processed);
 
   return processed;
 };
 
-export const getLogsByExercise = (exercise: string, callback?: (rows: ExerciseLog[]) => void) => {
-  const rows = db.getAllSync(`SELECT * FROM logs WHERE exercise = ? ORDER BY completedAt DESC;`, [
+export const getLogsByExercise = async (exercise: string, callback?: (rows: ExerciseLog[]) => void) => {
+  const rows = (await db.getAllAsync(`SELECT * FROM logs WHERE exercise = ? ORDER BY completedAt DESC;`, [
     exercise,
-  ]) as ExerciseLog[];
+  ])) as ExerciseLog[];
   if (callback)
     // Check if callback is defined before calling it
 

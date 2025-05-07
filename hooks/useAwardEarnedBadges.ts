@@ -1,22 +1,12 @@
 import { useBadges } from "@/providers/BadgeContext";
-import { badgeConditions, BadgeKey, BadgeStatus, getStreak } from "@/utils/gamification";
-import { getLogs, Log } from "@/utils/logs";
-import { useFocusEffect } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { badgeConditions, BadgeKey, BadgeStatus, getStreak } from "@/queries/gamification/gamification";
+import { useGetLogs } from "@/queries/logs";
+import { useEffect } from "react";
 
 export const useAwardEarnedBadges = () => {
-  const [logs, setLogs] = useState<Log[]>([]);
+  const logsQuery = useGetLogs();
+  const logs = logsQuery.data || [];
   const { awardBadge, badges } = useBadges();
-
-  useFocusEffect(
-    useCallback(() => {
-      const fetchLogs = async () => {
-        const logs = await getLogs();
-        setLogs(logs);
-      };
-      fetchLogs();
-    }, [])
-  );
 
   useEffect(() => {
     const checkAndAward = async () => {

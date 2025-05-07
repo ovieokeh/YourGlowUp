@@ -296,7 +296,16 @@ export default function MarketplaceScreen() {
                   const product = products.find((p) => p.id === itemId);
                   if (!product) return null;
                   return (
-                    <ExternalLink key={product.id} href={product.affiliateLink} style={[styles.card]}>
+                    <ExternalLink
+                      key={product.id}
+                      href={product.affiliateLink}
+                      style={[
+                        styles.card,
+                        {
+                          borderColor,
+                        },
+                      ]}
+                    >
                       <View>
                         <Image source={{ uri: product.image }} style={styles.image} />
                         <ThemedText numberOfLines={2} style={styles.productName}>

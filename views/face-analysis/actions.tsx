@@ -7,8 +7,9 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { EXERCISES, TASKS } from "@/constants/Exercises";
 import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { addRoutine } from "@/utils/routines";
+import { useUpdateRoutine } from "@/queries/routines";
 import { router } from "expo-router";
+import Toast from "react-native-toast-message";
 
 interface FaceAnalysisActionsViewProps {
   analysisResults: {
@@ -46,8 +47,8 @@ const RecomendationsRenderer = ({
   return (
     <View style={{ gap: Spacings.sm }}>
       {analysisResults.recommendations.map((rec) => {
-        const exercise = EXERCISES.find((e) => e.id === rec);
-        const task = TASKS.find((t) => t.id === rec);
+        const exercise = EXERCISES.find((e) => e.itemId === rec);
+        const task = TASKS.find((t) => t.itemId === rec);
         const item = exercise || task;
 
         if (!item) return null;
@@ -93,17 +94,26 @@ const RecomendationsRenderer = ({
 
 export default function FaceAnalysisActionsView({ analysisResults }: FaceAnalysisActionsViewProps) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const updateRoutineMutation = useUpdateRoutine("my-routine");
 
   const handleSaveRoutine = () => {
-    addRoutine({
-      routineId: "my-routine", // This should be generated or passed as a prop
-      name: "My Routine",
-      description: "Routine based on facial analysis",
-      steps: [...selected],
-      notificationTime: "09:00", // Default time for tasks
-    });
-
-    router.replace("/(tabs)/routines");
+    updateRoutineMutation
+      .mutateAsync({
+        routineId: "my-routine",
+        name: "My Routine",
+        description: "Routine based on facial analysis on " + new Date().toLocaleDateString(),
+        steps: [...selected],
+      })
+      .then(() => {
+        router.replace("/(tabs)/routines/my-routine");
+      })
+      .catch((error) => {
+        Toast.show({
+          type: "error",
+          text1: "Error saving routine",
+          text2: error.message,
+        });
+      });
   };
 
   return (

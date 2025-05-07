@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, View } from "react-native";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -6,24 +6,19 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useBadges } from "@/providers/BadgeContext";
-import { BadgeKey, BadgeLevel, BADGES, BadgeStatus, fetchUserXP } from "@/utils/gamification";
+import { useGetUserXP } from "@/queries/gamification";
+import { BadgeKey, BadgeLevel, BADGES, BadgeStatus } from "@/queries/gamification/gamification";
 
 export const XPCounter = () => {
-  const [xp, setXP] = useState<number>(0);
   const [modalVisible, setModalVisible] = useState(false);
   const { badges } = useBadges();
+  const userXPQuery = useGetUserXP();
+  const xp = userXPQuery.data || 0;
 
   const background = useThemeColor({}, "background");
   const textColor = useThemeColor({}, "text");
   const accent = useThemeColor({}, "accent");
   const border = useThemeColor({}, "border");
-
-  useEffect(() => {
-    (async () => {
-      const userXP = await fetchUserXP();
-      setXP(userXP);
-    })();
-  }, []);
 
   const xpCounterUnit = useMemo(
     () => (

@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
 import { ExerciseCard } from "@/components/ExerciseCard";
@@ -10,28 +10,40 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { TodaysStats } from "@/components/TodaysStats";
 import { BorderRadii, Spacings } from "@/constants/Theme";
-import { getUserRoutines, isRoutineExerciseItem, isRoutineTaskItem, RoutineWithItems } from "@/utils/routines";
+import { useAddRoutine, useGetRoutineById, useGetRoutines } from "@/queries/routines";
+import { isRoutineExerciseItem, isRoutineTaskItem } from "@/queries/routines/routines";
 
 export default function HomeScreen() {
   const router = useRouter();
-  const [routines, setRoutines] = useState<RoutineWithItems[]>([]);
+  const routinesQuery = useGetRoutines();
+
+  const routines = useMemo(() => routinesQuery.data || [], [routinesQuery.data]);
+  const routineQuery = useGetRoutineById(routines[0]?.routineId || "my-routine");
+  const { mutate } = useAddRoutine();
+  const routine = routineQuery.data;
 
   useFocusEffect(
     useCallback(() => {
-      getUserRoutines().then((res) => {
-        setRoutines(res);
-      });
-    }, [])
+      if (!routine && routineQuery.isSuccess) {
+        mutate({
+          routineId: "my-routine",
+          name: "My Routine",
+          description: "Your default routine",
+          steps: [""],
+        });
+      }
+    }, [mutate, routine, routineQuery.isSuccess])
   );
 
-  const firstRoutine = routines[0];
-  const exercises = firstRoutine?.items?.filter(isRoutineExerciseItem) || [];
-  const tasks = firstRoutine?.items?.filter(isRoutineTaskItem) || [];
+  const exercises = routine?.items?.filter(isRoutineExerciseItem) || [];
+  const tasks = routine?.items?.filter(isRoutineTaskItem) || [];
 
   return (
     <ThemedView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.content}>
+          <TodaysStats />
+
           <View style={styles.cards}>
             <ThemedText style={styles.title} type="subtitle">
               Today&apos;s tasks
@@ -43,14 +55,17 @@ export default function HomeScreen() {
                 handlePress={() =>
                   router.push({
                     pathname: "/exercise/[slug]",
-                    params: { slug: encodeURIComponent(item.name), routineId: firstRoutine.routineId },
+                    params: { slug: encodeURIComponent(item.name), routineId: routine?.routineId },
                   })
                 }
               />
             ))}
+            {tasks.length === 0 && (
+              <ThemedText type="default" style={{ padding: Spacings.sm }}>
+                No tasks available.
+              </ThemedText>
+            )}
           </View>
-
-          <TodaysStats />
 
           <View style={styles.cards}>
             <ThemedText style={styles.title} type="subtitle">
@@ -63,16 +78,21 @@ export default function HomeScreen() {
                 handlePress={() =>
                   router.push({
                     pathname: "/exercise/[slug]",
-                    params: { slug: encodeURIComponent(item.name), routineId: firstRoutine.routineId },
+                    params: { slug: encodeURIComponent(item.name), routineId: routine?.routineId },
                   })
                 }
               />
             ))}
+            {exercises.length === 0 && (
+              <ThemedText type="default" style={{ padding: Spacings.sm }}>
+                No exercises available.
+              </ThemedText>
+            )}
           </View>
 
           <ThemedButton
             title="View Routine"
-            onPress={() => router.push(`/(tabs)/routines/${firstRoutine?.id}`)}
+            onPress={() => router.push(`/(tabs)/routines/${routine?.routineId}`)}
             variant="outline"
             icon="chevron.right"
             iconPlacement="right"

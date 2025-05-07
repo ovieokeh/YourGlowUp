@@ -7,13 +7,15 @@ import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { fetchUserXP } from "@/utils/gamification";
-import { getLogsByExercise } from "@/utils/logs";
+import { useGetUserXP } from "@/queries/gamification";
+import { getLogsByExercise } from "@/queries/logs/logs";
 
 export default function ExerciseCompleteScreen() {
-  const [xp, setXP] = useState(0);
   const [streak, setStreak] = useState(0);
   const router = useRouter();
+
+  const userXPQuery = useGetUserXP();
+  const xp = userXPQuery.data || 0;
 
   const border = useThemeColor({}, "border");
 
@@ -27,9 +29,6 @@ export default function ExerciseCompleteScreen() {
         today.setDate(today.getDate() - 1);
       }
       setStreak(count);
-
-      const xpVal = await fetchUserXP();
-      setXP(xpVal);
     });
   }, []);
 

@@ -10,7 +10,8 @@ import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { BorderRadii, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { getOnboardingStatus, OnboardingStatus, setOnboardingStatus } from "@/utils/onboarding";
+import { useGetOnboardingStatus, useSetOnboardingStatus } from "@/queries/onboarding";
+import { OnboardingStatus } from "@/queries/onboarding/onboarding";
 
 const { width } = Dimensions.get("window");
 
@@ -57,6 +58,10 @@ export default function OnboardingScreen() {
   const [index, setIndex] = useState(0);
   const translateX = useSharedValue(0);
   const router = useRouter();
+  const onboardingStatusQuery = useGetOnboardingStatus("main-onboarding");
+  const onboardingStatus = onboardingStatusQuery.data;
+
+  const setOnboardingStatusMutation = useSetOnboardingStatus();
 
   const inactiveDot = useThemeColor({}, "border");
   const activeDot = useThemeColor({}, "text");
@@ -64,23 +69,33 @@ export default function OnboardingScreen() {
 
   useEffect(() => {
     (async () => {
-      const onboardingStatus = await getOnboardingStatus("main-onboarding");
       if (onboardingStatus?.status === OnboardingStatus.IN_PROGRESS) {
         setIndex(onboardingStatus.step);
         translateX.value = withTiming(-(onboardingStatus.step * width), { duration: 300 });
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [onboardingStatus, translateX]);
 
   const handleNext = async () => {
     const nextIndex = index + 1;
     if (nextIndex < slides.length) {
       setIndex(nextIndex);
       translateX.value = withTiming(-nextIndex * width, { duration: 300 });
-      await setOnboardingStatus("main-onboarding", { step: nextIndex, status: OnboardingStatus.IN_PROGRESS });
+      await setOnboardingStatusMutation.mutateAsync({
+        key: "main-onboarding",
+        value: {
+          step: nextIndex,
+          status: OnboardingStatus.IN_PROGRESS,
+        },
+      });
     } else {
-      await setOnboardingStatus("main-onboarding", { step: 0, status: OnboardingStatus.COMPLETED });
+      await setOnboardingStatusMutation.mutateAsync({
+        key: "main-onboarding",
+        value: {
+          step: 0,
+          status: OnboardingStatus.COMPLETED,
+        },
+      });
       router.replace("/auth");
     }
   };

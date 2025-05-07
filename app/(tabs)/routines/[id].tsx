@@ -1,33 +1,166 @@
-import { Link, Stack } from "expo-router";
-import { StyleSheet } from "react-native";
+import { Link, router, Stack } from "expo-router";
+import { ScrollView, StyleSheet, View } from "react-native";
 
+import { ExerciseCard } from "@/components/ExerciseCard";
+import { RoutineItemsModal } from "@/components/RoutineItemsModal";
+import { TaskCard } from "@/components/TaskCard";
+import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Spacings } from "@/constants/Theme";
+import { useGetRoutineById, useUpdateRoutine } from "@/queries/routines";
+import { isRoutineExerciseItem, isRoutineTaskItem } from "@/queries/routines/routines";
+import { useLocalSearchParams } from "expo-router/build/hooks";
+import { useState } from "react";
 
 export default function RoutinesSingleScreen() {
-  return (
-    <>
-      <Stack.Screen options={{ title: "Oops!" }} />
+  const { id = "my-routine" } = useLocalSearchParams<{ id: string }>();
+  const updateRoutineMutation = useUpdateRoutine(id);
+
+  const [showSelector, setShowSelector] = useState(false);
+
+  const routineQuery = useGetRoutineById(id);
+  const { data: routine, isLoading } = routineQuery;
+
+  if (isLoading) {
+    // Show a loading state while fetching the routine
+    return (
       <ThemedView style={styles.container}>
-        <ThemedText type="title">This screen doesn&apos;t exist.</ThemedText>
-        <Link href="/" style={styles.link}>
-          <ThemedText type="link">Go to home screen!</ThemedText>
-        </Link>
+        <ThemedText type="title">Loading...</ThemedText>
       </ThemedView>
-    </>
+    );
+  }
+
+  if (!routine) {
+    // If the routine is not found, show a 404 screen
+    return (
+      <>
+        <Stack.Screen options={{ title: "Oops!" }} />
+        <ThemedView style={styles.container}>
+          <ThemedText type="title">This screen doesn&apos;t exist.</ThemedText>
+          <Link href="/" style={styles.link}>
+            <ThemedText type="link">Go to home screen!</ThemedText>
+          </Link>
+        </ThemedView>
+      </>
+    );
+  }
+
+  const exercises = routine?.items?.filter(isRoutineExerciseItem) || [];
+  const tasks = routine?.items?.filter(isRoutineTaskItem) || [];
+
+  return (
+    <ThemedView style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <Stack.Screen options={{ title: routine.name }} />
+        <ThemedText>Customise your routine or generate a routine from a new face analysis.</ThemedText>
+
+        <View style={{ flexDirection: "row", gap: Spacings.sm, marginBottom: Spacings.md }}>
+          <ThemedButton
+            variant="solid"
+            title="Analyse Face"
+            onPress={() => {
+              router.push("/face-analysis");
+            }}
+            icon="wand.and.stars"
+          />
+
+          <ThemedButton
+            variant="outline"
+            title="Update Routine"
+            onPress={() => {
+              setShowSelector(true);
+            }}
+            icon="plus.circle"
+          />
+        </View>
+
+        <View style={styles.cards}>
+          <ThemedText style={styles.title} type="subtitle">
+            Tasks
+          </ThemedText>
+
+          {tasks.map((item) => (
+            <TaskCard
+              key={item.id + item.itemId}
+              item={item}
+              handlePress={() =>
+                router.push({
+                  pathname: "/exercise/[slug]",
+                  params: { slug: encodeURIComponent(item.name), routineId: routine?.routineId },
+                })
+              }
+            />
+          ))}
+          {tasks.length === 0 && (
+            <ThemedText type="default" style={{ padding: Spacings.sm }}>
+              No tasks available.
+            </ThemedText>
+          )}
+        </View>
+
+        <View style={styles.cards}>
+          <ThemedText style={styles.title} type="subtitle">
+            Exercises
+          </ThemedText>
+
+          {exercises.map((item) => (
+            <ExerciseCard
+              key={item.id + item.itemId}
+              item={item}
+              handlePress={() =>
+                router.push({
+                  pathname: "/exercise/[slug]",
+                  params: { slug: encodeURIComponent(item.name), routineId: routine?.routineId },
+                })
+              }
+            />
+          ))}
+          {exercises.length === 0 && (
+            <ThemedText type="default" style={{ padding: Spacings.sm }}>
+              No exercises available.
+            </ThemedText>
+          )}
+        </View>
+      </ScrollView>
+      <RoutineItemsModal
+        visible={showSelector}
+        selectedIds={routine.items.map((item) => item.itemId)}
+        onClose={() => setShowSelector(false)}
+        onSave={(items) => {
+          updateRoutineMutation
+            .mutateAsync({
+              replace: true,
+              steps: [...routine.items.map((item) => item.itemId), ...items.map((item) => item.itemId)],
+            })
+            .then(() => {
+              setShowSelector(false);
+            });
+        }}
+      />
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    alignItems: "center",
     justifyContent: "center",
+    gap: Spacings.xl,
     padding: Spacings.lg,
+    paddingBottom: 96,
   },
   link: {
     marginTop: Spacings.md,
     paddingVertical: Spacings.md,
+  },
+  cards: {
+    width: "100%",
+    borderRadius: 12,
+    gap: Spacings.sm,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "700",
+    marginBottom: Spacings.sm,
   },
 });

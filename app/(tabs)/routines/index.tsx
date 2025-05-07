@@ -5,9 +5,8 @@ import { FlatList, Image, Pressable, StyleSheet, View } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { ROUTINES } from "@/constants/Exercises";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { Routine, getUserRoutines } from "@/utils/routines";
+import { Routine, getUserRoutines } from "@/queries/routines/routines";
 
 export default function RoutinesScreen() {
   const router = useRouter();
@@ -24,7 +23,7 @@ export default function RoutinesScreen() {
         if (data) {
           setRoutines(data);
         } else {
-          setRoutines(ROUTINES);
+          setRoutines([]);
         }
       } catch (error) {
         console.error("Error fetching routines:", error);
@@ -33,17 +32,13 @@ export default function RoutinesScreen() {
     init();
   }, []);
 
-  const sorted = routines.sort((a, b) => {
-    if (a.notificationTime === "random") return 1;
-    if (b.notificationTime === "random") return -1;
-    return a.notificationTime.localeCompare(b.notificationTime);
-  });
+  const sorted = routines;
 
   return (
     <ThemedView style={styles.container}>
       <FlatList
         data={sorted}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={{ paddingBottom: 96 }}
         renderItem={({ item }) => (
           <Pressable
@@ -58,7 +53,6 @@ export default function RoutinesScreen() {
             <View style={styles.content}>
               <ThemedText style={styles.name}>{item.name}</ThemedText>
               <ThemedText style={styles.description}>{item.description}</ThemedText>
-              <ThemedText style={styles.time}>Time: {item.notificationTime}</ThemedText>
             </View>
           </Pressable>
         )}

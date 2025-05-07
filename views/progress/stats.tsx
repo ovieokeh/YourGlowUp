@@ -1,5 +1,4 @@
-import { useFocusEffect } from "expo-router";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Dimensions, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { LineChart, PieChart } from "react-native-chart-kit";
 
@@ -8,7 +7,8 @@ import { ThemedView } from "@/components/ThemedView";
 import { EXERCISES } from "@/constants/Exercises";
 import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { getLogs, isExerciseLog, isUserLog, Log } from "@/utils/logs";
+import { useGetLogs } from "@/queries/logs";
+import { isExerciseLog, isUserLog, UserLog } from "@/queries/logs/logs";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const CHART_WIDTH = SCREEN_WIDTH - 32;
@@ -16,7 +16,8 @@ const CHART_HEIGHT = 200;
 const RANGE_OPTIONS = ["7d", "30d", "3mo", "all"];
 
 export function ProgressStatsView() {
-  const [logs, setLogs] = useState<Log[]>([]);
+  const logsQuery = useGetLogs();
+  const logs = useMemo(() => logsQuery.data || [], [logsQuery.data]);
   const [range, setRange] = useState<"7d" | "30d" | "3mo" | "all">("30d");
 
   const now = useMemo(() => new Date(), []);
@@ -25,12 +26,6 @@ export function ProgressStatsView() {
   const borderColor = useThemeColor({}, "border");
   const accentColor = useThemeColor({}, "accent");
   const colorScheme = backgroundColor === Colors.dark.background ? "dark" : "light";
-
-  useFocusEffect(
-    useCallback(() => {
-      getLogs(setLogs);
-    }, [])
-  );
 
   const rangeStart = useMemo(() => {
     const d = new Date(now);
@@ -57,26 +52,28 @@ export function ProgressStatsView() {
     return count;
   }, [logs]);
 
+  const userLogs = useMemo(() => filtered.filter(isUserLog) as UserLog[], [filtered]);
+
   const symmetryAvg = useMemo(() => {
-    const vals = filtered.filter(isUserLog).map((l) => l.symmetryRating);
+    const vals = userLogs.map((l) => l.symmetryRating);
     if (!vals.length) return "N/A";
     const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
     return avg.toFixed(2);
-  }, [filtered]);
+  }, [userLogs]);
 
   const chewingTime = useMemo(() => {
-    const totalMin = filtered.filter(isUserLog).reduce((sum, l) => sum + (l.chewingDuration || 0), 0);
+    const totalMin = userLogs.filter(isUserLog).reduce((sum, l) => sum + (l.chewingDuration || 0), 0);
     return `${Math.floor(totalMin / 60)}h ${totalMin % 60}m`;
-  }, [filtered]);
+  }, [userLogs]);
 
   const gumTime = useMemo(() => {
-    const totalMin = filtered.filter(isUserLog).reduce((sum, l) => sum + (l.gumChewingDuration || 0), 0);
+    const totalMin = userLogs.filter(isUserLog).reduce((sum, l) => sum + (l.gumChewingDuration || 0), 0);
     return `${Math.floor(totalMin / 60)}h ${totalMin % 60}m`;
-  }, [filtered]);
+  }, [userLogs]);
 
   const lineData = useMemo(() => {
     const map = new Map<string, number[]>();
-    filtered.filter(isUserLog).forEach((l) => {
+    userLogs.filter(isUserLog).forEach((l) => {
       const day = new Date(l.completedAt).toLocaleDateString();
       if (map.has(day)) {
         map.get(day)!.push(l.symmetryRating);
@@ -90,7 +87,7 @@ export function ProgressStatsView() {
       return arr.reduce((a, b) => a + b, 0) / arr.length;
     });
     return { labels, datasets: [{ data }] };
-  }, [filtered]);
+  }, [userLogs]);
 
   const pieData = useMemo(() => {
     const map = new Map<string, number>();
