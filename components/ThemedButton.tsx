@@ -17,7 +17,7 @@ import { IconSymbol, IconSymbolName } from "./ui/IconSymbol";
 export type ThemedButtonVariant = "solid" | "outline" | "ghost" | "primary" | "destructive" | "success";
 
 export type ThemedButtonProps = {
-  title: string;
+  title?: string;
   onPress: (event: GestureResponderEvent) => void;
   variant?: ThemedButtonVariant;
   loading?: boolean;
@@ -50,7 +50,7 @@ export function ThemedButton({
       case "primary":
         return {
           button: { backgroundColor: theme.accent },
-          textColor: currentTheme === "dark" ? Colors.dark.background : Colors.light.background,
+          textColor: textStyle?.color ?? currentTheme === "dark" ? Colors.dark.background : Colors.light.background,
         };
       case "outline":
         return {
@@ -59,23 +59,25 @@ export function ThemedButton({
             borderColor: theme.border,
             borderWidth: 1.5,
           },
-          textColor: theme.text,
+          textColor: (textStyle?.color as string) ?? theme.text,
         };
       case "destructive":
         return {
           button: { backgroundColor: theme.danger },
-          textColor: currentTheme === "dark" ? Colors.dark.background : Colors.light.background,
+          textColor:
+            (textStyle?.color as string) ?? currentTheme === "dark" ? Colors.dark.background : Colors.light.background,
         };
       case "success":
         return {
           button: { backgroundColor: theme.success },
-          textColor: currentTheme === "dark" ? Colors.dark.background : Colors.light.background,
+          textColor:
+            (textStyle?.color as string) ?? currentTheme === "dark" ? Colors.dark.background : Colors.light.background,
         };
       case "ghost":
       default:
         return {
           button: { backgroundColor: "transparent" },
-          textColor: theme.tint,
+          textColor: (textStyle?.color as string) ?? theme.tint,
         };
     }
   };
@@ -104,22 +106,24 @@ export function ThemedButton({
           {icon && iconPlacement === "left" && (
             <IconSymbol name={icon} size={18} color={textColor} style={styles.iconLeft} />
           )}
-          <ThemedText
-            style={[
-              styles.text,
-              { color: textColor },
-              textStyle,
-              active && {
-                color: ["ghost"].includes(variant)
-                  ? Colors.light.text
-                  : ["outline"].includes(variant)
-                  ? Colors.dark.accent
-                  : textColor,
-              },
-            ]}
-          >
-            {title}
-          </ThemedText>
+          {title && (
+            <ThemedText
+              style={[
+                styles.text,
+                { color: textColor },
+                textStyle,
+                active && {
+                  color: ["ghost"].includes(variant)
+                    ? Colors.light.text
+                    : ["outline"].includes(variant)
+                    ? Colors.dark.accent
+                    : textColor,
+                },
+              ]}
+            >
+              {title}
+            </ThemedText>
+          )}
           {icon && iconPlacement === "right" && (
             <IconSymbol name={icon} size={18} color={textColor} style={styles.iconRight} />
           )}

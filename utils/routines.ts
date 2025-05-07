@@ -1,4 +1,4 @@
-import { EXERCISES, TASKS } from "@/constants/Exercises";
+import { Exercise, EXERCISES, Task, TASKS } from "@/constants/Exercises";
 import { db } from "./db";
 
 export const initRoutinesTables = () => {
@@ -71,20 +71,31 @@ export interface Routine {
   notificationTime: string;
 }
 
-export interface RoutineItem {
+export type RoutineTaskItem = Task & {
   id: number;
-  itemId: string;
-  name: string;
-  description: string;
-  notificationTime: string | null;
   addedAt: string;
-}
+  notificationTime: string | null;
+};
+export type RoutineExerciseItem = Exercise & {
+  id: number;
+  addedAt: string;
+  notificationTime: string | null;
+};
+
+export const isRoutineTaskItem = (item: RoutineItem): item is RoutineTaskItem => {
+  return (item as RoutineTaskItem).type === "task";
+};
+export const isRoutineExerciseItem = (item: RoutineItem): item is RoutineExerciseItem => {
+  return (item as RoutineExerciseItem).type === "exercise";
+};
+
+export type RoutineItem = RoutineTaskItem | RoutineExerciseItem;
 export interface RoutineWithItems extends Routine {
   items: RoutineItem[];
 }
 export const addRoutine = (routine: Omit<Routine, "id">) => {
   const items = routine.steps.map((itemId) => {
-    const item = EXERCISES.find((e) => e.id === itemId) || TASKS.find((t) => t.id === itemId);
+    const item = EXERCISES.find((e) => e.itemId === itemId) || TASKS.find((t) => t.itemId === itemId);
     if (!item) return null;
 
     const isTask = item.type === "task";
@@ -92,7 +103,7 @@ export const addRoutine = (routine: Omit<Routine, "id">) => {
     const notificationTime = isTask ? DEFAULT_NOTIFICATION_TIME : null;
 
     return {
-      id: item.id,
+      itemId: item.itemId,
       name: item.name,
       description: item.description,
       notificationTime,
@@ -111,7 +122,7 @@ export const addRoutine = (routine: Omit<Routine, "id">) => {
   items.forEach((item) => {
     if (item) {
       db.runSync(`INSERT INTO routine_items (itemId, routineId, notificationTime, addedAt) VALUES (?, ?, ?, ?)`, [
-        item.id,
+        item.itemId,
         routine.routineId,
         item.notificationTime,
         item.addedAt,
@@ -133,9 +144,22 @@ export const getUserRoutines = async () => {
     const items = (await db.getAllAsync(`SELECT * FROM routine_items WHERE routineId = ?`, [
       routine.routineId,
     ])) as RoutineItem[];
-    routine.items = items.map((item) => ({
-      ...item,
-    }));
+    routine.items = items.map((item) => {
+      const exercise = EXERCISES.find((e) => e.itemId === item.itemId);
+      const task = TASKS.find((t) => t.itemId === item.itemId);
+      if (exercise) {
+        return {
+          ...exercise,
+          ...item,
+        };
+      } else if (task) {
+        return {
+          ...task,
+          ...item,
+        };
+      }
+      return item;
+    });
   }
 
   return mappedRows as RoutineWithItems[];

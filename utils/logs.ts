@@ -10,6 +10,7 @@ export const initLogsTable = () => {
         routineId TEXT,
         type TEXT NOT NULL, -- "exercise" | "user" | "task"
         exercise TEXT,
+        task TEXT,
         duration INTEGER,
         dominantSide TEXT,
         chewingDuration INTEGER,
@@ -90,9 +91,9 @@ export interface TaskLog {
   task: string;
   completedAt: string;
 }
-export const saveTaskLog = (task: string) => {
+export const saveTaskLog = async (task: string) => {
   const now = new Date().toISOString();
-  db.runSync(`INSERT INTO logs (type, task, completedAt) VALUES ("task", ?, ?)`, [task, now]);
+  db.runAsync(`INSERT INTO logs (type, task, completedAt) VALUES ("task", ?, ?)`, [task, now]);
 };
 
 export type Log = UserLog | ExerciseLog | TaskLog;
@@ -128,4 +129,28 @@ export const getLogs = (callback?: (rows: Log[]) => void) => {
     callback(processed);
 
   return processed;
+};
+
+export const getLogsByExercise = (exercise: string, callback?: (rows: ExerciseLog[]) => void) => {
+  const rows = db.getAllSync(`SELECT * FROM logs WHERE exercise = ? ORDER BY completedAt DESC;`, [
+    exercise,
+  ]) as ExerciseLog[];
+  if (callback)
+    // Check if callback is defined before calling it
+
+    callback(rows);
+
+  return rows;
+};
+
+export const getLogsByTask = async (task: string, callback?: (rows: TaskLog[]) => void) => {
+  const rows = (await db.getAllAsync(`SELECT * FROM logs WHERE task = ? ORDER BY completedAt DESC;`, [
+    task,
+  ])) as TaskLog[];
+  if (callback)
+    // Check if callback is defined before calling it
+
+    callback(rows);
+
+  return rows;
 };

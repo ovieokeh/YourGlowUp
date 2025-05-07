@@ -5,10 +5,10 @@ import { supabase } from "@/supabase";
 import { decode } from "base64-arraybuffer"; // npm i base64-arraybuffer
 import * as ImagePicker from "expo-image-picker";
 import React, { useCallback, useMemo } from "react";
-import { Alert, Image, Pressable, StyleSheet, View } from "react-native";
+import { Image, Pressable, StyleSheet, View } from "react-native";
 import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
-import "react-native-get-random-values"; // Required for uuid
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue } from "react-native-reanimated";
+import Toast from "react-native-toast-message";
 
 export interface PhotoUploadViewProps {
   photoUri: string | null;
@@ -91,7 +91,12 @@ export function PhotoUpload({
 
       if (error) {
         console.error("Supabase upload error:", error.message);
-        Alert.alert("Upload Error", `Failed to upload image: ${error.message}`);
+        Toast.show({
+          type: "error",
+          text1: "Upload Failed",
+          text2: `Failed to upload image: ${error.message}`,
+          position: "bottom",
+        });
         return null;
       }
 
@@ -101,14 +106,23 @@ export function PhotoUpload({
         if (publicUrlData && publicUrlData.publicUrl) {
           return publicUrlData.publicUrl;
         } else {
-          Alert.alert("URL Error", "Failed to get public URL for the uploaded image.");
+          Toast.show({
+            type: "error",
+            text1: "URL Error",
+            text2: "Failed to get public URL for the uploaded image.",
+            position: "bottom",
+          });
           return null;
         }
       }
       return null;
     } catch (e: any) {
-      console.error("Upload process error:", e);
-      Alert.alert("Upload Error", `An unexpected error occurred during upload: ${e.message || e}`);
+      Toast.show({
+        type: "error",
+        text1: "Upload Error",
+        text2: `An unexpected error occurred during upload: ${e.message || e}`,
+        position: "bottom",
+      });
       return null;
     }
   };
@@ -122,7 +136,12 @@ export function PhotoUpload({
         if (type === "camera") {
           const { status } = await ImagePicker.requestCameraPermissionsAsync();
           if (status !== "granted") {
-            Alert.alert("Permission required", "Camera access is needed to take a photo.");
+            Toast.show({
+              type: "error",
+              text1: "Permission required",
+              text2: "Camera access is needed to take a photo. Enable camera access in system settings.",
+              position: "bottom",
+            });
             return;
           }
           result = await ImagePicker.launchCameraAsync({
@@ -134,7 +153,12 @@ export function PhotoUpload({
           // gallery
           const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
           if (status !== "granted") {
-            Alert.alert("Permission required", "Gallery access is needed to upload your photo.");
+            Toast.show({
+              type: "error",
+              text1: "Permission required",
+              text2: "Gallery access is needed to upload your photo. Enable gallery access in system settings.",
+              position: "bottom",
+            });
             return;
           }
           result = await ImagePicker.launchImageLibraryAsync({
@@ -146,7 +170,12 @@ export function PhotoUpload({
         }
 
         if (!result || result.canceled || !result.assets || result.assets.length === 0) {
-          Alert.alert("Error", "No image selected or operation was canceled.");
+          Toast.show({
+            type: "error",
+            text1: "No Image Selected",
+            text2: "Please select an image to upload.",
+            position: "bottom",
+          });
           return;
         }
 
@@ -154,7 +183,12 @@ export function PhotoUpload({
         const base64 = asset.base64;
 
         if (!base64) {
-          Alert.alert("Error", "Selected image was corrupted or not in required format.");
+          Toast.show({
+            type: "error",
+            text1: "Invalid Image",
+            text2: "Selected image was corrupted or not in required format.",
+            position: "bottom",
+          });
           return;
         }
 
@@ -181,9 +215,13 @@ export function PhotoUpload({
         } else {
           console.error("Upload failed, publicUrl is null");
         }
-      } catch (error) {
-        console.error("Error picking photo:", error);
-        Alert.alert("Error", "An unexpected error occurred while picking the photo.");
+      } catch {
+        Toast.show({
+          type: "error",
+          text1: "Error Picking Photo",
+          text2: "An unexpected error occurred while picking the photo.",
+          position: "bottom",
+        });
       } finally {
         setLoading?.(false);
       }

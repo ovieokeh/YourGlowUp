@@ -14,7 +14,6 @@ export default function TabLayout() {
   const border = useThemeColor({}, "border");
   const tint = useThemeColor({}, "tint");
   const accent = useThemeColor({}, "accent");
-  const text = useThemeColor({}, "text");
 
   useAwardEarnedBadges();
 
@@ -42,7 +41,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Today",
+          title: "Your Glow Up",
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="calendar" color={color} />,
           headerLeft: () => (
             <Pressable
@@ -50,10 +49,9 @@ export default function TabLayout() {
               style={{
                 padding: 10,
                 borderRadius: 100,
-                marginRight: 10,
               }}
             >
-              <IconSymbol size={34} name="person.circle" color={text} />
+              <IconSymbol size={34} name="person.circle" color={accent} />
             </Pressable>
           ),
           headerRight: () => <XPCounter />,

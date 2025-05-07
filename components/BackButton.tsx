@@ -1,13 +1,25 @@
 import { Colors } from "@/constants/Theme";
-import { useRouter } from "expo-router";
+import { Href, useRouter } from "expo-router";
+import { useSearchParams } from "expo-router/build/hooks";
 import { Pressable } from "react-native";
 import { IconSymbol } from "./ui/IconSymbol";
 
 export const BackButton = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const lastPage = searchParams.get("lastPage") || null;
 
+  console.log("Back button pressed", lastPage);
   const handleBack = () => {
-    router.replace("..");
+    if (!lastPage && router.canGoBack()) {
+      router.back();
+    } else {
+      if (lastPage) {
+        router.dismissTo(lastPage as Href);
+      } else {
+        router.replace("..");
+      }
+    }
   };
 
   return (

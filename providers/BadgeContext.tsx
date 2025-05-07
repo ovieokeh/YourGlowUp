@@ -66,14 +66,11 @@ export const BadgeProvider = ({ children }: { children: React.ReactNode }) => {
 
   const awardBadge = async (key: BadgeKey) => {
     const badge = badges[key];
-    console.log("Awarding badge:", key);
     if (!badge || badge.status === BadgeStatus.EARNED) return;
 
-    console.log("Updating badge status to EARNED");
     await updateBadge(key, BadgeStatus.EARNED);
 
     if (!shownToasts.has(key)) {
-      console.log(`Awarded badge: ${key}`);
       Toast.show({
         type: "success",
         text1: `🏅 ${badge.name} Unlocked!`,

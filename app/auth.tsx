@@ -2,7 +2,6 @@ import { Href, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -19,6 +18,7 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { useBadges } from "@/providers/BadgeContext";
 import { supabase } from "@/supabase";
 import { useSearchParams } from "expo-router/build/hooks";
+import Toast from "react-native-toast-message";
 
 export default function AuthScreen() {
   const router = useRouter();
@@ -44,10 +44,21 @@ export default function AuthScreen() {
       const { error } = await supabase.auth.signUp({ email, password });
       if (error) {
         setLoading(false);
-        Alert.alert("Sign Up Failed", error.message);
+        Toast.show({
+          type: "error",
+          text1: "Sign Up Failed",
+          text2: error.message,
+          position: "bottom",
+        });
         return;
       }
-      Alert.alert("Check your email for the confirmation link.");
+
+      Toast.show({
+        type: "success",
+        text1: "Sign Up Successful",
+        text2: "Check your email for the confirmation link.",
+        position: "bottom",
+      });
       setLoading(false);
       await awardBadge("new-beginnings");
       return;
@@ -57,7 +68,12 @@ export default function AuthScreen() {
     setLoading(false);
 
     if (error) {
-      Alert.alert("Sign In Failed", error.message);
+      Toast.show({
+        type: "error",
+        text1: "Sign In Failed",
+        text2: error.message,
+        position: "bottom",
+      });
     } else {
       if (redirectTo) {
         router.replace(redirectTo);
@@ -72,7 +88,12 @@ export default function AuthScreen() {
     const { error } = await supabase.auth.signInAnonymously();
     setLoading(false);
     if (error) {
-      Alert.alert("Anonymous Sign In Failed", error.message);
+      Toast.show({
+        type: "error",
+        text1: "Anonymous Sign In Failed",
+        text2: error.message,
+        position: "bottom",
+      });
     } else {
       if (redirectTo) {
         router.replace(redirectTo);

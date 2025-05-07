@@ -21,6 +21,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { supabase } from "@/supabase";
 import { getLogs, isUserLog, Log, saveExerciseLog, saveUserLog } from "@/utils/logs";
+import Toast from "react-native-toast-message";
 
 const NOTIF_ENABLED_KEY = "settings.notifications.enabled";
 const NOTIF_TIME_KEY = "settings.notifications.time";
@@ -49,7 +50,12 @@ export default function AccountView() {
       setLoading(false);
 
       if (error) {
-        Alert.alert("Error", "Could not fetch user");
+        Alert.alert("Error", "Could not fetch user", [
+          {
+            text: "OK",
+            onPress: () => router.push("/auth"),
+          },
+        ]);
       } else if (!currentUser) {
         // no session, redirect to auth
         router.push("/auth");
@@ -68,9 +74,19 @@ export default function AccountView() {
     });
     setSaving(false);
     if (error) {
-      Alert.alert("Save Failed", error.message);
+      Toast.show({
+        type: "error",
+        text1: "Save Failed",
+        text2: error.message,
+        position: "bottom",
+      });
     } else {
-      Alert.alert("Saved", "Your name has been updated.");
+      Toast.show({
+        type: "success",
+        text1: "Save Successful",
+        text2: "Your name has been updated.",
+        position: "bottom",
+      });
     }
   };
 
@@ -121,12 +137,22 @@ export default function AccountView() {
         });
       Sharing.shareAsync(path)
         .then(() => {
-          Alert.alert("Export Successful", "Your data has been shared.");
+          Toast.show({
+            type: "success",
+            text1: "Share Successful",
+            text2: "Your data has been shared.",
+            position: "bottom",
+          });
           FileSystem.deleteAsync(path).catch(console.error);
         })
         .catch((error) => {
           console.error("Error sharing file:", error);
-          Alert.alert("Share Failed", "An error occurred while sharing your data.");
+          Toast.show({
+            type: "error",
+            text1: "Share Failed",
+            text2: "An error occurred while sharing your data.",
+            position: "bottom",
+          });
         });
     });
   };
@@ -171,7 +197,12 @@ export default function AccountView() {
 
             Alert.alert("Import Successful", "Your data has been imported.");
           } catch {
-            Alert.alert("Invalid JSON", "The selected file is not valid.");
+            Toast.show({
+              type: "error",
+              text1: "Import Failed",
+              text2: "An error occurred while importing your data.",
+              position: "bottom",
+            });
           }
         },
       },

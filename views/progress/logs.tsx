@@ -108,7 +108,7 @@ export function ProgressLogsView() {
           />
 
           <ThemedFabButton
-            onPress={() => router.push("/(tabs)/add-user-log")}
+            onPress={() => router.push("/add-user-log")}
             icon="plus"
             iconPlacement="right"
             title="Add Log"

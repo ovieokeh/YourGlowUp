@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, FlatList, Image, ScrollView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Dimensions, FlatList, Image, ScrollView, StyleSheet, View } from "react-native";
 
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     opacity: 0.7,
     fontSize: 14,
-    width: 300,
+    width: Dimensions.get("window").width - Spacings.xl * 2,
     textAlign: "center",
     padding: Spacings.sm,
   },

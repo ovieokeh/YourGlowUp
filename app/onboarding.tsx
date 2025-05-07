@@ -1,10 +1,11 @@
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Dimensions, Image, StyleSheet, View } from "react-native";
-import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
-import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { useSharedValue, withTiming } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { Swiper } from "@/components/Swiper";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { BorderRadii, Spacings } from "@/constants/Theme";
@@ -15,7 +16,7 @@ const { width } = Dimensions.get("window");
 
 const slides = [
   {
-    title: "Welcome to FaceGlowUp",
+    title: "Welcome to YourGlowUp",
     description: "Your path to enhanced facial symmetry, improved confidence, and lasting results begins now.",
     image: require("@/assets/images/welcome-face.png"),
   },
@@ -41,11 +42,11 @@ const slides = [
     image: require("@/assets/images/ai-coach.png"),
     cta: {
       title: "See it in Action",
-      link: `/auth?redirectTo=/face-analysis`,
+      link: `/auth?redirectTo=/face-analysis?referrer=onboarding`,
     },
   },
   {
-    title: "Join the FaceGlowUp Community",
+    title: "Join the YourGlowUp Community",
     description:
       "Ready to transform your face? Join our community of users who are already experiencing the benefits of facial symmetry.",
     image: require("@/assets/images/community.png"),
@@ -84,47 +85,30 @@ export default function OnboardingScreen() {
     }
   };
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.value }],
-  }));
-
-  const swipeGesture = Gesture.Pan()
-    .onUpdate((e) => {
-      translateX.value = -(index * width) + e.translationX;
-    })
-    .onEnd(() => {
-      const newIndex = Math.min(slides.length - 1, Math.max(0, Math.round(-translateX.value / width)));
-      translateX.value = withTiming(-newIndex * width, { duration: 300 });
-      runOnJS(setIndex)(newIndex);
-      runOnJS(setOnboardingStatus)("main-onboarding", { step: newIndex, status: OnboardingStatus.IN_PROGRESS });
-    });
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <GestureDetector gesture={swipeGesture}>
-          <Animated.View style={[styles.slider, animatedStyle]}>
-            {slides.map((slide, idx) => (
-              <View key={idx} style={styles.slide}>
-                {slide.image && <Image source={slide.image} style={styles.image} resizeMode="contain" />}
-                <ThemedText type="title" style={styles.title}>
-                  {slide.title}
-                </ThemedText>
-                <ThemedText type="subtitle" style={styles.description}>
-                  {slide.description}
-                </ThemedText>
-                {slide.cta && (
-                  <ThemedButton
-                    title={slide.cta.title}
-                    onPress={() => router.replace(slide.cta.link as any)}
-                    variant="outline"
-                    style={styles.ctaButton}
-                  />
-                )}
-              </View>
-            ))}
-          </Animated.View>
-        </GestureDetector>
+        <Swiper index={index} width={width} setIndex={setIndex} length={slides.length}>
+          {slides.map((slide, idx) => (
+            <View key={idx} style={styles.slide}>
+              {slide.image && <Image source={slide.image} style={styles.image} resizeMode="contain" />}
+              <ThemedText type="title" style={styles.title}>
+                {slide.title}
+              </ThemedText>
+              <ThemedText type="subtitle" style={styles.description}>
+                {slide.description}
+              </ThemedText>
+              {slide.cta && (
+                <ThemedButton
+                  title={slide.cta.title}
+                  onPress={() => router.replace(slide.cta.link as any)}
+                  variant="outline"
+                  style={styles.ctaButton}
+                />
+              )}
+            </View>
+          ))}
+        </Swiper>
         <View style={styles.footer}>
           <View style={styles.dots}>
             {slides.map((_, idx) => (
@@ -147,7 +131,6 @@ export default function OnboardingScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  slider: { flexDirection: "row", width: width * slides.length, flex: 1 },
   slide: {
     width,
     padding: Spacings.lg,

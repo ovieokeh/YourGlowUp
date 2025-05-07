@@ -260,5 +260,5 @@ Every flow will be in one of these states:
 
 - **User-Generated Content Loop**:
 
-  - Prompt users to post #MyFaceGlowUp weekly.
+  - Prompt users to post #MyYourGlowUp weekly.
   - Gamify with monthly competitions.

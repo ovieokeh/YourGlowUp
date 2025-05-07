@@ -18,6 +18,7 @@ type Step = (typeof STEPS)[number];
 export default function FaceAnalysisScreen() {
   const params = useSearchParams();
   const activeTab = params.get("step") || "form";
+  const referrer = params.get("referrer") || "home";
   const [step, setStep] = useState<Step>(activeTab as Step);
   const [photos, setPhotos] = useState<{
     front: { uri: string; transform?: any } | null;
@@ -68,7 +69,15 @@ export default function FaceAnalysisScreen() {
     if (stepIndex > 0) {
       setStep(STEPS[stepIndex - 1]);
     } else {
-      router.back();
+      if (referrer === "onboarding") {
+        router.replace("/onboarding");
+      } else {
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace("/(tabs)");
+        }
+      }
     }
   };
 

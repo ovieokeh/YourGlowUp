@@ -1,7 +1,7 @@
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import React from "react";
-import { Dimensions, FlatList, Pressable, SafeAreaView, StyleSheet, View } from "react-native";
+import { Dimensions, FlatList, Pressable, StyleSheet, View } from "react-native";
 
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
@@ -19,38 +19,36 @@ export default function ExercisesScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaView>
-        <FlatList
-          data={EXERCISES}
-          keyExtractor={(item) => item.name}
-          contentContainerStyle={{ paddingBottom: Spacings.xl * 6 }}
-          renderItem={({ item }) => (
-            <Pressable
-              onPress={() =>
-                router.push({
-                  pathname: "/exercise/[slug]",
-                  params: { slug: encodeURIComponent(item.name) },
-                })
-              }
-              style={({ pressed }) => [
-                styles.card,
-                { backgroundColor: cardBg, borderColor: cardBorder },
-                pressed && { opacity: 0.85 },
-              ]}
-            >
-              <Image source={{ uri: item.featureImage }} style={styles.image} contentFit="cover" />
-              <View style={styles.cardContent}>
-                <ThemedText style={styles.exerciseName}>{item.name}</ThemedText>
-                <ThemedText style={styles.exerciseArea}>{item.area}</ThemedText>
-                <ThemedText numberOfLines={2} style={styles.description}>
-                  {item.description}
-                </ThemedText>
-              </View>
-            </Pressable>
-          )}
-          style={{ gap: Spacings.md }}
-        />
-      </SafeAreaView>
+      <FlatList
+        data={EXERCISES}
+        keyExtractor={(item) => item.name}
+        contentContainerStyle={{ paddingBottom: Spacings.xl * 6 }}
+        renderItem={({ item }) => (
+          <Pressable
+            onPress={() =>
+              router.push({
+                pathname: "/exercise/[slug]",
+                params: { slug: encodeURIComponent(item.name) },
+              })
+            }
+            style={({ pressed }) => [
+              styles.card,
+              { backgroundColor: cardBg, borderColor: cardBorder },
+              pressed && { opacity: 0.85 },
+            ]}
+          >
+            <Image source={{ uri: item.featureImage }} style={styles.image} contentFit="cover" />
+            <View style={styles.cardContent}>
+              <ThemedText style={styles.exerciseName}>{item.name}</ThemedText>
+              <ThemedText style={styles.exerciseArea}>{item.area}</ThemedText>
+              <ThemedText numberOfLines={2} style={styles.description}>
+                {item.description}
+              </ThemedText>
+            </View>
+          </Pressable>
+        )}
+        style={{ gap: Spacings.md }}
+      />
     </ThemedView>
   );
 }
@@ -58,7 +56,7 @@ export default function ExercisesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: Spacings.xl,
+    padding: Spacings.md,
   },
   card: {
     borderWidth: 1,

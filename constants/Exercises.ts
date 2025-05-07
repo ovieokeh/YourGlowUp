@@ -1,6 +1,21 @@
-export const EXERCISES = [
+export interface Exercise {
+  itemId: string;
+  type: "exercise";
+  name: string;
+  area: string;
+  duration: number;
+  description: string;
+  instructions: string[];
+  featureImage: string;
+  animation: string;
+  color: string;
+  itemsNeeded?: string[];
+  notificationTime?: string | null;
+}
+
+export const EXERCISES: Exercise[] = [
   {
-    id: "tongue-posture",
+    itemId: "tongue-posture",
     type: "exercise",
     name: "Tongue Posture (Mewing)",
     area: "Skull support",
@@ -19,7 +34,7 @@ export const EXERCISES = [
     color: "#FF5733",
   },
   {
-    id: "chin-tuck",
+    itemId: "chin-tuck",
     type: "exercise",
     name: "Chin Tucks",
     area: "Neck posture",
@@ -37,7 +52,7 @@ export const EXERCISES = [
     color: "#FAC800",
   },
   {
-    id: "smile-symmetry",
+    itemId: "smile-symmetry",
     type: "exercise",
     name: "Smile Symmetry Drill",
     area: "Zygomatic control",
@@ -56,7 +71,7 @@ export const EXERCISES = [
     color: "#00BFFF",
   },
   {
-    id: "chewing",
+    itemId: "chewing",
     type: "exercise",
     name: "Chewing (Mastic Gum)",
     area: "Masseter hypertrophy",
@@ -75,7 +90,7 @@ export const EXERCISES = [
     itemsNeeded: ["gum"],
   },
   {
-    id: "fish-face",
+    itemId: "fish-face",
     type: "exercise",
     name: "Fish Face",
     area: "Buccinator tone",
@@ -89,7 +104,7 @@ export const EXERCISES = [
     color: "#A0FF00",
   },
   {
-    id: "jaw-push-resist",
+    itemId: "jaw-push-resist",
     type: "exercise",
     name: "Jaw Push-Resist",
     area: "Jaw strength",
@@ -107,7 +122,7 @@ export const EXERCISES = [
     color: "#00FF7F",
   },
   {
-    id: "neck-curl-ups",
+    itemId: "neck-curl-ups",
     type: "exercise",
     name: "Neck Curl-Ups",
     area: "Cervical tone",
@@ -126,13 +141,28 @@ export const EXERCISES = [
   },
 ];
 
-export const TASKS = [
+export interface Task {
+  itemId: string;
+  type: "task";
+  name: string;
+  area: string;
+  description: string;
+  frequency?: number;
+  duration?: number;
+  featureImage?: string;
+  animation?: string;
+  instructions?: string[];
+  color?: string;
+  itemsNeeded?: string[];
+  notificationTime?: string | null;
+}
+export const TASKS: Task[] = [
   {
-    id: "cleanse",
+    itemId: "cleanse",
     type: "task",
     name: "Cleanse",
     area: "Facial Care",
-    duration: 5,
+    frequency: 5,
     description: "Wash your face with a gentle cleanser to remove impurities.",
     instructions: [
       "Use lukewarm water to wet your face.",
@@ -149,11 +179,11 @@ export const TASKS = [
     itemsNeeded: ["cleanser"],
   },
   {
-    id: "exfoliate",
+    itemId: "exfoliate",
     type: "task",
     name: "Exfoliate",
     area: "Facial Care",
-    duration: 10,
+    frequency: 10,
     description: "Exfoliate your skin to remove dead cells and promote cell turnover.",
     instructions: [
       "Apply a small amount of exfoliator to your fingertips.",
@@ -169,11 +199,11 @@ export const TASKS = [
     itemsNeeded: ["exfoliator"],
   },
   {
-    id: "serum",
+    itemId: "serum",
     type: "task",
     name: "Apply Serum",
     area: "Facial Care",
-    duration: 5,
+    frequency: 1,
     description: "Apply a hydrating serum to nourish your skin.",
     instructions: [
       "Take a few drops of serum on your fingertips.",
@@ -188,11 +218,11 @@ export const TASKS = [
     itemsNeeded: ["serum"],
   },
   {
-    id: "moisturize",
+    itemId: "moisturize",
     type: "task",
     name: "Moisturize",
     area: "Facial Care",
-    duration: 5,
+    frequency: 2,
     description: "Use a moisturizer to lock in hydration.",
     instructions: [
       "Take a small amount of moisturizer on your fingertips.",
@@ -202,7 +232,7 @@ export const TASKS = [
     itemsNeeded: ["moisturizer"],
   },
   {
-    id: "sunscreen",
+    itemId: "sunscreen",
     type: "task",
     name: "Apply Sunscreen",
     area: "Facial Care",
@@ -221,28 +251,12 @@ export const TASKS = [
     itemsNeeded: ["sunscreen"],
   },
   {
-    id: "breath",
-    type: "exercise",
-    name: "Breath Exercise",
-    area: "Relaxation",
-    duration: 5,
-    description: "Take a moment to breathe deeply and relax.",
-    instructions: ["Inhale deeply through your nose.", "Exhale slowly through your mouth."],
-    featureImage:
-      "https://lvaengmvyffyrughoqmc.supabase.co/storage/v1/object/public/app-assets/images/breath-feature-image.png",
-    animation:
-      "https://lvaengmvyffyrughoqmc.supabase.co/storage/v1/object/public/app-assets/images/breath-feature-image.png",
-    color: "#00CED1",
-    notificationTime: "random",
-  },
-  {
-    id: "hydrate",
+    itemId: "hydrate",
     type: "task",
     name: "Hydrate",
     area: "Hydration",
-    duration: 30,
+    frequency: 30,
     description: "Drink a glass of water to stay hydrated.",
-    instructions: ["Fill a glass with water.", "Drink it slowly."],
     featureImage:
       "https://lvaengmvyffyrughoqmc.supabase.co/storage/v1/object/public/app-assets/images/hydrate-feature-image.png",
     animation:
@@ -254,28 +268,28 @@ export const TASKS = [
 
 export const ROUTINES = [
   {
-    id: "morning-routine",
+    itemId: "morning-routine",
     name: "Morning Routine",
     description: "A routine for facial care and exercises to start your day.",
     notificationTime: "08:00",
     steps: ["cleanse", "serum", "moisturize", "sunscreen", "smile-symmetry"],
   },
   {
-    id: "self-love-routine",
+    itemId: "self-love-routine",
     name: "Self-Love Routine",
     description: "A routine for keeping your skin and mind healthy.",
     notificationTime: "random",
     steps: ["hydrate", "breath", "tongue-posture"],
   },
   {
-    id: "evening-routine",
+    itemId: "evening-routine",
     name: "Evening Routine",
     description: "A routine for facial care and exercises to end your day.",
     notificationTime: "20:00",
     steps: ["cleanse", "exfoliate", "serum", "moisturize", "fish-face", "chewing"],
   },
   {
-    id: "workout-routine",
+    itemId: "workout-routine",
     name: "Workout Routine",
     description: "A routine for facial exercises to enhance your workout.",
     notificationTime: "07:00",

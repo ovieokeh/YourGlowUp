@@ -1,17 +1,23 @@
 {
   "expo": {
-    "name": "FaceGlowUp",
-    "slug": "FaceGlowUp",
+    "name": "YourGlowUp",
+    "slug": "YourGlowUp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "faceglowup",
+    "scheme": "yourglowup",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.nerdylegs.FaceGlowUp",
-      "runtimeVersion": "1.0.0"
+      "bundleIdentifier": "com.nerdylegs.yourglowup",
+      "runtimeVersion": "1.0.0",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app uses the camera to take photos.",
+        "NSPhotoLibraryAddUsageDescription": "This app uses the photo library to save photos.",
+        "NSPhotoLibraryUsageDescription": "This app uses the photo library to select photos.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -22,7 +28,7 @@
       "runtimeVersion": {
         "policy": "appVersion"
       },
-      "package": "com.nerdylegs.FaceGlowUp"
+      "package": "com.nerdylegs.yourglowup"
     },
     "web": {
       "bundler": "metro",
@@ -48,12 +54,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "50981f14-aa22-46a6-aac5-b9db1afde10b"
+        "projectId": "cf9ddcde-7114-4622-aec4-08593a4b72eb"
       }
     },
-    "owner": "nerdylegs",
-    "updates": {
-      "url": "https://u.expo.dev/50981f14-aa22-46a6-aac5-b9db1afde10b"
-    }
+    "owner": "nerdylegs"
   }
 }

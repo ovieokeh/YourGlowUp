@@ -35,8 +35,6 @@ export const XPCounter = () => {
     [xp, accent]
   );
 
-  console.log("XP Counter:", badges);
-
   return (
     <>
       <Pressable style={styles.counter} onPress={() => setModalVisible(true)}>

@@ -8,7 +8,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { fetchUserXP } from "@/utils/gamification";
-import { getLogs } from "@/utils/logs";
+import { getLogsByExercise } from "@/utils/logs";
 
 export default function ExerciseCompleteScreen() {
   const [xp, setXP] = useState(0);
@@ -18,7 +18,7 @@ export default function ExerciseCompleteScreen() {
   const border = useThemeColor({}, "border");
 
   useEffect(() => {
-    getLogs(async (logs) => {
+    getLogsByExercise("exercise", async (logs) => {
       const dates = new Set(logs.map((l) => new Date(l.completedAt).toDateString()));
       let count = 0;
       const today = new Date();

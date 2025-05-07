@@ -2,7 +2,6 @@ import Slider from "@react-native-community/slider";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-  Alert,
   findNodeHandle,
   KeyboardAvoidingView,
   Platform,
@@ -14,6 +13,7 @@ import {
   View,
 } from "react-native";
 
+import { Checkbox } from "@/components/Checkbox";
 import { Collapsible } from "@/components/Collapsible";
 import { PhotoUpload, PhotoUploadViewProps } from "@/components/PhotoUpload";
 import { ThemedButton } from "@/components/ThemedButton";
@@ -22,6 +22,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { saveUserLog } from "@/utils/logs";
+import Toast from "react-native-toast-message";
 
 const TIPS = [
   "Avoid chewing only on one side — causes asymmetry.",
@@ -49,11 +50,8 @@ export default function AddUserLogScreen() {
   });
   const [isUploading, setIsUploading] = useState(false);
 
-  // useAwardEarnedBadges
-
   const borderColor = useThemeColor({}, "border");
   const inputTextColor = useThemeColor({}, "text");
-  const backgroundActive = useThemeColor({ light: Colors.light.accent, dark: Colors.dark.accent }, "accent");
 
   const scrollViewRef = React.useRef<ScrollView>(null);
   const tipsRef = React.useRef<View>(null);
@@ -70,12 +68,22 @@ export default function AddUserLogScreen() {
 
   const handleSubmit = async () => {
     if (!dominantSide || chewingDuration <= 0 || symmetryRating < 1 || symmetryRating > 5) {
-      Alert.alert("Missing or invalid input", "Please fill in all required fields with valid values.");
+      Toast.show({
+        type: "error",
+        text1: "Missing or invalid input",
+        text2: "Please fill in all required fields with valid values.",
+        position: "bottom",
+      });
       return;
     }
 
     if (gumUsed && gumChewingDuration <= 0) {
-      Alert.alert("Invalid Gum Duration", "Please specify gum chewing duration.");
+      Toast.show({
+        type: "error",
+        text1: "Invalid Gum Duration",
+        text2: "Please specify gum chewing duration.",
+        position: "bottom",
+      });
       return;
     }
 
@@ -94,8 +102,12 @@ export default function AddUserLogScreen() {
         router.replace("/(tabs)/progress?activeTab=Logs&logsTab=Self%20Reports");
       })
       .catch((err) => {
-        console.error("Error saving user log", err);
-        Alert.alert("Error", "Failed to save log. Please try again.");
+        Toast.show({
+          type: "error",
+          text1: "Error Saving Log",
+          text2: "Failed to save log. Please try again.",
+          position: "bottom",
+        });
       });
   };
 
@@ -158,21 +170,7 @@ export default function AddUserLogScreen() {
               />
             </View>
 
-            <View style={styles.checkboxRow}>
-              <Pressable onPress={() => setGumUsed((v) => !v)} style={styles.checkbox}>
-                <View
-                  style={{
-                    width: 18,
-                    height: 18,
-                    borderRadius: 4,
-                    borderWidth: 1,
-                    borderColor: inputTextColor,
-                    backgroundColor: gumUsed ? backgroundActive : "transparent",
-                  }}
-                />
-                <ThemedText>Used Chewing Gum</ThemedText>
-              </Pressable>
-            </View>
+            <Checkbox label="Used Chewing Gum" onPress={() => setGumUsed((v) => !v)} checked={gumUsed} />
 
             {gumUsed && (
               <View>
@@ -299,17 +297,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacings.sm,
     textAlign: "center",
   },
-  checkboxRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: Spacings.md,
-  },
-  checkbox: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacings.sm,
-    marginRight: Spacings.sm,
-  },
+
   textArea: {
     borderWidth: 1,
     borderRadius: BorderRadii.sm,

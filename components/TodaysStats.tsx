@@ -1,10 +1,10 @@
 import { formatDistanceToNow } from "date-fns";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { Image, StyleSheet, View } from "react-native";
 
 import { ThemedText } from "@/components/ThemedText";
-import { Log, getLogs, isExerciseLog } from "@/utils/logs";
+import { Log, getLogs, isExerciseLog, isTaskLog } from "@/utils/logs";
 
 import { BorderRadii, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
@@ -43,10 +43,19 @@ export const TodaysStats: React.FC = () => {
     (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
   )[0];
 
-  if (!exercisesToday.length) {
+  const tasksToday = todayLogs.filter((log) => isTaskLog(log));
+  const lastTask = tasksToday.sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())[0];
+
+  if (!exercisesToday.length && !tasksToday.length) {
     return (
       <View style={[styles.wrapper, { borderColor: wrapperBorder }]}>
-        <ThemedText style={styles.emptyText}>No activity yet today. Ready to crush a session?</ThemedText>
+        <Image
+          source={require("@/assets/images/empty-today-stats.png")}
+          style={{ width: 100, height: 100, marginBottom: Spacings.sm, marginHorizontal: "auto" }}
+        />
+        <ThemedText style={styles.emptyText}>
+          No activity yet today. Ready to crush a complete a task or do an exercise?
+        </ThemedText>
       </View>
     );
   }
@@ -58,18 +67,28 @@ export const TodaysStats: React.FC = () => {
       </ThemedText>
 
       <View style={styles.statsGrid}>
+        <View style={{ flexDirection: "row", gap: Spacings.sm }}>
+          <StatCard
+            icon="figure.walk.circle"
+            label="Tasks Done"
+            value={tasksToday.length.toString()}
+            color={tint}
+            muted={muted}
+            text={text}
+          />
+          <StatCard
+            icon="figure.walk.circle"
+            label="Exercises Done"
+            value={exercisesToday.length.toString()}
+            color={tint}
+            muted={muted}
+            text={text}
+          />
+        </View>
         <StatCard
           icon="calendar"
           label="Current Streak"
           value={`${streak} days`}
-          color={tint}
-          muted={muted}
-          text={text}
-        />
-        <StatCard
-          icon="figure.walk.circle"
-          label="Exercises Done"
-          value={exercisesToday.length.toString()}
           color={tint}
           muted={muted}
           text={text}
@@ -81,6 +100,20 @@ export const TodaysStats: React.FC = () => {
             label="Last Exercise"
             value={lastExercise.exercise}
             subValue={formatDistanceToNow(new Date(lastExercise.completedAt), {
+              addSuffix: true,
+            })}
+            color={tint}
+            muted={muted}
+            text={text}
+          />
+        )}
+
+        {lastTask && (
+          <StatCard
+            icon="checkmark"
+            label="Last Task"
+            value={lastTask.task}
+            subValue={formatDistanceToNow(new Date(lastTask.completedAt), {
               addSuffix: true,
             })}
             color={tint}
@@ -131,7 +164,6 @@ const StatCard = ({
 
 const styles = StyleSheet.create({
   wrapper: {
-    marginBottom: Spacings.lg,
     paddingVertical: Spacings.md,
     paddingHorizontal: Spacings.md,
     borderRadius: BorderRadii.md,

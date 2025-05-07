@@ -1,12 +1,12 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
-import { Alert, Image, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, Image, ScrollView, StyleSheet, View } from "react-native";
 import { useSharedValue, withTiming } from "react-native-reanimated";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ProgressBar } from "@/components/ProgressBar";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { EXERCISES } from "@/constants/Exercises";
 import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
@@ -14,6 +14,7 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { addXP, LOG_TYPE_XP_MAP } from "@/utils/gamification";
 import { saveExerciseLog } from "@/utils/logs";
 import { useSearchParams } from "expo-router/build/hooks";
+import Toast from "react-native-toast-message";
 
 export default function ExerciseSession() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -21,7 +22,10 @@ export default function ExerciseSession() {
   const routineId = searchParams.get("routineId") || "";
   const router = useRouter();
 
-  const exercise = useMemo(() => EXERCISES.find((e) => e.id === slug || e.name === decodeURIComponent(slug)), [slug]);
+  const exercise = useMemo(
+    () => EXERCISES.find((e) => e.itemId === slug || e.name === decodeURIComponent(slug)),
+    [slug]
+  );
 
   const [timeLeft, setTimeLeft] = useState(exercise?.duration || 0);
   const [started, setStarted] = useState(false);
@@ -49,11 +53,17 @@ export default function ExerciseSession() {
       timer = setInterval(() => setTimeLeft((t) => t - 1), 1000);
     } else if (timeLeft === 0 && started && !completed) {
       setCompleted(true);
-      Alert.alert("Well done!", "You completed the session.");
+      Toast.show({
+        type: "success",
+        text1: "Session Complete",
+        text2: `You completed ${exercise?.name} in ${(exercise?.duration ?? 0) - timeLeft} seconds.`,
+        position: "bottom",
+        visibilityTime: 3000,
+      });
     }
 
     return () => clearInterval(timer);
-  }, [completed, started, timeLeft]);
+  }, [completed, started, timeLeft, exercise?.name, exercise?.duration]);
 
   const handleStart = () => setStarted(true);
 
@@ -86,77 +96,67 @@ export default function ExerciseSession() {
   };
 
   const handleComplete = async () => {
-    if (!completed || !exercise) return;
+    if (!exercise) return;
     await saveExerciseLog(exercise.name, exercise.duration, routineId);
     addXP(LOG_TYPE_XP_MAP["exercise"] + exercise.duration)
       .catch((err) => {
         console.error("Error adding XP:", err);
       })
       .finally(() => {
-        // router.replace("/(tabs)/progress?activeTab=Logs&logsTab=Exercise%20Logs");
-        router.replace("/exercise-complete");
+        router.replace(`/exercise-complete?exercise=${exercise.name}`);
       });
   };
 
   if (!exercise) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: background }]}>
+      <ThemedView style={[styles.container, { backgroundColor: background }]}>
         <ThemedText style={styles.title}>Exercise not found.</ThemedText>
-      </SafeAreaView>
+      </ThemedView>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: background }]}>
-      <ScrollView contentContainerStyle={styles.scrollView}>
-        <ThemedText type="title">{exercise.name}</ThemedText>
-        <Image source={{ uri: exercise.animation }} style={styles.image} resizeMode="contain" />
+    <ScrollView contentContainerStyle={[styles.container, styles.scrollView]}>
+      <ThemedText type="title">{exercise.name}</ThemedText>
+      <Image source={{ uri: exercise.animation }} style={styles.image} resizeMode="contain" />
 
-        <View style={[styles.infoCard, { backgroundColor: card, borderColor: border }]}>
-          <View style={[styles.descriptionContainer, { backgroundColor: border }]}>
-            <View style={styles.infoRow}>
-              <IconSymbol name="target" size={18} color={textColor} />
-              <ThemedText style={styles.infoText}>Target Area: {exercise.area}</ThemedText>
-            </View>
-            <ThemedText style={styles.description}>{exercise.description}</ThemedText>
+      <View style={[styles.infoCard, { backgroundColor: card, borderColor: border }]}>
+        <View style={[styles.descriptionContainer, { backgroundColor: border }]}>
+          <View style={styles.infoRow}>
+            <IconSymbol name="target" size={18} color={textColor} />
+            <ThemedText style={styles.infoText}>Target Area: {exercise.area}</ThemedText>
           </View>
-          <View style={styles.instructions}>
-            <ThemedText style={styles.instructionsTitle}>Instructions:</ThemedText>
-            {exercise.instructions.map((step, idx) => (
-              <ThemedText key={idx} style={styles.step}>
-                {idx + 1}. {step}
-              </ThemedText>
-            ))}
-          </View>
+          <ThemedText style={styles.description}>{exercise.description}</ThemedText>
         </View>
-
-        <View style={{ gap: Spacings.md, width: "100%" }}>
-          {started && (
-            <View style={styles.progressContainer}>
-              <ProgressBar progress={progress} />
-              <ThemedText style={styles.timer}>{timeLeft}s remaining</ThemedText>
-            </View>
-          )}
-
-          <View style={[styles.infoRow, { justifyContent: "space-between", width: "100%" }]}>
-            <Pressable style={styles.backButton} onPress={() => router.back()} disabled={started}>
-              <IconSymbol name="arrow.backward" size={16} color={textColor} />
-              <ThemedText style={styles.backButtonText}>Back</ThemedText>
-            </Pressable>
-
-            <ThemedButton
-              title={started ? (completed ? "Finish Session" : "Quit Early") : "Start Session"}
-              onPress={started ? (completed ? handleComplete : handleQuit) : handleStart}
-              variant={started ? (completed ? "primary" : "destructive") : "success"}
-              icon={started ? (completed ? "checkmark.rectangle" : "x.circle") : "play"}
-              iconPlacement="right"
-              style={styles.startButton}
-              textStyle={styles.startButtonText}
-            />
-          </View>
+        <View style={styles.instructions}>
+          <ThemedText style={styles.instructionsTitle}>Instructions:</ThemedText>
+          {exercise.instructions.map((step, idx) => (
+            <ThemedText key={idx} style={styles.step}>
+              {idx + 1}. {step}
+            </ThemedText>
+          ))}
         </View>
-      </ScrollView>
-    </SafeAreaView>
+      </View>
+
+      <View style={{ gap: Spacings.md, width: "100%" }}>
+        {started && (
+          <View style={styles.progressContainer}>
+            <ProgressBar progress={progress} />
+            <ThemedText style={styles.timer}>{timeLeft}s remaining</ThemedText>
+          </View>
+        )}
+
+        <ThemedButton
+          title={started ? (completed ? "Finish Session" : "Quit Early") : "Start Session"}
+          onPress={started ? (completed ? handleComplete : handleQuit) : handleStart}
+          variant={started ? (completed ? "primary" : "destructive") : "success"}
+          icon={started ? (completed ? "checkmark.rectangle" : "x.circle") : "play"}
+          iconPlacement="right"
+          style={styles.startButton}
+          textStyle={styles.startButtonText}
+        />
+      </View>
+    </ScrollView>
   );
 }
 
@@ -164,11 +164,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: Spacings.md,
+    paddingBottom: Spacings.xl,
   },
   scrollView: {
     paddingHorizontal: Spacings.lg,
     alignItems: "center",
-    paddingBottom: Spacings.xl,
     gap: Spacings.md,
   },
   title: {

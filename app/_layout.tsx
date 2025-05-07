@@ -1,8 +1,9 @@
+import { BackButton } from "@/components/BackButton";
 import { ThemeProviderCustom, useAppTheme } from "@/hooks/theme/context";
 import { BadgeProvider } from "@/providers/BadgeContext";
 import { supabase } from "@/supabase";
 import { initLogsTable } from "@/utils/logs";
-import { getOnboardingStatus, OnboardingStatus, setOnboardingStatus } from "@/utils/onboarding";
+import { getOnboardingStatus, OnboardingStatus } from "@/utils/onboarding";
 import { initRoutinesTables } from "@/utils/routines";
 import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { Buffer } from "buffer";
@@ -73,10 +74,10 @@ function App() {
   useEffect(() => {
     initLogsTable();
     initRoutinesTables();
-    setOnboardingStatus("main-onboarding", {
-      step: 0,
-      status: OnboardingStatus.NOT_STARTED,
-    });
+    // setOnboardingStatus("main-onboarding", {
+    //   step: 0,
+    //   status: OnboardingStatus.NOT_STARTED,
+    // });
   }, []);
 
   if (!loaded) {
@@ -90,6 +91,14 @@ function App() {
           <Stack.Screen name="onboarding" />
           <Stack.Screen name="auth" />
           <Stack.Screen
+            name="add-user-log"
+            options={{
+              headerShown: true,
+              title: "Add a self log",
+              headerTitleAlign: "center",
+            }}
+          />
+          <Stack.Screen
             name="exercises"
             options={{
               headerShown: true,
@@ -98,9 +107,18 @@ function App() {
             }}
           />
           <Stack.Screen
+            name="exercise/[slug]"
+            options={{
+              headerShown: true,
+              title: "Exercises",
+              headerTitleAlign: "center",
+              headerLeft: () => <BackButton />,
+            }}
+          />
+          <Stack.Screen
             name="(tabs)"
             options={{
-              headerTitle: "Home",
+              title: "Home",
             }}
           />
           <Stack.Screen
