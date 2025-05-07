@@ -1,5 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getLogs, getLogsByExercise, getLogsByTask, saveExerciseLog, saveTaskLog, saveUserLog } from "./logs";
+import {
+  getLogs,
+  getLogsByExercise,
+  getLogsByTask,
+  getPhotoLogs,
+  PhotoLogCreate,
+  saveExerciseLog,
+  savePhotoLog,
+  saveTaskLog,
+} from "./logs";
 
 export const useGetLogs = () => {
   return useQuery({
@@ -38,11 +47,11 @@ export const useSaveExerciseLog = (routineId: string) => {
   });
 };
 
-export const useSaveUserLog = () => {
+export const useSavePhotoLog = (routineId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationKey: ["logs"],
-    mutationFn: (log: any) => saveUserLog(log),
+    mutationFn: (args: PhotoLogCreate) => savePhotoLog({ ...args, routineId }),
     onSuccess: () => {
       // Invalidate the query to refetch the data
       queryClient.invalidateQueries({ queryKey: ["logs"] });
@@ -59,5 +68,13 @@ export const useSaveTaskLog = () => {
       // Invalidate the query to refetch the data
       queryClient.invalidateQueries({ queryKey: ["logs"] });
     },
+  });
+};
+
+export const useGetPhotoLogs = (routineId: string) => {
+  return useQuery({
+    queryKey: ["logs", routineId],
+    queryFn: () => getPhotoLogs(routineId),
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };

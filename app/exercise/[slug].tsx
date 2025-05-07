@@ -59,7 +59,7 @@ export default function ExerciseSession() {
         type: "success",
         text1: "Session Complete",
         text2: `You completed ${exercise?.name} in ${(exercise?.duration ?? 0) - timeLeft} seconds.`,
-        position: "bottom",
+        position: "top",
         visibilityTime: 3000,
       });
     }

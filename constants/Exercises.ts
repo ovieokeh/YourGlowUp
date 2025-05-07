@@ -138,6 +138,7 @@ interface TaskQuestion {
   minLength?: number;
   maxLength?: number;
   placeholder?: string;
+  reliesOn?: string;
 }
 export interface Task extends SharedExerciseAndTask {
   type: "task";
@@ -270,7 +271,17 @@ export const TASKS: Task[] = [
     questions: [
       {
         questionId: "dominantSide",
-        question: "How long did you chew?",
+        question: "Which side did you chew with the most?",
+        answer: "",
+        answerType: "select",
+        options: ["Left", "Right", "Both Equally", "Unsure"],
+        required: true,
+        placeholder: "Select a side",
+        minLength: 1,
+      },
+      {
+        questionId: "dominantSide",
+        question: "How long did you chew? (in minutes)",
         answer: "",
         answerType: "number",
         min: 1,
@@ -287,13 +298,14 @@ export const TASKS: Task[] = [
       },
       {
         questionId: "gumChewingDuration",
-        question: "How long did you chew gum?",
+        question: "How long did you chew gum? (in minutes)",
         answer: "",
         answerType: "number",
         min: 1,
         max: 120,
         required: false,
         placeholder: "Duration in minutes",
+        reliesOn: "gumUsed",
       },
     ],
   },

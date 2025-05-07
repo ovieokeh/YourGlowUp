@@ -102,7 +102,7 @@ export default function FaceAnalysisActionsView({ analysisResults }: FaceAnalysi
         routineId: "my-routine",
         name: "My Routine",
         description: "Routine based on facial analysis on " + new Date().toLocaleDateString(),
-        steps: [...selected],
+        itemsIds: [...selected],
       })
       .then(() => {
         router.replace("/(tabs)/routines/my-routine");

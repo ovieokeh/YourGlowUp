@@ -12,9 +12,10 @@ import { RoutineExerciseItem } from "@/queries/routines/routines";
 
 interface ExerciseCardProps {
   item: RoutineExerciseItem;
+  mode?: "display" | "action";
   handlePress: () => void;
 }
-export const ExerciseCard = ({ item, handlePress }: ExerciseCardProps) => {
+export const ExerciseCard = ({ item, mode = "display", handlePress }: ExerciseCardProps) => {
   const cardBg = useThemeColor({}, "background");
   const cardBorder = useThemeColor({}, "border");
   const textColor = useThemeColor({}, "text");
@@ -33,6 +34,7 @@ export const ExerciseCard = ({ item, handlePress }: ExerciseCardProps) => {
     const today = new Date().toISOString().split("T")[0];
     return logs.filter((log) => log.completedAt.startsWith(today));
   }, [logs]);
+  const hasTodayLogs = useMemo(() => todayLogs.length > 0, [todayLogs]);
 
   const readableDuration = (duration: number) => {
     const minutes = Math.floor(duration / 60);
@@ -55,9 +57,14 @@ export const ExerciseCard = ({ item, handlePress }: ExerciseCardProps) => {
         styles.card,
         { backgroundColor: cardBg, borderColor: cardBorder },
         pressed && { opacity: 0.85 },
-        todayLogs.length > 0 && {
-          opacity: 0.5,
-          borderColor: successColor,
+        {
+          backgroundColor: cardBg,
+          ...(mode === "action"
+            ? {
+                borderColor: hasTodayLogs ? successColor : cardBorder,
+                opacity: hasTodayLogs ? 0.5 : 1,
+              }
+            : {}),
         },
       ]}
     >
@@ -83,7 +90,7 @@ export const ExerciseCard = ({ item, handlePress }: ExerciseCardProps) => {
         </View>
         <ThemedText style={styles.exerciseName}>{item.name}</ThemedText>
 
-        {todayLogs.length > 0 && (
+        {mode === "action" && hasTodayLogs && (
           <View style={styles.row}>
             <ThemedText style={[styles.description, { color: textColor }]}>
               Completed {todayLogs.length} {todayLogs.length > 1 ? "times" : "time"} today already

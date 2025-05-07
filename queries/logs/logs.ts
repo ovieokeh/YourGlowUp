@@ -4,13 +4,14 @@ export const initLogsTable = (reset?: boolean) => {
   if (reset) {
     // drop the table if it exists
     db.execSync("DROP TABLE IF EXISTS logs;");
+    db.execSync("DROP TABLE IF EXISTS photo_logs;");
   }
   // create the table
   db.execSync(
     `CREATE TABLE IF NOT EXISTS logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         routineId TEXT,
-        type TEXT NOT NULL, -- "exercise" | "user" | "task"
+        type TEXT NOT NULL, -- "exercise" | "task"
         exercise TEXT,
         task TEXT,
         duration INTEGER,
@@ -24,6 +25,18 @@ export const initLogsTable = (reset?: boolean) => {
         transform TEXT,
         completedAt TEXT NOT NULL
     );`
+  );
+
+  db.execSync(
+    `CREATE TABLE IF NOT EXISTS photo_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        routineId TEXT NOT NULL,
+        createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        photos TEXT NOT NULL,
+        type TEXT NOT NULL DEFAULT "photo",
+        notes TEXT
+      )
+    `
   );
 };
 
@@ -47,50 +60,66 @@ export const saveExerciseLog = async (exercise: string, duration: number, routin
   });
 };
 
-export interface UserLogCreate {
-  dominantSide: string;
-  chewingDuration: number;
-  gumUsed: boolean;
-  gumChewingDuration?: number;
-  symmetryRating: number;
+export interface PhotoLogTransform {
+  scale: number;
+  x: number;
+  y: number;
+}
+export interface PhotoLogCreate {
+  front: { uri: string; transform?: PhotoLogTransform } | null;
+  left: { uri: string; transform?: PhotoLogTransform } | null;
+  right: { uri: string; transform?: PhotoLogTransform } | null;
   notes?: string;
-  photoUri?: string;
-  transform?: {
-    scale: number;
-    x: number;
-    y: number;
-  };
 }
-export interface UserLog extends UserLogCreate {
+export interface PhotoLog {
   id: number;
+  routineId: string;
   type: "user";
-  completedAt: string;
+  createdAt: string;
+  photos: PhotoLogCreate;
 }
-export const saveUserLog = async (log: UserLogCreate) => {
+export const savePhotoLog = async (
+  log: PhotoLogCreate & {
+    routineId: string;
+  }
+) => {
   const now = new Date().toISOString();
-  return db.runAsync(
-    `INSERT INTO logs 
-       (type, dominantSide, chewingDuration, gumUsed, gumChewingDuration, symmetryRating, notes, photoUri, transform, completedAt)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
-    [
-      "user",
-      log.dominantSide,
-      log.chewingDuration,
-      log.gumUsed ? 1 : 0,
-      log.gumChewingDuration || 0,
-      log.symmetryRating,
-      log.notes || "",
-      log.photoUri || "",
-      log.transform ? JSON.stringify(log.transform) : "",
+  return db
+    .runAsync(`INSERT INTO photo_logs (routineId, createdAt, photos, notes) VALUES (?, ?, ?, ?)`, [
+      log.routineId,
       now,
-    ]
-  );
+      JSON.stringify({
+        front: log.front,
+        left: log.left,
+        right: log.right,
+      }),
+      log.notes ?? "",
+    ])
+    .catch((err) => {
+      console.error("Error saving photo log", err);
+    });
+};
+
+export const getPhotoLogs = async (routineId: string) => {
+  const rows = (await db.getAllAsync(`SELECT * FROM photo_logs WHERE routineId = ? ORDER BY createdAt DESC;`, [
+    routineId,
+  ])) as PhotoLog[];
+  return rows.map((row) => {
+    if (row && row.photos) {
+      return {
+        ...row,
+        photos: JSON.parse(row.photos as unknown as string) as PhotoLogCreate,
+      };
+    }
+    return row;
+  });
 };
 
 export interface TaskLog {
   id: number;
   type: "task";
   task: string;
+  notes: string;
   completedAt: string;
 }
 export const saveTaskLog = async (task: string, note?: string) => {
@@ -98,10 +127,8 @@ export const saveTaskLog = async (task: string, note?: string) => {
   db.runAsync(`INSERT INTO logs (type, task, notes, completedAt) VALUES ("task", ?, ?, ?)`, [task, note ?? "", now]);
 };
 
-export type Log = UserLog | ExerciseLog | TaskLog;
-export const isUserLog = (log: Log): log is UserLog => {
-  return log.type === "user";
-};
+export type Log = ExerciseLog | TaskLog;
+
 export const isExerciseLog = (log: Log): log is ExerciseLog => {
   return log.type === "exercise";
 };
@@ -111,22 +138,7 @@ export const isTaskLog = (log: Log): log is TaskLog => {
 
 export const getLogs = async () => {
   const rows = (await db.getAllAsync(`SELECT * FROM logs ORDER BY completedAt DESC;`)) as Log[];
-  const processed = rows.map((row) => {
-    if (row && isUserLog(row)) {
-      return {
-        ...row,
-        transform: row.transform ? JSON.parse(row.transform as unknown as string) : undefined,
-      };
-    } else if (isExerciseLog(row)) {
-      return {
-        ...row,
-        exercise: row.exercise || "",
-      };
-    }
-    return row;
-  });
-
-  return processed;
+  return rows;
 };
 
 export const getLogsByExercise = async (exercise: string, callback?: (rows: ExerciseLog[]) => void) => {

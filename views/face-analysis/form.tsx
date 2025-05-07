@@ -24,6 +24,8 @@ interface Props {
       right: { uri: string; transform?: any } | null;
     }>
   >;
+  showPreview?: boolean;
+  allowTransform?: boolean;
   setErrors: React.Dispatch<React.SetStateAction<{ front: boolean; left: boolean; right: boolean }>>;
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   onTransformChange: (key: "front" | "left" | "right", transform: any) => void;
@@ -33,6 +35,8 @@ export default function FaceAnalysisFormView({
   photos,
   errors,
   loading,
+  showPreview = false,
+  allowTransform = false,
   setErrors,
   setPhotos,
   setLoading,
@@ -71,6 +75,9 @@ export default function FaceAnalysisFormView({
         error={errors.front}
         loading={loading}
         setLoading={setLoading}
+        showPreview={showPreview}
+        allowTransform={allowTransform}
+        overlay={require("@/assets/images/eyes-overlay.png")}
       />
 
       <Field
@@ -81,6 +88,8 @@ export default function FaceAnalysisFormView({
         error={errors.left}
         loading={loading}
         setLoading={setLoading}
+        showPreview={showPreview}
+        allowTransform={allowTransform}
       />
 
       <Field
@@ -91,6 +100,8 @@ export default function FaceAnalysisFormView({
         error={errors.right}
         loading={loading}
         setLoading={setLoading}
+        showPreview={showPreview}
+        allowTransform={allowTransform}
       />
     </ScrollView>
   );
@@ -99,18 +110,24 @@ export default function FaceAnalysisFormView({
 function Field({
   label,
   photo,
+  loading = false,
+  error,
+  showPreview = false,
+  allowTransform = false,
+  overlay,
   onPick,
   onTransformChange,
-  error,
-  loading = false,
   setLoading,
 }: {
   label: string;
   photo: { uri: string; transform?: any } | null;
+  loading?: boolean;
+  error?: boolean;
+  showPreview?: boolean;
+  allowTransform?: boolean;
+  overlay?: number;
   onPick: PhotoUploadViewProps["onPickPhoto"];
   onTransformChange: (t: any) => void;
-  error?: boolean;
-  loading?: boolean;
   setLoading?: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   return (
@@ -118,11 +135,13 @@ function Field({
       <ThemedText style={styles.label}>{label}</ThemedText>
       <PhotoUpload
         photoUri={photo?.uri || null}
+        initialTransform={photo?.transform}
+        loading={loading}
+        showPreview={showPreview}
+        allowTransform={allowTransform}
         onPickPhoto={onPick}
         onTransformChange={onTransformChange}
-        initialTransform={photo?.transform}
-        // showPreview={false}
-        loading={loading}
+        overlayImage={overlay}
         setLoading={setLoading}
       />
       {error && <ThemedText style={styles.errorText}>This view is required</ThemedText>}
@@ -131,10 +150,7 @@ function Field({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: Spacings.sm,
-    paddingBottom: Spacings.xl * 2,
-  },
+  container: {},
   title: {
     fontSize: 22,
     fontWeight: "700",

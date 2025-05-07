@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useMemo } from "react";
 import { Image, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -8,29 +8,28 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useGetUserXP } from "@/queries/gamification";
-import { getLogsByExercise } from "@/queries/logs/logs";
+import { useGetLogsByExercise } from "@/queries/logs";
 
 export default function ExerciseCompleteScreen() {
-  const [streak, setStreak] = useState(0);
   const router = useRouter();
+  const logsQuery = useGetLogsByExercise("exercise");
+  const logs = useMemo(() => logsQuery.data || [], [logsQuery.data]);
 
   const userXPQuery = useGetUserXP();
   const xp = userXPQuery.data || 0;
 
   const border = useThemeColor({}, "border");
 
-  useEffect(() => {
-    getLogsByExercise("exercise", async (logs) => {
-      const dates = new Set(logs.map((l) => new Date(l.completedAt).toDateString()));
-      let count = 0;
-      const today = new Date();
-      while (dates.has(today.toDateString())) {
-        count++;
-        today.setDate(today.getDate() - 1);
-      }
-      setStreak(count);
-    });
-  }, []);
+  const streak = useMemo(() => {
+    const dates = new Set(logs.map((l) => new Date(l.completedAt).toDateString()));
+    let count = 0;
+    const today = new Date();
+    while (dates.has(today.toDateString())) {
+      count++;
+      today.setDate(today.getDate() - 1);
+    }
+    return count;
+  }, [logs]);
 
   return (
     <SafeAreaView style={{ flex: 1 }}>

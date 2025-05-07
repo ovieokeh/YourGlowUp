@@ -167,14 +167,14 @@ export const updateRoutine = async (routineId: string, updatedRoutine: Partial<R
 
     const finalName = name ?? originalRoutine.name;
     const finalDescription = description ?? originalRoutine.description;
-    const finalItems = itemsIds ?? originalRoutine.itemsIds;
+    const finalItems = itemsIds ?? originalRoutine?.itemsIds;
 
     if (!originalRoutine || originalRoutine.routineId !== routineId) {
       const add = await addRoutine({
         routineId,
         name: finalName,
         description: finalDescription,
-        itemsIds: finalItems,
+        itemsIds: itemsIds || [],
       });
       return add;
     }
@@ -190,7 +190,7 @@ export const updateRoutine = async (routineId: string, updatedRoutine: Partial<R
 
     if (replace) {
       // remove items that are not in the new items
-      const itemsToRemove = originalRoutine.items.filter((item) => !finalItems.includes(item.itemId));
+      const itemsToRemove = originalRoutine.items?.filter((item) => !finalItems.includes(item.itemId));
       for (const item of itemsToRemove) {
         await db.runAsync(`DELETE FROM routine_items WHERE itemId = ? AND routineId = ?`, [item.itemId, routineId]);
         changes++;

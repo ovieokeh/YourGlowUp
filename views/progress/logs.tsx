@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
-import { FlatList, Image, StyleSheet, View } from "react-native";
+import { FlatList, StyleSheet, View } from "react-native";
 
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedFabButton } from "@/components/ThemedFabButton";
@@ -9,16 +9,25 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useGetLogs } from "@/queries/logs";
-import { ExerciseLog, isExerciseLog, isUserLog, UserLog } from "@/queries/logs/logs";
+import { ExerciseLog, isExerciseLog, isTaskLog, TaskLog } from "@/queries/logs/logs";
 
-const TABS = ["Self Reports", "Exercise Logs"] as const;
+const TABS = ["Tasks", "Exercises"] as const;
+
+const renderTaskNote = (note: string) => {
+  try {
+    const parsedNote = JSON.parse(note);
+    return JSON.stringify(parsedNote, null, 2);
+  } catch {
+    return note;
+  }
+};
 
 export function ProgressLogsView() {
   const router = useRouter();
   const logsQuery = useGetLogs();
   const logs = logsQuery.data || [];
   const params = useLocalSearchParams();
-  const initialTab = params.logsTab === "Exercise Logs" ? "Exercise Logs" : "Self Reports";
+  const initialTab = params.logsTab === "Exercises" ? "Exercises" : "Tasks";
 
   const [activeTab, setActiveTab] = useState<(typeof TABS)[number]>(initialTab);
 
@@ -26,11 +35,9 @@ export function ProgressLogsView() {
   const cardBorder = useThemeColor({ light: Colors.light.border, dark: Colors.dark.border }, "border");
   const underline = useThemeColor({}, "tint");
   const iconColor = useThemeColor({}, "text");
-  const success = useThemeColor({}, "success");
-  const danger = useThemeColor({}, "danger");
 
   const exerciseLogs = logs.filter(isExerciseLog) as ExerciseLog[];
-  const userLogs = logs.filter(isUserLog) as UserLog[];
+  const taskLogs = logs.filter(isTaskLog) as TaskLog[];
 
   const handleTabPress = (tab: (typeof TABS)[number], index: number) => {
     setActiveTab(tab);
@@ -50,52 +57,30 @@ export function ProgressLogsView() {
         ))}
       </View>
 
-      {activeTab === "Self Reports" ? (
+      {activeTab === "Tasks" ? (
         <>
           <FlatList
             contentContainerStyle={styles.list}
-            data={userLogs}
+            data={taskLogs}
             keyExtractor={(item) => item.id.toString()}
             ListEmptyComponent={() => (
               <View style={styles.emptyState}>
-                <ThemedText style={styles.emptyText}>No self reports yet.</ThemedText>
+                <ThemedText style={styles.emptyText}>No tasks completed yet.</ThemedText>
               </View>
             )}
             renderItem={({ item }) => (
               <View style={[styles.log, { backgroundColor: cardBg, borderColor: cardBorder }]}>
-                {item.photoUri && <Image source={{ uri: item.photoUri }} style={styles.photo} />}
-                <View style={styles.row}>
-                  <IconSymbol name="face.smiling.fill" size={18} color={iconColor} />
-                  <ThemedText style={styles.rowText}>
-                    Dominant side: <ThemedText style={styles.bold}>{item.dominantSide}</ThemedText>
-                  </ThemedText>
-                </View>
-                <View style={styles.row}>
-                  <IconSymbol name="clock" size={18} color={iconColor} />
-                  <ThemedText style={styles.rowText}>
-                    Chewing duration: <ThemedText style={styles.bold}>{item.chewingDuration} min</ThemedText>
-                  </ThemedText>
-                </View>
-                <View style={styles.row}>
-                  <IconSymbol
-                    name={item.gumUsed ? "checkmark.circle" : "xmark.circle"}
-                    size={18}
-                    color={item.gumUsed ? success : danger}
-                  />
-                  <ThemedText style={styles.rowText}>
-                    {item.gumUsed ? `Gum: ${item.gumChewingDuration} min` : "No gum used"}
-                  </ThemedText>
-                </View>
-                <View style={styles.row}>
-                  <IconSymbol name="face.smiling" size={18} color={iconColor} />
-                  <ThemedText style={styles.rowText}>
-                    Symmetry rating: <ThemedText style={styles.bold}>{item.symmetryRating}</ThemedText>
-                  </ThemedText>
-                </View>
+                <ThemedText style={styles.rowText}>{item.task}</ThemedText>
                 {item.notes && (
-                  <View style={styles.row}>
-                    <IconSymbol name="message" size={18} color={iconColor} />
-                    <ThemedText style={styles.rowText}>Notes: {item.notes}</ThemedText>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      backgroundColor: Colors.light.gray10,
+                      padding: Spacings.sm,
+                    }}
+                  >
+                    <IconSymbol name="pencil.and.scribble" size={18} color={iconColor} />
+                    <ThemedText style={styles.rowText}>{renderTaskNote(item.notes)}</ThemedText>
                   </View>
                 )}
                 <ThemedText style={styles.timestamp}>{new Date(item.completedAt).toLocaleString()}</ThemedText>
@@ -104,10 +89,10 @@ export function ProgressLogsView() {
           />
 
           <ThemedFabButton
-            onPress={() => router.push("/add-user-log")}
+            onPress={() => router.push("/add-photo-log")}
             icon="plus"
             iconPlacement="right"
-            title="Add Log"
+            title="Log progress"
             variant="solid"
           />
         </>

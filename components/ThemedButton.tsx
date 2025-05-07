@@ -27,6 +27,7 @@ export type ThemedButtonProps = {
   textStyle?: TextStyle;
   icon?: IconSymbolName;
   iconPlacement?: "left" | "right";
+  iconSize?: number;
 };
 
 export function ThemedButton({
@@ -40,6 +41,7 @@ export function ThemedButton({
   textStyle,
   icon,
   iconPlacement = "left",
+  iconSize = 18,
 }: ThemedButtonProps) {
   const currentTheme = useThemeColor({}, "background") === Colors.dark.background ? "dark" : "light";
   const theme = Colors[currentTheme];
@@ -104,7 +106,7 @@ export function ThemedButton({
       ) : (
         <View style={styles.row}>
           {icon && iconPlacement === "left" && (
-            <IconSymbol name={icon} size={18} color={textColor} style={styles.iconLeft} />
+            <IconSymbol name={icon} size={iconSize} color={textColor} style={styles.iconLeft} />
           )}
           {title && (
             <ThemedText
@@ -125,7 +127,7 @@ export function ThemedButton({
             </ThemedText>
           )}
           {icon && iconPlacement === "right" && (
-            <IconSymbol name={icon} size={18} color={textColor} style={styles.iconRight} />
+            <IconSymbol name={icon} size={iconSize} color={textColor} style={styles.iconRight} />
           )}
         </View>
       )}

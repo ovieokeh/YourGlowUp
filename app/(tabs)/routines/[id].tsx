@@ -27,7 +27,6 @@ export default function RoutinesSingleScreen() {
   const { data: pendingItems } = pendingItemsQuery;
 
   const backgroundColor = useThemeColor({}, "background");
-  const borderColor = useThemeColor({}, "border");
 
   if (isLoading) {
     // Show a loading state while fetching the routine
@@ -64,9 +63,17 @@ export default function RoutinesSingleScreen() {
         <Stack.Screen options={{ title: routine.name }} />
         <ThemedText>Customise your routine or generate a routine from a new face analysis.</ThemedText>
 
-        <View style={{ flexDirection: "row", gap: Spacings.sm, marginBottom: Spacings.md }}>
+        <View style={{ gap: Spacings.sm, marginBottom: Spacings.md }}>
           <ThemedButton
             variant="outline"
+            title="Generate AI Routine"
+            onPress={() => {
+              router.push("/face-analysis");
+            }}
+            icon="wand.and.stars"
+          />
+          <ThemedButton
+            variant="solid"
             title={hasPendingItems ? "Start next exercise" : "View your progress"}
             onPress={() => {
               if (hasPendingItems) {
@@ -126,14 +133,6 @@ export default function RoutinesSingleScreen() {
             </ThemedText>
           )}
         </View>
-        <ThemedButton
-          variant="solid"
-          title="Generate AI Routine"
-          onPress={() => {
-            router.push("/face-analysis");
-          }}
-          icon="wand.and.stars"
-        />
       </ScrollView>
       <ThemedFabButton
         variant="outline"
@@ -146,7 +145,7 @@ export default function RoutinesSingleScreen() {
         bottom={96}
         style={{
           backgroundColor: backgroundColor,
-          borderColor: borderColor,
+          borderColor: "transparent",
         }}
       />
       <RoutineItemsModal

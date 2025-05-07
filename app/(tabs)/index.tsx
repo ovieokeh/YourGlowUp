@@ -29,7 +29,7 @@ export default function HomeScreen() {
           routineId: "my-routine",
           name: "My Routine",
           description: "Your default routine",
-          steps: ["tongue-posture"],
+          itemsIds: ["tongue-posture"],
         });
       }
     }, [mutate, routine, routineQuery.isSuccess])
@@ -49,7 +49,7 @@ export default function HomeScreen() {
               Today&apos;s tasks
             </ThemedText>
             {tasks.map((item) => (
-              <TaskCard key={item.id + item.itemId} item={item} handlePress={() => {}} allowCompletion />
+              <TaskCard key={item.id + item.itemId} item={item} handlePress={() => {}} allowCompletion mode="action" />
             ))}
             {tasks.length === 0 && (
               <ThemedText type="default" style={{ padding: Spacings.sm }}>
@@ -72,6 +72,7 @@ export default function HomeScreen() {
                     params: { slug: encodeURIComponent(item.name), routineId: routine?.routineId },
                   })
                 }
+                mode="action"
               />
             ))}
             {exercises.length === 0 && (
@@ -92,10 +93,10 @@ export default function HomeScreen() {
       </ScrollView>
 
       <ThemedFabButton
-        onPress={() => router.push("/add-user-log")}
+        onPress={() => router.push("/add-photo-log")}
         icon="plus"
         iconPlacement="right"
-        title="Add Log"
+        title="Log progress"
         variant="solid"
         bottom={96}
       />

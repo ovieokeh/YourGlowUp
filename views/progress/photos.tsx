@@ -8,14 +8,14 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useGetLogs } from "@/queries/logs";
-import { isUserLog, UserLog } from "@/queries/logs/logs";
+import { useGetPhotoLogs } from "@/queries/logs";
+import { PhotoLog } from "@/queries/logs/logs";
 
 const RANGE_OPTIONS = ["7d", "30d", "3mo", "all"];
 
-export function ProgressTrackView() {
+export function ProgressPhotoView() {
   const router = useRouter();
-  const logsQuery = useGetLogs();
+  const logsQuery = useGetPhotoLogs("my-routine");
   const logs = useMemo(() => logsQuery.data || [], [logsQuery.data]);
   const [range, setRange] = useState<"7d" | "30d" | "3mo" | "all">("30d");
 
@@ -34,31 +34,14 @@ export function ProgressTrackView() {
   }, [now, range]);
 
   const filtered = useMemo(
-    () =>
-      logs.filter(isUserLog).filter((l) => (rangeStart ? new Date(l.completedAt) >= rangeStart! : true)) as UserLog[],
+    () => logs.filter((l) => (rangeStart ? new Date(l.createdAt) >= rangeStart! : true)) as PhotoLog[],
     [logs, rangeStart]
   );
-
-  const photoURIs = useMemo(() => {
-    const photos = filtered
-      .filter(isUserLog)
-      .filter((l) => l.photoUri)
-      .map((l) => ({
-        uri: l.photoUri!,
-        transform: (l.transform
-          ? typeof l.transform === "string"
-            ? JSON.parse(l.transform as unknown as string)
-            : l.transform
-          : undefined) as { scale: number; x: number; y: number } | undefined,
-      }))
-      .filter(Boolean);
-    return photos ?? [];
-  }, [filtered]);
 
   return (
     <ScrollView contentContainerStyle={{ flex: 1 }}>
       <ThemedView style={styles.container}>
-        {photoURIs.length ? (
+        {filtered.length ? (
           <View style={styles.selectorRow}>
             {RANGE_OPTIONS.map((r) => (
               <Pressable
@@ -76,14 +59,14 @@ export function ProgressTrackView() {
           </View>
         ) : null}
 
-        <ProgressReview photos={photoURIs} />
+        <ProgressReview photoLogs={filtered} />
 
         <ThemedFabButton
           icon="camera"
-          title="Add log"
+          title="Log progress"
           onPress={() => {
             router.push({
-              pathname: "/add-user-log",
+              pathname: "/add-photo-log",
               params: { activeTab: "Self Reports" },
             });
           }}

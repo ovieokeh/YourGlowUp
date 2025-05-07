@@ -75,6 +75,7 @@ function App() {
   }, [loaded]);
 
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const nuke = async () => {
       initLogsTable(true);
       initRoutinesTables(true);
@@ -85,7 +86,7 @@ function App() {
         status: OnboardingStatus.NOT_STARTED,
       });
     };
-    nuke();
+    // nuke();
   }, []);
 
   if (!loaded) {
@@ -100,10 +101,10 @@ function App() {
             <Stack.Screen name="onboarding" />
             <Stack.Screen name="auth" />
             <Stack.Screen
-              name="add-user-log"
+              name="add-photo-log"
               options={{
                 headerShown: true,
-                title: "Add log",
+                title: "Log progress",
                 headerTitleAlign: "center",
               }}
             />

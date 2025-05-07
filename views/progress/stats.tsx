@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Dimensions, Pressable, ScrollView, StyleSheet, View } from "react-native";
-import { LineChart, PieChart } from "react-native-chart-kit";
+import { PieChart } from "react-native-chart-kit";
 
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
@@ -8,10 +8,10 @@ import { EXERCISES } from "@/constants/Exercises";
 import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useGetLogs } from "@/queries/logs";
-import { isExerciseLog, isUserLog, UserLog } from "@/queries/logs/logs";
+import { isExerciseLog, isTaskLog } from "@/queries/logs/logs";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
-const CHART_WIDTH = SCREEN_WIDTH - 32;
+// const CHART_WIDTH = SCREEN_WIDTH - 32;
 const CHART_HEIGHT = 200;
 const RANGE_OPTIONS = ["7d", "30d", "3mo", "all"];
 
@@ -52,47 +52,48 @@ export function ProgressStatsView() {
     return count;
   }, [logs]);
 
-  const userLogs = useMemo(() => filtered.filter(isUserLog) as UserLog[], [filtered]);
+  // const userLogs = useMemo(() => filtered.filter(isUserLog) as UserLog[], [filtered]);
 
-  const symmetryAvg = useMemo(() => {
-    const vals = userLogs.map((l) => l.symmetryRating);
-    if (!vals.length) return "N/A";
-    const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-    return avg.toFixed(2);
-  }, [userLogs]);
+  // const symmetryAvg = useMemo(() => {
+  //   const vals = userLogs.map((l) => l.symmetryRating);
+  //   if (!vals.length) return "N/A";
+  //   const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+  //   return avg.toFixed(2);
+  // }, [userLogs]);
 
-  const chewingTime = useMemo(() => {
-    const totalMin = userLogs.filter(isUserLog).reduce((sum, l) => sum + (l.chewingDuration || 0), 0);
-    return `${Math.floor(totalMin / 60)}h ${totalMin % 60}m`;
-  }, [userLogs]);
+  // const chewingTime = useMemo(() => {
+  //   const totalMin = userLogs.filter(isUserLog).reduce((sum, l) => sum + (l.chewingDuration || 0), 0);
+  //   return `${Math.floor(totalMin / 60)}h ${totalMin % 60}m`;
+  // }, [userLogs]);
 
-  const gumTime = useMemo(() => {
-    const totalMin = userLogs.filter(isUserLog).reduce((sum, l) => sum + (l.gumChewingDuration || 0), 0);
-    return `${Math.floor(totalMin / 60)}h ${totalMin % 60}m`;
-  }, [userLogs]);
+  // const gumTime = useMemo(() => {
+  //   const totalMin = userLogs.filter(isUserLog).reduce((sum, l) => sum + (l.gumChewingDuration || 0), 0);
+  //   return `${Math.floor(totalMin / 60)}h ${totalMin % 60}m`;
+  // }, [userLogs]);
 
-  const lineData = useMemo(() => {
-    const map = new Map<string, number[]>();
-    userLogs.filter(isUserLog).forEach((l) => {
-      const day = new Date(l.completedAt).toLocaleDateString();
-      if (map.has(day)) {
-        map.get(day)!.push(l.symmetryRating);
-      } else {
-        map.set(day, [l.symmetryRating]);
-      }
-    });
-    const labels = Array.from(map.keys()).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
-    const data = labels.map((date) => {
-      const arr = map.get(date)!;
-      return arr.reduce((a, b) => a + b, 0) / arr.length;
-    });
-    return { labels, datasets: [{ data }] };
-  }, [userLogs]);
+  // const lineData = useMemo(() => {
+  //   const map = new Map<string, number[]>();
+  //   userLogs.filter(isUserLog).forEach((l) => {
+  //     const day = new Date(l.completedAt).toLocaleDateString();
+  //     if (map.has(day)) {
+  //       map.get(day)!.push(l.symmetryRating);
+  //     } else {
+  //       map.set(day, [l.symmetryRating]);
+  //     }
+  //   });
+  //   const labels = Array.from(map.keys()).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+  //   const data = labels.map((date) => {
+  //     const arr = map.get(date)!;
+  //     return arr.reduce((a, b) => a + b, 0) / arr.length;
+  //   });
+  //   return { labels, datasets: [{ data }] };
+  // }, [userLogs]);
 
   const pieData = useMemo(() => {
     const map = new Map<string, number>();
-    filtered.filter(isExerciseLog).forEach((l) => {
-      map.set(l.exercise, (map.get(l.exercise) || 0) + 1);
+    filtered.forEach((l) => {
+      const key = isExerciseLog(l) ? l.exercise : isTaskLog(l) ? l.task : "";
+      map.set(key, (map.get(key) || 0) + 1);
     });
     return Array.from(map.entries()).map(([name, count]) => {
       const exercise = EXERCISES.find((e) => e.name === name);
@@ -139,12 +140,12 @@ export function ProgressStatsView() {
 
         <View style={styles.cardGrid}>
           <StatCard label="Current Streak" value={`${streak} days`} />
-          <StatCard label="Avg Symmetry" value={symmetryAvg} />
-          <StatCard label="Total Chewing" value={chewingTime} />
-          <StatCard label="Gum Time" value={gumTime} />
+          {/* <StatCard label="Avg Symmetry" value={symmetryAvg} /> */}
+          {/* <StatCard label="Total Chewing" value={chewingTime} />
+          <StatCard label="Gum Time" value={gumTime} /> */}
         </View>
 
-        <View style={styles.section}>
+        {/* <View style={styles.section}>
           <ThemedText style={styles.sectionTitle}>Symmetry Trend</ThemedText>
           {lineData.datasets[0].data.length ? (
             <LineChart
@@ -158,10 +159,10 @@ export function ProgressStatsView() {
           ) : (
             <ThemedText style={styles.emptyText}>No data available</ThemedText>
           )}
-        </View>
+        </View> */}
 
         <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Exercises Breakdown</ThemedText>
+          <ThemedText style={styles.sectionTitle}>Routine Breakdown</ThemedText>
           {pieData.length ? (
             <View style={styles.pieWrapper}>
               <PieChart

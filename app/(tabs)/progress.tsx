@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { Pressable, SafeAreaView, StyleSheet, useWindowDimensions, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -9,15 +9,15 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { ProgressLogsView } from "@/views/progress/logs";
+import { ProgressPhotoView } from "@/views/progress/photos";
 import { ProgressStatsView } from "@/views/progress/stats";
-import { ProgressTrackView } from "@/views/progress/track";
 
-const TABS = ["Logs", "Stats", "Track"] as const;
+const TABS = ["Photos", "Stats", "Logs"] as const;
 
 export default function ProgressScreen() {
   const SCREEN_WIDTH = useWindowDimensions().width;
   const params = useLocalSearchParams();
-  const initialTab = params.activeTab === "Logs" ? "Logs" : "Stats";
+  const initialTab = params.activeTab === "Stats" ? "Stats" : "Photos";
   const [activeTab, setActiveTab] = useState<(typeof TABS)[number]>(initialTab);
 
   const tabBorder = useThemeColor({ light: Colors.light.border, dark: Colors.dark.border }, "border");
@@ -32,7 +32,8 @@ export default function ProgressScreen() {
   useEffect(() => {
     const index = TABS.indexOf(initialTab);
     translateX.value = tabWidth * index;
-  }, [initialTab, tabWidth, translateX]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialTab, tabWidth]);
 
   const handleTabPress = (tab: (typeof TABS)[number], index: number) => {
     setActiveTab(tab);
@@ -40,36 +41,34 @@ export default function ProgressScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <ThemedView style={[styles.container]}>
-        <View style={[styles.tabBar, { borderColor: tabBorder }]}>
-          {TABS.map((tab, idx) => (
-            <Pressable key={tab} style={styles.tabButton} onPress={() => handleTabPress(tab, idx)}>
-              <IconSymbol
-                size={24}
-                name={tab === "Logs" ? "book" : tab === "Stats" ? "chart.xyaxis.line" : "calendar"}
-                color={color}
-              />
-              <ThemedText style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab}</ThemedText>
-            </Pressable>
-          ))}
-          <Animated.View style={[styles.underline, { width: tabWidth, backgroundColor: underline }, underlineStyle]} />
-        </View>
-        <View
-          style={{
-            flex: 1,
-          }}
-        >
-          {activeTab === "Stats" ? (
-            <ProgressStatsView />
-          ) : activeTab === "Logs" ? (
-            <ProgressLogsView />
-          ) : (
-            <ProgressTrackView />
-          )}
-        </View>
-      </ThemedView>
-    </SafeAreaView>
+    <ThemedView style={[styles.container]}>
+      <View style={[styles.tabBar, { borderColor: tabBorder }]}>
+        {TABS.map((tab, idx) => (
+          <Pressable key={tab} style={styles.tabButton} onPress={() => handleTabPress(tab, idx)}>
+            <IconSymbol
+              size={24}
+              name={tab === "Logs" ? "book" : tab === "Stats" ? "chart.xyaxis.line" : "calendar"}
+              color={color}
+            />
+            <ThemedText style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab}</ThemedText>
+          </Pressable>
+        ))}
+        <Animated.View style={[styles.underline, { width: tabWidth, backgroundColor: underline }, underlineStyle]} />
+      </View>
+      <ScrollView
+        style={{
+          flex: 1,
+        }}
+      >
+        {activeTab === "Stats" ? (
+          <ProgressStatsView />
+        ) : activeTab === "Logs" ? (
+          <ProgressLogsView />
+        ) : (
+          <ProgressPhotoView />
+        )}
+      </ScrollView>
+    </ThemedView>
   );
 }
 

@@ -15,7 +15,6 @@ export const XPCounter = () => {
   const userXPQuery = useGetUserXP();
   const xp = userXPQuery.data || 0;
 
-  const background = useThemeColor({}, "background");
   const textColor = useThemeColor({}, "text");
   const accent = useThemeColor({}, "accent");
   const border = useThemeColor({}, "border");
@@ -36,7 +35,7 @@ export const XPCounter = () => {
         {xpCounterUnit}
       </Pressable>
 
-      <Modal visible={modalVisible} animationType="slide" backdropColor={background}>
+      <Modal visible={modalVisible} animationType="slide" presentationStyle="pageSheet">
         <SafeAreaView>
           <View style={styles.modalHeader}>
             <View
@@ -49,7 +48,7 @@ export const XPCounter = () => {
               <ThemedText type="title">Your Badges</ThemedText>
               {xpCounterUnit}
             </View>
-            <Pressable onPress={() => setModalVisible(false)}>
+            <Pressable onPress={() => setModalVisible(false)} style={{ padding: Spacings.md }}>
               <IconSymbol name="arrow.down" size={18} color={textColor} />
             </Pressable>
           </View>
