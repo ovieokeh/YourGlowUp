@@ -71,15 +71,15 @@ export const ExerciseCard = ({ item, handlePress }: ExerciseCardProps) => {
             <ThemedText style={[styles.description, { opacity: 0.7 }]}>{readableDuration(item.duration)}</ThemedText>
           </View>
 
-          {item.notificationTime ? (
-            <>
-              <View style={styles.row}>
-                <IconSymbol name={"alarm"} size={16} color={textColor} />
-                <ThemedText style={styles.description}>{item.notificationTime}</ThemedText>
-              </View>
-              <ThemedText>-</ThemedText>
-            </>
-          ) : null}
+          {item.notificationTimes
+            ? item.notificationTimes.map((time, index) => (
+                <View style={styles.row} key={time + index}>
+                  <ThemedText>-</ThemedText>
+                  <IconSymbol name={"alarm"} size={16} color={textColor} />
+                  <ThemedText style={styles.description}>{time}</ThemedText>
+                </View>
+              ))
+            : null}
         </View>
         <ThemedText style={styles.exerciseName}>{item.name}</ThemedText>
 

@@ -10,7 +10,7 @@ export interface Exercise {
   animation: string;
   color: string;
   itemsNeeded?: string[];
-  notificationTime?: string | null;
+  notificationTimes?: string[] | null;
 }
 
 export const EXERCISES: Exercise[] = [
@@ -154,7 +154,7 @@ export interface Task {
   instructions?: string[];
   color?: string;
   itemsNeeded?: string[];
-  notificationTime?: string | null;
+  notificationTimes?: string[] | null;
 }
 export const TASKS: Task[] = [
   {
@@ -262,7 +262,7 @@ export const TASKS: Task[] = [
     animation:
       "https://lvaengmvyffyrughoqmc.supabase.co/storage/v1/object/public/app-assets/images/hydrate-feature-image.png",
     color: "#00FF00",
-    notificationTime: "random",
+    notificationTimes: ["random"],
   },
 ];
 

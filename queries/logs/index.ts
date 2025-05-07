@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getLogs, getLogsByExercise, getLogsByTask, saveExerciseLog } from "./logs";
+import { getLogs, getLogsByExercise, getLogsByTask, saveExerciseLog, saveTaskLog, saveUserLog } from "./logs";
 
 export const useGetLogs = () => {
   return useQuery({
@@ -31,6 +31,30 @@ export const useSaveExerciseLog = (routineId: string) => {
     mutationKey: ["logs"],
     mutationFn: ({ exercise, duration }: { exercise: string; duration: number }) =>
       saveExerciseLog(exercise, duration, routineId),
+    onSuccess: () => {
+      // Invalidate the query to refetch the data
+      queryClient.invalidateQueries({ queryKey: ["logs"] });
+    },
+  });
+};
+
+export const useSaveUserLog = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: ["logs"],
+    mutationFn: (log: any) => saveUserLog(log),
+    onSuccess: () => {
+      // Invalidate the query to refetch the data
+      queryClient.invalidateQueries({ queryKey: ["logs"] });
+    },
+  });
+};
+
+export const useSaveTaskLog = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: ["logs"],
+    mutationFn: (task: string) => saveTaskLog(task),
     onSuccess: () => {
       // Invalidate the query to refetch the data
       queryClient.invalidateQueries({ queryKey: ["logs"] });

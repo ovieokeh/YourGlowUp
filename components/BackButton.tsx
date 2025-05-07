@@ -1,4 +1,4 @@
-import { Colors } from "@/constants/Theme";
+import { Colors, Spacings } from "@/constants/Theme";
 import { Href, useRouter } from "expo-router";
 import { useSearchParams } from "expo-router/build/hooks";
 import { Pressable } from "react-native";
@@ -22,7 +22,7 @@ export const BackButton = () => {
   };
 
   return (
-    <Pressable onPress={handleBack} style={{ marginLeft: 16 }}>
+    <Pressable onPress={handleBack} style={{ marginLeft: 16, paddingRight: Spacings.md }}>
       <IconSymbol name="chevron.left" size={28} color={Colors.light.accent} />
     </Pressable>
   );

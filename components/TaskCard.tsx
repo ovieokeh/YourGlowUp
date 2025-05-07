@@ -1,11 +1,10 @@
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { getLogsByTask, saveTaskLog, TaskLog } from "@/queries/logs/logs";
 import { RoutineTaskItem } from "@/queries/routines/routines";
-import { useFocusEffect } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { useMemo } from "react";
+import { Pressable, StyleSheet, View } from "react-native";
 
 import { BorderRadii, Spacings } from "@/constants/Theme";
+import { useGetLogsByTask, useSaveTaskLog } from "@/queries/logs";
 import Toast from "react-native-toast-message";
 import { ThemedButton } from "./ThemedButton";
 import { ThemedText } from "./ThemedText";
@@ -13,28 +12,23 @@ import { IconSymbol } from "./ui/IconSymbol";
 
 interface TaskCardProps {
   item: RoutineTaskItem;
+  allowCompletion?: boolean;
   handlePress: () => void;
 }
 
-export const TaskCard = ({ item, handlePress }: TaskCardProps) => {
+export const TaskCard = ({ item, allowCompletion, handlePress }: TaskCardProps) => {
   const cardBg = useThemeColor({}, "background");
   const cardBorder = useThemeColor({}, "border");
   const textColor = useThemeColor({}, "text");
   const successColor = useThemeColor({}, "success");
-  const [logs, setLogs] = useState<TaskLog[]>([]);
 
-  useFocusEffect(
-    useCallback(() => {
-      getLogsByTask(item.name, (res) => {
-        setLogs(res);
-      });
-    }, [item.name])
-  );
+  const logsByTaskQuery = useGetLogsByTask(item.name);
+  const logs = useMemo(() => logsByTaskQuery.data || [], [logsByTaskQuery.data]);
+
+  const saveTaskLogMutation = useSaveTaskLog();
 
   const handleTaskCompletion = async () => {
-    await saveTaskLog(item.name);
-    const newLogs = await getLogsByTask(item.name);
-    setLogs(newLogs);
+    await saveTaskLogMutation.mutateAsync(item.name);
     Toast.show({
       type: "success",
       text1: "Task completed",
@@ -51,21 +45,31 @@ export const TaskCard = ({ item, handlePress }: TaskCardProps) => {
   const hasTodayLogs = todayLogs.length > 0;
 
   return (
-    <View style={[styles.card, { backgroundColor: cardBg, borderColor: hasTodayLogs ? successColor : cardBorder }]}>
+    <Pressable
+      style={[styles.card, { backgroundColor: cardBg, borderColor: hasTodayLogs ? successColor : cardBorder }]}
+      onPress={handlePress}
+    >
       <View
         style={{
           padding: Spacings.sm,
         }}
       >
+        <ThemedText style={styles.exerciseArea}>{item.area}</ThemedText>
         <View style={styles.row}>
-          <ThemedText style={styles.exerciseArea}>{item.area}</ThemedText>
-          {item.notificationTime ? (
+          {item.notificationTimes?.length ? (
             <View style={styles.row}>
               <IconSymbol name={"alarm"} size={16} color={textColor} />
-              <ThemedText style={styles.description}>{item.notificationTime}</ThemedText>
+              {item.notificationTimes.slice(0, 3).map((time, index) => (
+                <View style={styles.row} key={time + index}>
+                  {index % 2 === 0 ? null : <ThemedText>-</ThemedText>}
+                  <ThemedText style={styles.description}>{time}</ThemedText>
+                </View>
+              ))}
+              {item.notificationTimes.length > 3 ? (
+                <ThemedText style={styles.description}>+{item.notificationTimes.length - 3} more</ThemedText>
+              ) : null}
             </View>
           ) : null}
-          <ThemedText>-</ThemedText>
         </View>
         <ThemedText style={styles.exerciseName}>{item.name}</ThemedText>
 
@@ -78,19 +82,21 @@ export const TaskCard = ({ item, handlePress }: TaskCardProps) => {
         )}
       </View>
 
-      <ThemedButton
-        onPress={handleTaskCompletion}
-        variant="ghost"
-        icon={hasTodayLogs ? "arrow.circlepath" : "checkmark.circle"}
-        iconPlacement="right"
-        style={{
-          marginLeft: "auto",
-        }}
-        textStyle={{
-          color: successColor,
-        }}
-      />
-    </View>
+      {allowCompletion && (
+        <ThemedButton
+          onPress={handleTaskCompletion}
+          variant="ghost"
+          icon={hasTodayLogs ? "arrow.circlepath" : "checkmark.circle"}
+          iconPlacement="right"
+          style={{
+            marginLeft: "auto",
+          }}
+          textStyle={{
+            color: successColor,
+          }}
+        />
+      )}
+    </Pressable>
   );
 };
 

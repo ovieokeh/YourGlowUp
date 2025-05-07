@@ -49,16 +49,7 @@ export default function HomeScreen() {
               Today&apos;s tasks
             </ThemedText>
             {tasks.map((item) => (
-              <TaskCard
-                key={item.id + item.itemId}
-                item={item}
-                handlePress={() =>
-                  router.push({
-                    pathname: "/exercise/[slug]",
-                    params: { slug: encodeURIComponent(item.name), routineId: routine?.routineId },
-                  })
-                }
-              />
+              <TaskCard key={item.id + item.itemId} item={item} handlePress={() => {}} allowCompletion />
             ))}
             {tasks.length === 0 && (
               <ThemedText type="default" style={{ padding: Spacings.sm }}>

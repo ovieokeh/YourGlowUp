@@ -15,7 +15,6 @@ export function ThemedFabButton(
   return (
     <ThemedButton
       {...props}
-      variant="solid"
       style={{
         ...styles.fab,
         bottom: props.bottom ?? Spacings.xl * 2,
@@ -23,6 +22,7 @@ export function ThemedFabButton(
         left: props.left,
         top: props.top,
         borderRadius: props.borderRadius ?? BorderRadii.lg,
+        ...props.style,
       }}
     />
   );

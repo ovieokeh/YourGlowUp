@@ -104,6 +104,14 @@ function App() {
               }}
             />
             <Stack.Screen
+              name="edit-routine-item"
+              options={{
+                headerShown: true,
+                title: "Edit Routine Item",
+                headerTitleAlign: "center",
+              }}
+            />
+            <Stack.Screen
               name="exercises"
               options={{
                 headerShown: true,

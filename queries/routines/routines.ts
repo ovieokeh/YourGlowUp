@@ -46,12 +46,10 @@ export interface Routine {
 export type RoutineTaskItem = Task & {
   id: number;
   addedAt: string;
-  notificationTime: string | null;
 };
 export type RoutineExerciseItem = Exercise & {
   id: number;
   addedAt: string;
-  notificationTime: string | null;
 };
 
 export const isRoutineTaskItem = (item: RoutineItem): item is RoutineTaskItem => {
@@ -142,14 +140,16 @@ export const getRoutineById = async (routineId: string) => {
         return {
           ...exercise,
           ...item,
+          notificationTimes: item.notificationTimes ? JSON.parse((item as any).notificationTimes) : null,
           type: "exercise",
-        };
+        } as RoutineExerciseItem;
       } else if (task) {
         return {
           ...task,
           ...item,
+          notificationTimes: item.notificationTimes ? JSON.parse((item as any).notificationTimes) : null,
           type: "task",
-        };
+        } as RoutineTaskItem;
       }
       return item;
     });
@@ -238,4 +238,48 @@ export const updateRoutine = async (routineId: string, updatedRoutine: Partial<R
     console.error("Error updating routine", error);
     throw error;
   }
+};
+
+export const getRoutineItem = async (itemId: string, routineId: string) => {
+  const item = (await db.getFirstAsync(`SELECT * FROM routine_items WHERE itemId = ? AND routineId = ?`, [
+    itemId,
+    routineId,
+  ])) as RoutineItem;
+  console.log("item >>>>>", item);
+  if (!item) return null;
+
+  const exercise = EXERCISES.find((e) => e.itemId === item.itemId);
+  const task = TASKS.find((t) => t.itemId === item.itemId);
+  if (exercise) {
+    return {
+      ...exercise,
+      ...item,
+      notificationTimes: item.notificationTimes ? JSON.parse((item as any).notificationTimes) : null,
+      type: "exercise",
+    } as RoutineExerciseItem;
+  } else if (task) {
+    return {
+      ...task,
+      ...item,
+      notificationTimes: item.notificationTimes ? JSON.parse((item as any).notificationTimes) : null,
+      type: "task",
+    } as RoutineTaskItem;
+  }
+  return null;
+};
+
+export const updateRoutineItem = async (itemId: string, routineId: string, updatedItem: Partial<RoutineItem>) => {
+  const { name, description, notificationTimes } = updatedItem;
+  const originalItem = await getRoutineItem(itemId, routineId);
+  if (!originalItem) return null;
+
+  const finalName = name ?? originalItem.name;
+  const finalDescription = description ?? originalItem.description;
+  const finalNotificationTimes = notificationTimes ?? originalItem.notificationTimes;
+
+  const update = await db.runAsync(
+    `UPDATE routine_items SET name = ?, description = ?, notificationTimes = ? WHERE itemId = ? AND routineId = ?`,
+    [finalName, finalDescription, JSON.stringify(finalNotificationTimes), itemId, routineId]
+  );
+  return update;
 };

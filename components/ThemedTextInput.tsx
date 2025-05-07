@@ -45,7 +45,6 @@ export function ThemedTextInput({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: Spacings.md,
     width: "100%",
   },
   label: {

@@ -5,9 +5,11 @@ import { ExerciseCard } from "@/components/ExerciseCard";
 import { RoutineItemsModal } from "@/components/RoutineItemsModal";
 import { TaskCard } from "@/components/TaskCard";
 import { ThemedButton } from "@/components/ThemedButton";
+import { ThemedFabButton } from "@/components/ThemedFabButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Spacings } from "@/constants/Theme";
+import { useThemeColor } from "@/hooks/useThemeColor";
 import { useGetRoutineById, useUpdateRoutine } from "@/queries/routines";
 import { isRoutineExerciseItem, isRoutineTaskItem } from "@/queries/routines/routines";
 import { useLocalSearchParams } from "expo-router/build/hooks";
@@ -16,11 +18,13 @@ import { useState } from "react";
 export default function RoutinesSingleScreen() {
   const { id = "my-routine" } = useLocalSearchParams<{ id: string }>();
   const updateRoutineMutation = useUpdateRoutine(id);
-
   const [showSelector, setShowSelector] = useState(false);
 
   const routineQuery = useGetRoutineById(id);
   const { data: routine, isLoading } = routineQuery;
+
+  const backgroundColor = useThemeColor({}, "background");
+  const borderColor = useThemeColor({}, "border");
 
   if (isLoading) {
     // Show a loading state while fetching the routine
@@ -64,15 +68,6 @@ export default function RoutinesSingleScreen() {
             }}
             icon="wand.and.stars"
           />
-
-          <ThemedButton
-            variant="outline"
-            title="Update Routine"
-            onPress={() => {
-              setShowSelector(true);
-            }}
-            icon="plus.circle"
-          />
         </View>
 
         <View style={styles.cards}>
@@ -86,8 +81,8 @@ export default function RoutinesSingleScreen() {
               item={item}
               handlePress={() =>
                 router.push({
-                  pathname: "/exercise/[slug]",
-                  params: { slug: encodeURIComponent(item.name), routineId: routine?.routineId },
+                  pathname: `/edit-routine-item`,
+                  params: { id: item.itemId, routineId: routine?.routineId },
                 })
               }
             />
@@ -123,6 +118,20 @@ export default function RoutinesSingleScreen() {
           )}
         </View>
       </ScrollView>
+      <ThemedFabButton
+        variant="outline"
+        title="Update Routine"
+        onPress={() => {
+          setShowSelector(true);
+        }}
+        icon="pencil"
+        iconPlacement="right"
+        bottom={96}
+        style={{
+          backgroundColor: backgroundColor,
+          borderColor: borderColor,
+        }}
+      />
       <RoutineItemsModal
         visible={showSelector}
         selectedIds={routine.items.map((item) => item.itemId)}
