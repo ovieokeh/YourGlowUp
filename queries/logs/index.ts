@@ -3,6 +3,7 @@ import {
   getLogs,
   getLogsByExercise,
   getLogsByTask,
+  getLogsByTaskOrExercise,
   getPhotoLogs,
   PhotoLogCreate,
   saveExerciseLog,
@@ -30,6 +31,14 @@ export const useGetLogsByTask = (task: string) => {
   return useQuery({
     queryKey: ["logs", task],
     queryFn: () => getLogsByTask(task),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+export const useGetLogsByTaskOrExercise = (taskOrExercise: string) => {
+  return useQuery({
+    queryKey: ["logs", taskOrExercise],
+    queryFn: () => getLogsByTaskOrExercise(taskOrExercise),
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };

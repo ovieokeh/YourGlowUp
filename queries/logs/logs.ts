@@ -111,6 +111,14 @@ export const getLogsByTask = async (task: string, callback?: (rows: TaskLog[]) =
   return rows;
 };
 
+export const getLogsByTaskOrExercise = async (taskOrExercise: string) => {
+  const rows = (await db.getAllAsync(`SELECT * FROM logs WHERE task = ? OR exercise = ? ORDER BY completedAt DESC;`, [
+    taskOrExercise,
+    taskOrExercise,
+  ])) as (ExerciseLog | TaskLog)[];
+  return rows;
+};
+
 export interface PhotoLogTransform {
   scale: number;
   x: number;

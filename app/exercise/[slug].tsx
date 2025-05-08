@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import { Alert, Image, ScrollView, StyleSheet, View } from "react-native";
 import { useSharedValue, withTiming } from "react-native-reanimated";
@@ -8,7 +8,7 @@ import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { EXERCISES } from "@/constants/Exercises";
+import { Exercise, EXERCISES, TASKS } from "@/constants/Exercises";
 import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useBadges } from "@/providers/BadgeContext";
@@ -25,13 +25,17 @@ export default function ExerciseSession() {
   const { addXP } = useBadges();
 
   const exercise = useMemo(
-    () => EXERCISES.find((e) => e.itemId === slug || e.name === decodeURIComponent(slug)),
+    () =>
+      EXERCISES.find((e) => e.itemId === slug || e.name === decodeURIComponent(slug)) ||
+      TASKS.find((e) => e.itemId === slug || e.name === decodeURIComponent(slug)),
     [slug]
   );
 
-  const [timeLeft, setTimeLeft] = useState(exercise?.duration || 0);
+  const [timeLeft, setTimeLeft] = useState((exercise as Exercise)?.duration || 0);
   const [started, setStarted] = useState(false);
   const [completed, setCompleted] = useState(false);
+
+  const duration = useMemo(() => (exercise as Exercise)?.duration || 0, [exercise]);
 
   const progress = useSharedValue(0);
 
@@ -42,14 +46,16 @@ export default function ExerciseSession() {
   const background = useThemeColor({}, "background");
   const card = useThemeColor({ light: Colors.light.background, dark: Colors.dark.background }, "background");
   const border = useThemeColor({}, "border");
+  const success = useThemeColor({}, "success");
+  const danger = useThemeColor({}, "danger");
 
   useEffect(() => {
-    if (started && timeLeft > 0 && exercise) {
-      progress.value = withTiming((exercise.duration - timeLeft) / exercise.duration);
-    } else if (started && timeLeft === 0 && exercise) {
+    if (started && timeLeft > 0 && duration > 0) {
+      progress.value = withTiming((duration - timeLeft) / duration);
+    } else if (started && timeLeft === 0 && duration > 0) {
       progress.value = withTiming(1);
     }
-  }, [exercise, progress, started, timeLeft]);
+  }, [duration, progress, started, timeLeft]);
 
   useEffect(() => {
     let timer: number | undefined;
@@ -68,21 +74,19 @@ export default function ExerciseSession() {
       clearInterval(timer);
       clearInterval(soundTimer);
     };
-  }, [completed, started, timeLeft, exercise?.name, exercise?.duration, play]);
+  }, [completed, started, timeLeft, exercise?.name, duration, play]);
 
   const handleStart = () => setStarted(true);
 
   const handleQuit = () => {
     if (!exercise) return;
-    const timeElapsed = exercise.duration - timeLeft;
-    const threshold = Math.floor(exercise.duration / 3);
+    const timeElapsed = duration - timeLeft;
+    const threshold = Math.floor(duration / 3);
 
     if (timeElapsed >= threshold) {
       Alert.alert(
         "Quit Early?",
-        `You've completed ${Math.round(
-          (timeElapsed / exercise.duration) * 100
-        )}% of the session.\nThis will still be saved.`,
+        `You've completed ${Math.round((timeElapsed / duration) * 100)}% of the session.\nThis will still be saved.`,
         [
           { text: "Cancel", style: "cancel" },
           {
@@ -102,10 +106,10 @@ export default function ExerciseSession() {
 
   const handleComplete = async () => {
     if (!exercise) return;
-    await saveExerciseLogMutation.mutateAsync({ exercise: exercise.name, duration: exercise.duration });
+    await saveExerciseLogMutation.mutateAsync({ exercise: exercise.name, duration: duration });
     play("complete-exercise");
     addXP
-      .mutateAsync(LOG_TYPE_XP_MAP["exercise"] + exercise.duration)
+      .mutateAsync(LOG_TYPE_XP_MAP["exercise"] + duration)
       .catch((err) => {
         console.error("Error adding XP:", err);
       })
@@ -117,53 +121,81 @@ export default function ExerciseSession() {
   if (!exercise) {
     return (
       <ThemedView style={[styles.container, { backgroundColor: background }]}>
+        <Stack.Screen options={{ title: "Oops!" }} />
+
         <ThemedText style={styles.title}>Exercise not found.</ThemedText>
       </ThemedView>
     );
   }
 
+  const hasDuration = (exercise as Exercise)?.duration > 0;
+
   return (
-    <ScrollView contentContainerStyle={[styles.container, styles.scrollView]}>
-      <ThemedText type="title">{exercise.name}</ThemedText>
-      <Image source={{ uri: exercise.animation }} style={styles.image} resizeMode="contain" />
-
-      <View style={[styles.infoCard, { backgroundColor: card, borderColor: border }]}>
-        <View style={[styles.descriptionContainer, { backgroundColor: border }]}>
-          <View style={styles.infoRow}>
-            <IconSymbol name="target" size={18} color={textColor} />
-            <ThemedText style={styles.infoText}>Target Area: {exercise.area}</ThemedText>
-          </View>
-          <ThemedText style={styles.description}>{exercise.description}</ThemedText>
-        </View>
-        <View style={styles.instructions}>
-          <ThemedText style={styles.instructionsTitle}>Instructions:</ThemedText>
-          {exercise.instructions.map((step, idx) => (
-            <ThemedText key={idx} style={styles.step}>
-              {idx + 1}. {step}
-            </ThemedText>
-          ))}
-        </View>
-      </View>
-
-      <View style={{ gap: Spacings.md, width: "100%" }}>
+    <>
+      <Stack.Screen
+        options={{
+          title: exercise.name,
+          headerRight: () => (
+            <ThemedButton
+              title={started ? (completed ? "" : "") : ""}
+              onPress={
+                !hasDuration ? handleComplete : started ? (completed ? handleComplete : handleQuit) : handleStart
+              }
+              variant={"ghost"}
+              icon={
+                !hasDuration
+                  ? "checkmark"
+                  : started
+                  ? completed
+                    ? "checkmark.rectangle.fill"
+                    : "x.circle.fill"
+                  : "play.fill"
+              }
+              iconPlacement="right"
+              style={styles.startButton}
+              iconSize={28}
+              textStyle={{
+                ...styles.startButtonText,
+                ...{
+                  color: started ? (completed ? success : danger) : textColor,
+                },
+              }}
+            />
+          ),
+        }}
+      />
+      {exercise.animation && <Image source={{ uri: exercise.animation }} style={styles.image} resizeMode="cover" />}
+      <View style={{ gap: Spacings.md, marginTop: Spacings.md, width: "100%" }}>
         {started && (
           <View style={styles.progressContainer}>
             <ProgressBar progress={progress} />
             <ThemedText style={styles.timer}>{timeLeft}s remaining</ThemedText>
           </View>
         )}
-
-        <ThemedButton
-          title={started ? (completed ? "Finish Session" : "Quit Early") : "Start Session"}
-          onPress={started ? (completed ? handleComplete : handleQuit) : handleStart}
-          variant={started ? (completed ? "primary" : "destructive") : "success"}
-          icon={started ? (completed ? "checkmark.rectangle" : "x.circle") : "play"}
-          iconPlacement="right"
-          style={styles.startButton}
-          textStyle={styles.startButtonText}
-        />
       </View>
-    </ScrollView>
+
+      <ScrollView contentContainerStyle={[styles.container, { backgroundColor: background }, styles.scrollView]}>
+        <View style={[styles.infoCard, { backgroundColor: card, borderColor: border }]}>
+          <View style={[styles.descriptionContainer, { backgroundColor: border }]}>
+            <View style={styles.infoRow}>
+              <IconSymbol name="target" size={18} color={textColor} />
+              <ThemedText style={styles.infoText}>Target Area: {exercise.area}</ThemedText>
+            </View>
+            <ThemedText style={styles.description}>{exercise.description}</ThemedText>
+          </View>
+          {!!exercise.instructions?.length && (
+            <View style={styles.instructions}>
+              <ThemedText style={styles.instructionsTitle}>Instructions:</ThemedText>
+              {exercise.instructions?.map((step, idx) => (
+                <ThemedText key={idx} style={styles.step}>
+                  {idx + 1}. {step}
+                </ThemedText>
+              ))}
+            </View>
+          )}
+        </View>
+      </ScrollView>
+    </>
   );
 }
 
@@ -185,17 +217,11 @@ const styles = StyleSheet.create({
   },
   image: {
     width: "100%",
-    height: 220,
-    borderRadius: BorderRadii.md,
+    // height: 320,
+    aspectRatio: 1,
   },
   infoCard: {
-    borderWidth: 1,
-    padding: Spacings.md,
-    borderRadius: BorderRadii.md,
     width: "100%",
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
   },
   infoRow: {
     flexDirection: "row",
@@ -243,7 +269,8 @@ const styles = StyleSheet.create({
     padding: Spacings.sm,
     borderRadius: BorderRadii.md,
     alignItems: "center",
-    marginVertical: Spacings.sm,
+    paddingVertical: Spacings.xs,
+    marginLeft: "auto",
   },
   startButtonText: {
     fontSize: 16,

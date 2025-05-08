@@ -232,10 +232,6 @@ export default function AccountView() {
             </>
           ) : (
             <>
-              <ThemedText type="title" style={{ marginHorizontal: "auto" }}>
-                Your Account
-              </ThemedText>
-
               <ThemedText style={[styles.label, { color: muted }]}>Name</ThemedText>
               <TextInput
                 style={[styles.input, { backgroundColor: bg, color: text, borderColor: border }]}
@@ -283,6 +279,8 @@ const styles = StyleSheet.create({
   inner: {
     flex: 1,
     paddingHorizontal: 24,
+    paddingTop: 24,
+
     paddingBottom: 64,
     gap: 16,
   },

@@ -35,6 +35,7 @@ export function ProgressLogsView() {
   const cardBorder = useThemeColor({ light: Colors.light.border, dark: Colors.dark.border }, "border");
   const underline = useThemeColor({}, "tint");
   const iconColor = useThemeColor({}, "text");
+  const muted = useThemeColor({}, "muted");
 
   const exerciseLogs = logs.filter(isExerciseLog) as ExerciseLog[];
   const taskLogs = logs.filter(isTaskLog) as TaskLog[];
@@ -75,8 +76,9 @@ export function ProgressLogsView() {
                   <View
                     style={{
                       flexDirection: "row",
-                      backgroundColor: Colors.light.gray10,
                       padding: Spacings.sm,
+                      borderRadius: BorderRadii.sm,
+                      // backgroundColor: muted,
                     }}
                   >
                     <IconSymbol name="pencil.and.scribble" size={18} color={iconColor} />
@@ -92,7 +94,7 @@ export function ProgressLogsView() {
             onPress={() => router.push("/add-photo-log")}
             icon="plus"
             iconPlacement="right"
-            title="Log progress"
+            title="Log photo"
             variant="solid"
             bottom={96}
           />

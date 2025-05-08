@@ -108,7 +108,7 @@ function App() {
               name="add-photo-log"
               options={{
                 headerShown: true,
-                title: "Log progress",
+                title: "Log photo",
                 headerTitleAlign: "center",
               }}
             />
@@ -159,7 +159,7 @@ function App() {
             />
             <Stack.Screen name="+not-found" />
           </Stack>
-          <StatusBar style="auto" />
+          <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
           <Toast />
         </BadgeProvider>
       </ThemeProvider>

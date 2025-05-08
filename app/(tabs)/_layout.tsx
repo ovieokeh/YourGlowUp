@@ -57,6 +57,17 @@ export default function TabLayout() {
             elevation: 12,
           },
         }),
+        headerStyle: {
+          backgroundColor: background,
+          // borderBottomWidth: 0.5,
+          // borderBottomColor: border,
+          shadowColor: "transparent",
+        },
+        headerTitleStyle: {
+          // fontSize: 20,
+          // fontWeight: "600",
+          color: "transparent",
+        },
       }}
     >
       <Tabs.Screen

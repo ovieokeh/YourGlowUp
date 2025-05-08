@@ -1,4 +1,5 @@
-import { Colors, Spacings } from "@/constants/Theme";
+import { Spacings } from "@/constants/Theme";
+import { useThemeColor } from "@/hooks/useThemeColor";
 import { Href, useRouter } from "expo-router";
 import { useSearchParams } from "expo-router/build/hooks";
 import { Pressable } from "react-native";
@@ -8,6 +9,7 @@ export const BackButton = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const lastPage = searchParams.get("lastPage") || null;
+  const tint = useThemeColor({}, "tint");
 
   const handleBack = () => {
     if (!lastPage && router.canGoBack()) {
@@ -23,7 +25,7 @@ export const BackButton = () => {
 
   return (
     <Pressable onPress={handleBack} style={{ marginLeft: 16, paddingRight: Spacings.md }}>
-      <IconSymbol name="chevron.left" size={28} color={Colors.light.accent} />
+      <IconSymbol name="chevron.left" size={28} color={tint} />
     </Pressable>
   );
 };

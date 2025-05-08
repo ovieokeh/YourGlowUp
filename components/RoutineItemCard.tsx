@@ -1,184 +1,148 @@
-import { useThemeColor } from "@/hooks/useThemeColor";
-import { useMemo, useState } from "react";
-import { Alert, Modal, Pressable, SafeAreaView, StyleSheet, useWindowDimensions, View } from "react-native";
+import React, { useMemo, useState } from "react";
+import { Modal, Pressable, SafeAreaView, StyleSheet, useWindowDimensions, View } from "react-native";
 
+import { ThemedButton } from "@/components/ThemedButton";
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
+import { IconSymbol } from "@/components/ui/IconSymbol";
 import { BorderRadii, Spacings } from "@/constants/Theme";
+import { useThemeColor } from "@/hooks/useThemeColor";
 import { useBadges } from "@/providers/BadgeContext";
 import { LOG_TYPE_XP_MAP } from "@/queries/gamification/gamification";
-import { useGetLogsByTask, useSaveTaskLog } from "@/queries/logs";
-import { RoutineTaskItem } from "@/queries/routines/shared";
+import { useGetLogsByTaskOrExercise, useSaveTaskLog } from "@/queries/logs";
+import { isRoutineExerciseItem, isRoutineTaskItem, RoutineItem, RoutineTaskItem } from "@/queries/routines/shared";
 import { useSound } from "@/utils/sounds";
+import { Image } from "expo-image";
 import Toast from "react-native-toast-message";
-import { ThemedButton } from "./ThemedButton";
 import { ThemedPicker } from "./ThemedPicker";
-import { ThemedText } from "./ThemedText";
 import { ThemedTextInput } from "./ThemedTextInput";
-import { ThemedView } from "./ThemedView";
-import { IconSymbol } from "./ui/IconSymbol";
 
-interface TaskCardProps {
-  item: RoutineTaskItem;
-  allowCompletion?: boolean;
-  mode?: "display" | "action";
+export const RoutineItemCard = ({
+  item,
+  handlePress,
+  mode = "display",
+  allowCompletion = false,
+}: {
+  item: RoutineItem;
   handlePress: () => void;
-}
-
-export const TaskCard = ({ item, allowCompletion, mode = "display", handlePress }: TaskCardProps) => {
+  mode?: "display" | "action";
+  allowCompletion?: boolean;
+}) => {
   const cardBg = useThemeColor({}, "background");
   const cardBorder = useThemeColor({}, "border");
   const textColor = useThemeColor({}, "text");
   const successColor = useThemeColor({}, "success");
-  const { play } = useSound();
-
-  const logsByTaskQuery = useGetLogsByTask(item.name);
-  const logs = useMemo(() => logsByTaskQuery.data || [], [logsByTaskQuery.data]);
-
-  const saveTaskLogMutation = useSaveTaskLog();
-  const { addXP } = useBadges();
-
+  const tint = useThemeColor({}, "tint");
+  const successBg = useThemeColor({}, "successBg");
   const [questionModalVisible, setQuestionModalVisible] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<{ [key: string]: string }>({});
 
-  const handleTaskCompletion = async () => {
-    if (item.questions && item.questions.length > 0) {
-      setQuestionModalVisible(true);
-      return;
-    }
+  const getLogsQuery = useGetLogsByTaskOrExercise(item.name);
 
-    await saveTaskLogMutation.mutateAsync({
-      task: item.name,
-      note: "",
-    });
-    await addXP.mutateAsync(LOG_TYPE_XP_MAP["task"]).catch((err) => {
-      console.error("Error adding XP:", err);
-    });
-
-    await play("complete-task");
-
-    Toast.show({
-      type: "success",
-      text1: "Task completed",
-      text2: `You have completed ${item.name} today`,
-      position: "bottom",
-    });
-  };
-
-  const handleSubmitAnswers = async () => {
-    await saveTaskLogMutation.mutateAsync({
-      task: item.name,
-      note: JSON.stringify(answers),
-    });
-    await play("complete-task");
-    Toast.show({
-      type: "success",
-      text1: "Task completed",
-      text2: `You have completed ${item.name} today`,
-      position: "bottom",
-    });
-    setQuestionModalVisible(false);
-    setAnswers({});
-    setCurrentQuestionIndex(0);
-  };
-
-  const handleSkipQuestions = async () => {
-    Alert.alert(
-      "Incomplete log",
-      "Are you sure you want to mark this task as completed without answering all questions?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Yes, mark complete",
-          style: "destructive",
-          onPress: async () => {
-            await saveTaskLogMutation.mutateAsync({
-              task: item.name,
-              note: "",
-            });
-            Toast.show({
-              type: "success",
-              text1: "Task completed",
-              text2: `You have completed ${item.name} today`,
-              position: "bottom",
-            });
-            setQuestionModalVisible(false);
-            setAnswers({});
-            setCurrentQuestionIndex(0);
-          },
-        },
-        {
-          text: "No, leave incomplete",
-          style: "cancel",
-          onPress: () => {
-            setQuestionModalVisible(false);
-          },
-        },
-      ]
-    );
-  };
+  const logs = useMemo(() => {
+    return getLogsQuery.data || [];
+  }, [getLogsQuery.data]);
 
   const todayLogs = useMemo(() => {
     const now = new Date();
-    const startOfDay = new Date(now);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(now);
-    endOfDay.setHours(23, 59, 59, 999);
-
+    const start = new Date(now.setHours(0, 0, 0, 0)).getTime();
+    const end = new Date(now.setHours(23, 59, 59, 999)).getTime();
     return logs.filter((log) => {
-      const completed = new Date(log.completedAt).getTime();
-      return completed >= startOfDay.getTime() && completed <= endOfDay.getTime();
+      const t = new Date(log.completedAt).getTime();
+      return t >= start && t <= end;
     });
   }, [logs]);
 
   const hasTodayLogs = todayLogs.length > 0;
+  const { addXP } = useBadges();
+  const { play } = useSound();
+  const saveTaskLogMutation = useSaveTaskLog();
+
+  const handleTaskCompletion = async () => {
+    if (isRoutineTaskItem(item) && item.questions?.length) {
+      setQuestionModalVisible(true);
+      return;
+    }
+    await saveTaskLogMutation.mutateAsync({ task: item.name, note: "" });
+    await play("complete-task");
+    await addXP.mutateAsync(LOG_TYPE_XP_MAP["task"]);
+    Toast.show({ type: "success", text1: "Task completed", text2: `You completed ${item.name}`, position: "bottom" });
+  };
+
+  const readableDuration = (seconds: number) => `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
 
   return (
     <Pressable
+      onPress={handlePress}
       style={[
         styles.card,
-        { backgroundColor: cardBg, borderColor: cardBorder },
-
         {
-          ...(mode === "action"
-            ? {
-                borderColor: hasTodayLogs ? successColor : cardBorder,
-                opacity: hasTodayLogs ? 0.5 : 1,
-              }
-            : {}),
+          alignItems: "center",
+          // justifyContent: "center",
+          borderColor: cardBorder,
         },
+        mode === "action"
+          ? {
+              position: "relative",
+              backgroundColor: hasTodayLogs ? successBg : cardBg,
+              opacity: mode === "action" && hasTodayLogs ? 0.7 : 1,
+            }
+          : {},
       ]}
-      onPress={handlePress}
     >
-      <View style={{ padding: Spacings.sm }}>
-        <ThemedText style={styles.exerciseArea}>{item.area}</ThemedText>
+      <Image source={item.featureImage} style={{ width: 40, height: 40, borderRadius: BorderRadii.sm }} />
+      <View style={{ padding: Spacings.sm, width: "70%", flexWrap: "wrap" }}>
         <ThemedText style={styles.exerciseName}>{item.name}</ThemedText>
+
         <View style={styles.row}>
+          <ThemedText style={styles.exerciseArea}>{item.area}</ThemedText>
+          {isRoutineExerciseItem(item) && (
+            <>
+              <IconSymbol name="clock" size={14} color={textColor} />
+              <ThemedText style={styles.description}>{readableDuration(item.duration)}</ThemedText>
+            </>
+          )}
+
           {item.notificationTimes?.length ? (
             <View style={styles.row}>
-              <IconSymbol name={"alarm"} size={16} color={textColor} />
-              {item.notificationTimes.slice(0, 3).map((time, index) => (
-                <View style={styles.row} key={time + index}>
-                  {index % 2 === 0 ? null : <ThemedText>,</ThemedText>}
-                  <ThemedText style={styles.description}>{time}</ThemedText>
-                </View>
+              <IconSymbol name="alarm" size={16} color={textColor} />
+              {item.notificationTimes.slice(0, 3).map((time, i) => (
+                <ThemedText key={i} style={styles.description}>
+                  {time}
+                  {i < 2 && i < item.notificationTimes!.length - 1 ? ", " : ""}
+                </ThemedText>
               ))}
-              {item.notificationTimes.length > 3 ? (
+              {item.notificationTimes.length > 3 && (
                 <ThemedText style={styles.description}>+{item.notificationTimes.length - 3} more</ThemedText>
-              ) : null}
+              )}
             </View>
           ) : null}
         </View>
 
         {mode === "action" && hasTodayLogs && (
-          <View style={styles.row}>
-            <ThemedText style={[styles.description, { opacity: 0.5 }]}>
-              Completed {todayLogs.length} {todayLogs.length > 1 ? "times" : "time"} today already
-            </ThemedText>
+          <View
+            style={[
+              styles.row,
+              {
+                position: "absolute",
+                top: 0,
+                left: -12,
+              },
+            ]}
+          >
+            <ThemedText style={[styles.description, { color: tint }]}>{todayLogs.length}x</ThemedText>
           </View>
         )}
       </View>
 
-      {allowCompletion && (
+      {mode === "display" && (
+        <View style={[{ marginLeft: "auto" }]}>
+          <IconSymbol name="chevron.right" size={16} color={textColor} />
+        </View>
+      )}
+
+      {allowCompletion && isRoutineTaskItem(item) && (
         <ThemedButton
           onPress={handleTaskCompletion}
           variant="ghost"
@@ -190,16 +154,30 @@ export const TaskCard = ({ item, allowCompletion, mode = "display", handlePress 
         />
       )}
 
-      <TaskQuestionsModal
-        currentQuestionIndex={currentQuestionIndex}
-        item={item}
-        isVisible={questionModalVisible}
-        handleSkipQuestions={handleSkipQuestions}
-        handleSubmitAnswers={handleSubmitAnswers}
-        setCurrentQuestionIndex={setCurrentQuestionIndex}
-        answers={answers}
-        setAnswers={setAnswers}
-      />
+      {/* Modal for task questions */}
+      {isRoutineTaskItem(item) && item.questions?.length && (
+        <TaskQuestionsModal
+          currentQuestionIndex={currentQuestionIndex}
+          item={item}
+          isVisible={questionModalVisible}
+          handleSkipQuestions={() => setQuestionModalVisible(false)}
+          handleSubmitAnswers={async () => {
+            await saveTaskLogMutation.mutateAsync({ task: item.name, note: JSON.stringify(answers) });
+            await addXP.mutateAsync(LOG_TYPE_XP_MAP["task"]);
+            await play("complete-task");
+            Toast.show({
+              type: "success",
+              text1: "Task completed",
+              text2: `You completed ${item.name}`,
+              position: "bottom",
+            });
+            setQuestionModalVisible(false);
+          }}
+          setCurrentQuestionIndex={setCurrentQuestionIndex}
+          answers={answers}
+          setAnswers={setAnswers}
+        />
+      )}
     </Pressable>
   );
 };
@@ -330,11 +308,9 @@ const TaskQuestionsModal = ({
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    gap: Spacings.sm,
     flexDirection: "row",
     borderWidth: 1,
-    borderRadius: BorderRadii.md,
-    overflow: "hidden",
+    borderRadius: BorderRadii.sm,
     shadowOpacity: 0.05,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
@@ -347,6 +323,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "center",
+
     gap: Spacings.xs,
   },
   exerciseName: {

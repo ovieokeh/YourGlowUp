@@ -10,6 +10,7 @@ import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-g
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue } from "react-native-reanimated";
 import Toast from "react-native-toast-message";
 import { ThemedButton } from "./ThemedButton";
+import { ThemedView } from "./ThemedView";
 
 const thumbnailScaleFactor = 0.15;
 export interface PhotoUploadViewProps {
@@ -203,66 +204,80 @@ export function PhotoUpload({
   return (
     <>
       {actions}
-      <Modal visible={modalVisible} animationType="slide">
-        <SafeAreaView
-          style={[
-            styles.container,
-            { backgroundColor: background, borderColor, borderWidth: 1, borderRadius: BorderRadii.sm },
-          ]}
+      <SafeAreaView
+        style={[
+          styles.container,
+          {
+            backgroundColor: background,
+            borderColor: "transparent",
+            borderWidth: 1,
+            borderRadius: BorderRadii.sm,
+            overflow: "hidden",
+            flex: 1,
+          },
+        ]}
+      >
+        <Modal
+          visible={modalVisible}
+          animationType="slide"
+          style={{ backgroundColor: background }}
+          presentationStyle="pageSheet"
         >
-          <ThemedButton
-            title="Close"
-            onPress={() => setModalVisible(false)}
-            variant="ghost"
-            icon="x.circle"
-            iconPlacement="left"
-          />
-
-          <ThemedText>
-            {allowTransform ? "Pinch to zoom and drag to move the image. Tap 'Close' to save." : "Tap 'Close' to save."}
-          </ThemedText>
-
-          <View style={styles.photoContainer}>
-            {showPreview && allowTransform ? (
-              <GestureHandlerRootView>
-                <GestureDetector gesture={Gesture.Simultaneous(pinchGesture, panGesture)}>
-                  <Animated.Image
-                    source={{ uri: photoUri || undefined }}
-                    style={[
-                      styles.photo,
-                      animatedStyle,
-                      {
-                        height: height * 0.5,
-                        width: "100%",
-                      },
-                    ]}
-                    resizeMode="cover"
-                  />
-                </GestureDetector>
-              </GestureHandlerRootView>
-            ) : showPreview ? (
-              <Image source={{ uri: photoUri || undefined }} style={[styles.photo]} resizeMode="cover" />
-            ) : null}
-            {showPreview && overlayImage && (
-              <Image
-                source={overlayImage}
-                style={[
-                  styles.overlay,
-                  {
-                    height: height * 0.5,
-                    width: "100%",
-                    alignSelf: "center",
-                    transform: [
-                      { scale: 0.5 }, // Apply the scale transformation
-                    ],
-                  },
-                ]}
-                resizeMode="contain"
-              />
-            )}
-          </View>
-        </SafeAreaView>
-      </Modal>
+          <ThemedView style={{ flex: 1, padding: Spacings.md, gap: Spacings.sm }}>
+            <ThemedButton
+              title="Close"
+              onPress={() => setModalVisible(false)}
+              variant="ghost"
+              icon="x.circle"
+              iconPlacement="left"
+            />
+            <ThemedText>
+              {allowTransform
+                ? "Pinch to zoom and drag to move the image. Tap 'Close' to save."
+                : "Tap 'Close' to save."}
+            </ThemedText>
+            <View style={styles.photoContainer}>
+              {showPreview && allowTransform ? (
+                <GestureHandlerRootView>
+                  <GestureDetector gesture={Gesture.Simultaneous(pinchGesture, panGesture)}>
+                    <Animated.Image
+                      source={{ uri: photoUri || undefined }}
+                      style={[
+                        styles.photo,
+                        animatedStyle,
+                        {
+                          height: height * 0.5,
+                          width: "100%",
+                        },
+                      ]}
+                      resizeMode="cover"
+                    />
+                  </GestureDetector>
+                </GestureHandlerRootView>
+              ) : showPreview ? (
+                <Image source={{ uri: photoUri || undefined }} style={[styles.photo]} resizeMode="cover" />
+              ) : null}
+              {showPreview && overlayImage && (
+                <Image
+                  source={overlayImage}
+                  style={[
+                    styles.overlay,
+                    {
+                      height: height * 0.5,
+                      width: "100%",
+                      alignSelf: "center",
+                      transform: [
+                        { scale: 0.5 }, // Apply the scale transformation
+                      ],
+                    },
+                  ]}
+                  resizeMode="contain"
+                />
+              )}
+            </View>
+          </ThemedView>
+        </Modal>
+      </SafeAreaView>
     </>
   );
 }
@@ -284,7 +299,7 @@ const styles = StyleSheet.create({
   photoContainer: {
     width: "100%",
     position: "relative",
-    backgroundColor: "#dedede",
+    backgroundColor: "#dedede ",
     aspectRatio: 1,
     overflow: "hidden",
   },
@@ -311,15 +326,15 @@ const styles = StyleSheet.create({
     pointerEvents: "none",
   },
   thumbnail: {
-    width: 80,
-    height: 80,
+    width: 58,
+    height: 58,
     borderRadius: BorderRadii.sm,
     borderWidth: 1,
     marginRight: Spacings.sm,
   },
   thumbnailCrop: {
-    width: 80,
-    height: 80,
+    width: 58,
+    height: 58,
     overflow: "hidden",
     borderRadius: BorderRadii.sm,
     borderWidth: 1,

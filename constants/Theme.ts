@@ -1,31 +1,31 @@
-const tint = "#db6e1a";
 const accent = "#00b89f";
 const glowDark = "#121212";
-const glowLight = "#FFFFFF";
+const glowLight = "#F6FBFF";
 
 export const Colors = {
   light: {
     text: glowDark,
     background: glowLight,
-    tint: tint,
+    tint: "#084c87",
     icon: "#A7A7A7",
     tabIconDefault: "#A7A7A7",
-    tabIconSelected: tint,
+    tabIconSelected: "#084c87",
     border: "#E0E0E0",
     accent: accent,
     success: "#2DD881",
     danger: "#FF2E63",
     muted: "#9A9A9A",
     tabBar: glowLight,
-    gray10: "#F5F5F5",
+    gray10: "#fafafa",
+    successBg: "#F5FFF4",
   },
   dark: {
     text: glowLight,
     background: glowDark,
-    tint: tint,
+    tint: "#3590de",
     icon: "#7F7F7F",
     tabIconDefault: "#7F7F7F",
-    tabIconSelected: tint,
+    tabIconSelected: "#3590de",
     border: "#333333",
     accent: accent,
     success: "#2DD881",
@@ -33,6 +33,7 @@ export const Colors = {
     muted: "#757575",
     tabBar: "#181818",
     gray10: "#121212",
+    successBg: "#1F3A1F",
   },
 };
 

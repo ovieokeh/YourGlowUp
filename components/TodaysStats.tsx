@@ -1,7 +1,7 @@
 import { formatDistanceToNow } from "date-fns";
 import { useRouter } from "expo-router";
 import React, { useMemo } from "react";
-import { Image, StyleSheet, View } from "react-native";
+import { Dimensions, Image, StyleSheet, View } from "react-native";
 
 import { ThemedText } from "@/components/ThemedText";
 import { isExerciseLog, isTaskLog } from "@/queries/logs/logs";
@@ -11,7 +11,6 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { getStreak } from "@/queries/gamification/gamification";
 import { useGetLogs } from "@/queries/logs";
 import { ThemedButton } from "./ThemedButton";
-import { ThemedView } from "./ThemedView";
 import { IconSymbol, IconSymbolName } from "./ui/IconSymbol";
 
 export const TodaysStats: React.FC = () => {
@@ -24,6 +23,7 @@ export const TodaysStats: React.FC = () => {
   const muted = useThemeColor({}, "muted");
   const text = useThemeColor({}, "text");
   const tint = useThemeColor({}, "tint");
+  const gray10 = useThemeColor({}, "gray10");
 
   const streak = useMemo(() => {
     return getStreak(logs);
@@ -51,7 +51,7 @@ export const TodaysStats: React.FC = () => {
 
   if (!exercisesToday.length && !tasksToday.length) {
     return (
-      <View style={[styles.wrapper, { borderColor: wrapperBorder }]}>
+      <View style={[styles.wrapper, { backgroundColor: gray10, borderColor: wrapperBorder }]}>
         <Image
           source={require("@/assets/images/empty-today-stats.png")}
           style={{ width: 100, height: 100, marginBottom: Spacings.sm, marginHorizontal: "auto" }}
@@ -64,12 +64,28 @@ export const TodaysStats: React.FC = () => {
   }
 
   return (
-    <View style={[styles.wrapper, { borderColor: wrapperBorder }]}>
+    <View
+      style={[
+        styles.wrapper,
+        {
+          // backgroundColor: gray10,
+          borderColor: wrapperBorder,
+        },
+      ]}
+    >
       <ThemedText type="subtitle" style={styles.title}>
         At a glance
       </ThemedText>
 
       <View style={styles.statsGrid}>
+        <StatCard
+          icon="calendar"
+          label="Current Streak"
+          value={`${streak} days`}
+          color={tint}
+          muted={muted}
+          text={text}
+        />
         <View style={{ flexDirection: "row", gap: Spacings.sm }}>
           <StatCard
             icon="figure.walk.circle"
@@ -88,42 +104,36 @@ export const TodaysStats: React.FC = () => {
             text={text}
           />
         </View>
-        <StatCard
-          icon="calendar"
-          label="Current Streak"
-          value={`${streak} days`}
-          color={tint}
-          muted={muted}
-          text={text}
-        />
 
-        {lastExercise && (
-          <StatCard
-            icon="clock"
-            label="Last Exercise"
-            value={lastExercise.exercise}
-            subValue={formatDistanceToNow(new Date(lastExercise.completedAt), {
-              addSuffix: true,
-            })}
-            color={tint}
-            muted={muted}
-            text={text}
-          />
-        )}
+        <View style={{ flexDirection: "row", gap: Spacings.sm }}>
+          {lastExercise && (
+            <StatCard
+              icon="clock"
+              label="Last Exercise"
+              value={lastExercise.exercise}
+              subValue={formatDistanceToNow(new Date(lastExercise.completedAt), {
+                addSuffix: true,
+              })}
+              color={tint}
+              muted={muted}
+              text={text}
+            />
+          )}
 
-        {lastTask && (
-          <StatCard
-            icon="checkmark"
-            label="Last Task"
-            value={lastTask.task}
-            subValue={formatDistanceToNow(new Date(lastTask.completedAt), {
-              addSuffix: true,
-            })}
-            color={tint}
-            muted={muted}
-            text={text}
-          />
-        )}
+          {lastTask && (
+            <StatCard
+              icon="checkmark"
+              label="Last Task"
+              value={lastTask.task}
+              subValue={formatDistanceToNow(new Date(lastTask.completedAt), {
+                addSuffix: true,
+              })}
+              color={tint}
+              muted={muted}
+              text={text}
+            />
+          )}
+        </View>
       </View>
 
       <ThemedButton
@@ -155,14 +165,14 @@ const StatCard = ({
   muted: string;
   text: string;
 }) => (
-  <ThemedView style={styles.card}>
+  <View style={styles.card}>
     <IconSymbol name={icon} color={color} size={22} />
     <View style={{ marginLeft: Spacings.sm }}>
       <ThemedText style={[styles.cardLabel, { color: muted }]}>{label}</ThemedText>
       <ThemedText style={[styles.cardValue, { color: text }]}>{value}</ThemedText>
       {subValue && <ThemedText style={[styles.cardSubValue, { color: muted }]}>{subValue}</ThemedText>}
     </View>
-  </ThemedView>
+  </View>
 );
 
 const styles = StyleSheet.create({
@@ -181,6 +191,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: Spacings.sm,
     borderRadius: BorderRadii.sm,
+    width: Dimensions.get("window").width / 2.5,
   },
   cardLabel: {
     fontSize: 13,

@@ -65,7 +65,7 @@ export function ProgressPhotoView() {
 
       <ThemedFabButton
         icon="camera"
-        title="Log progress"
+        title="Log photo"
         onPress={() => {
           router.push({
             pathname: "/add-photo-log",

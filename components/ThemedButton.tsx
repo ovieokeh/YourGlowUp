@@ -51,7 +51,7 @@ export function ThemedButton({
       case "solid":
       case "primary":
         return {
-          button: { backgroundColor: theme.accent },
+          button: { backgroundColor: theme.tint },
           textColor: textStyle?.color ?? currentTheme === "dark" ? Colors.dark.background : Colors.light.background,
         };
       case "outline":

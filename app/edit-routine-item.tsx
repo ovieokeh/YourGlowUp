@@ -116,9 +116,35 @@ export default function EditRoutineItemScreen() {
 
   return (
     <ThemedView style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <Stack.Screen options={{ title: "Edit Routine Item" }} />
+      <Stack.Screen
+        options={{
+          title: `Edit`,
+          headerRight: () => {
+            return (
+              <ThemedButton
+                title="Save"
+                onPress={() => {
+                  updateItemMutation
+                    .mutateAsync({
+                      ...itemState,
+                      id: item.id,
+                    })
+                    .then(() => {
+                      Toast.show({
+                        type: "success",
+                        text1: `${itemState.name} updated`,
+                        position: "bottom",
+                      });
+                      router.back();
+                    });
+                }}
+              />
+            );
+          },
+        }}
+      />
 
+      <ScrollView contentContainerStyle={styles.container}>
         <ThemedTextInput
           label="Name"
           value={itemState.name}
@@ -178,25 +204,6 @@ export default function EditRoutineItemScreen() {
           </View>
           <ThemedButton title="Add Notification Time" onPress={addTime} variant="outline" icon="plus" />
         </View>
-
-        <ThemedButton
-          title="Save"
-          onPress={() => {
-            updateItemMutation
-              .mutateAsync({
-                ...itemState,
-                id: item.id,
-              })
-              .then(() => {
-                Toast.show({
-                  type: "success",
-                  text1: `${itemState.name} updated`,
-                  position: "bottom",
-                });
-                router.back();
-              });
-          }}
-        />
       </ScrollView>
     </ThemedView>
   );

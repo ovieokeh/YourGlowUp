@@ -1,17 +1,9 @@
-import { useRouter } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import React, { useState } from "react";
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  TextInput,
-  View,
-} from "react-native";
+import { KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StyleSheet, TextInput, View } from "react-native";
 
 import { Collapsible } from "@/components/Collapsible";
+import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
@@ -121,6 +113,25 @@ export default function AddPhotoLogScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
+      <Stack.Screen
+        options={{
+          headerRight: () => {
+            return (
+              <ThemedButton
+                title="Save"
+                onPress={handleSubmit}
+                variant="solid"
+                disabled={isUploading}
+                loading={isUploading}
+                style={{
+                  paddingVertical: Spacings.xs,
+                  height: 32,
+                }}
+              />
+            );
+          },
+        }}
+      />
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
         <ScrollView>
           <ThemedView style={styles.container}>
@@ -161,10 +172,6 @@ export default function AddPhotoLogScreen() {
                 ))}
               </Collapsible>
             </View>
-
-            <Pressable onPress={handleSubmit} style={[styles.submitButton]}>
-              <ThemedText style={{ fontWeight: "600" }}>Save Log</ThemedText>
-            </Pressable>
           </ThemedView>
         </ScrollView>
       </KeyboardAvoidingView>

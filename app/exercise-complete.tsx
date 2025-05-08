@@ -8,32 +8,27 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useGetUserXP } from "@/queries/gamification";
-import { useGetLogsByExercise } from "@/queries/logs";
+import { getStreak } from "@/queries/gamification/gamification";
+import { useGetLogs } from "@/queries/logs";
 
 export default function ExerciseCompleteScreen() {
   const router = useRouter();
-  const logsQuery = useGetLogsByExercise("exercise");
-  const logs = useMemo(() => logsQuery.data || [], [logsQuery.data]);
+  const allLogsQuery = useGetLogs();
+  const allLogs = useMemo(() => allLogsQuery.data || [], [allLogsQuery.data]);
 
   const userXPQuery = useGetUserXP();
   const xp = userXPQuery.data || 0;
 
   const border = useThemeColor({}, "border");
+  const successBg = useThemeColor({}, "successBg");
 
   const streak = useMemo(() => {
-    const dates = new Set(logs.map((l) => new Date(l.completedAt).toDateString()));
-    let count = 0;
-    const today = new Date();
-    while (dates.has(today.toDateString())) {
-      count++;
-      today.setDate(today.getDate() - 1);
-    }
-    return count;
-  }, [logs]);
+    return getStreak(allLogs);
+  }, [allLogs]);
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <ThemedView style={styles.container}>
+      <ThemedView style={{ ...styles.container, backgroundColor: successBg }}>
         <Image source={require("@/assets/images/congrats.gif")} style={styles.image} resizeMode="contain" />
 
         <ThemedText type="title" style={{ marginBottom: 8 }}>
@@ -46,7 +41,7 @@ export default function ExerciseCompleteScreen() {
         <View style={[styles.card, { borderColor: border }]}>
           <ThemedText style={styles.label}>Current Streak</ThemedText>
           <ThemedText type="title" style={styles.value}>
-            {streak} days
+            {streak} day{`${streak > 1 ? "s" : ""}`}
           </ThemedText>
         </View>
 

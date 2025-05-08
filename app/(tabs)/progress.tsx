@@ -23,7 +23,7 @@ export default function ProgressScreen() {
   const tabBorder = useThemeColor({ light: Colors.light.border, dark: Colors.dark.border }, "border");
   const color = useThemeColor({}, "text");
 
-  const underline = useThemeColor({ light: Colors.light.accent, dark: Colors.dark.accent }, "accent");
+  const underline = useThemeColor({}, "tint");
   const translateX = useSharedValue(0);
   const tabWidth = SCREEN_WIDTH / TABS.length;
   const underlineStyle = useAnimatedStyle(() => ({

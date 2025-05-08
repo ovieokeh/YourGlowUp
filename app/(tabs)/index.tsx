@@ -1,9 +1,9 @@
+import { format, parse } from "date-fns";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useMemo } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
-import { ExerciseCard } from "@/components/ExerciseCard";
-import { TaskCard } from "@/components/TaskCard";
+import { RoutineItemCard } from "@/components/RoutineItemCard";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedFabButton } from "@/components/ThemedFabButton";
 import { ThemedText } from "@/components/ThemedText";
@@ -11,7 +11,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { TodaysStats } from "@/components/TodaysStats";
 import { BorderRadii, Spacings } from "@/constants/Theme";
 import { useAddRoutine, useGetRoutineById, useGetRoutines } from "@/queries/routines";
-import { isRoutineExerciseItem, isRoutineTaskItem } from "@/queries/routines/shared";
+import { isRoutineTaskItem } from "@/queries/routines/shared";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -35,49 +35,70 @@ export default function HomeScreen() {
     }, [mutate, routine, routineQuery.isSuccess])
   );
 
-  const exercises = routine?.items?.filter(isRoutineExerciseItem) || [];
-  const tasks = routine?.items?.filter(isRoutineTaskItem) || [];
+  const items = useMemo(() => routine?.items || [], [routine?.items]);
+
+  const groupedByTime = useMemo(() => {
+    const map: Record<string, typeof items> = {};
+
+    for (const item of items) {
+      const times = item.notificationTimes || ["Unscheduled"];
+
+      for (const time of times) {
+        if (!map[time]) map[time] = [];
+        map[time].push(item);
+      }
+    }
+
+    return Object.entries(map)
+      .sort(([a], [b]) => a.localeCompare(b)) // Sort time keys
+      .reduce((acc, [time, group]) => {
+        acc.push({ time, items: group });
+        return acc;
+      }, [] as { time: string; items: typeof items }[]);
+  }, [items]);
 
   return (
     <ThemedView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.content}>
-          <View style={styles.cards}>
-            <ThemedText style={styles.title} type="subtitle">
-              Today&apos;s tasks
-            </ThemedText>
-            {tasks.map((item) => (
-              <TaskCard key={item.id + item.itemId} item={item} handlePress={() => {}} allowCompletion mode="action" />
-            ))}
-            {tasks.length === 0 && (
-              <ThemedText type="default" style={{ padding: Spacings.sm }}>
-                No tasks available.
-              </ThemedText>
-            )}
-          </View>
+          <TodaysStats />
 
-          <View style={styles.cards}>
-            <ThemedText style={styles.title} type="subtitle">
-              Today&apos;s exercises
-            </ThemedText>
-            {exercises.map((item) => (
-              <ExerciseCard
-                key={item.id + item.itemId}
-                item={item}
-                handlePress={() =>
-                  router.push({
-                    pathname: "/exercise/[slug]",
-                    params: { slug: encodeURIComponent(item.name), routineId: routine?.routineId },
-                  })
-                }
-                mode="action"
-              />
-            ))}
-            {exercises.length === 0 && (
-              <ThemedText type="default" style={{ padding: Spacings.sm }}>
-                No exercises available.
-              </ThemedText>
-            )}
+          <ThemedText style={styles.title} type="subtitle">
+            Today&apos;s tasks
+          </ThemedText>
+
+          <View
+            style={{
+              gap: Spacings.xl,
+            }}
+          >
+            {groupedByTime.map(({ time, items }) => {
+              const formatted =
+                time === "Unscheduled" ? "Unscheduled" : format(parse(time, "HH:mm", new Date()), "h:mm a");
+
+              return (
+                <View key={time} style={styles.cards}>
+                  <ThemedText style={styles.title}>{formatted}</ThemedText>
+                  {items.map((item) => (
+                    <RoutineItemCard
+                      key={item.id + item.itemId}
+                      item={item}
+                      handlePress={() => {
+                        router.push({
+                          pathname: "/exercise/[slug]",
+                          params: {
+                            slug: encodeURIComponent(item.itemId || item.name),
+                            routineId: routine?.routineId,
+                          },
+                        });
+                      }}
+                      allowCompletion={isRoutineTaskItem(item)}
+                      mode="action"
+                    />
+                  ))}
+                </View>
+              );
+            })}
           </View>
 
           <ThemedButton
@@ -88,15 +109,13 @@ export default function HomeScreen() {
             iconPlacement="right"
           />
         </View>
-
-        <TodaysStats />
       </ScrollView>
 
       <ThemedFabButton
         onPress={() => router.push("/add-photo-log")}
         icon="plus"
         iconPlacement="right"
-        title="Log progress"
+        title="Log photo"
         variant="solid"
         bottom={96}
       />
@@ -110,12 +129,11 @@ const styles = StyleSheet.create({
     padding: Spacings.md,
   },
   scrollContainer: {
-    gap: Spacings.xl,
     paddingBottom: 96,
   },
   content: {
     flex: 1,
-    gap: Spacings.sm,
+    gap: Spacings.xl,
   },
   title: {
     fontSize: 20,
@@ -123,8 +141,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacings.sm,
   },
   cards: {
-    gap: Spacings.md,
-    marginVertical: Spacings.md,
+    gap: Spacings.sm,
   },
   horizontalCard: {
     padding: Spacings.sm,

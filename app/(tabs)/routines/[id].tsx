@@ -1,9 +1,8 @@
 import { router, Stack } from "expo-router";
 import { ScrollView, StyleSheet, View } from "react-native";
 
-import { ExerciseCard } from "@/components/ExerciseCard";
+import { RoutineItemCard } from "@/components/RoutineItemCard";
 import { RoutineItemsModal } from "@/components/RoutineItemsModal";
-import { TaskCard } from "@/components/TaskCard";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedFabButton } from "@/components/ThemedFabButton";
 import { ThemedText } from "@/components/ThemedText";
@@ -13,6 +12,11 @@ import { useGetPendingItemsToday, useGetRoutineById, useUpdateRoutine } from "@/
 import { isRoutineExerciseItem, isRoutineTaskItem } from "@/queries/routines/shared";
 import { useLocalSearchParams } from "expo-router/build/hooks";
 import { useState } from "react";
+
+const getEarliestTime = (item: { notificationTimes?: string[] | null }) => {
+  if (!item.notificationTimes || item.notificationTimes.length === 0) return "99:99";
+  return item.notificationTimes.slice().sort()[0];
+};
 
 export default function RoutinesSingleScreen() {
   const { id = "my-routine" } = useLocalSearchParams<{ id: string }>();
@@ -38,6 +42,9 @@ export default function RoutinesSingleScreen() {
   const tasks = routine?.items?.filter(isRoutineTaskItem) || [];
 
   const hasPendingItems = (pendingItems?.length ?? 0) > 0;
+
+  exercises.sort((a, b) => getEarliestTime(a).localeCompare(getEarliestTime(b)));
+  tasks.sort((a, b) => getEarliestTime(a).localeCompare(getEarliestTime(b)));
 
   return (
     <ThemedView style={{ flex: 1 }}>
@@ -76,7 +83,7 @@ export default function RoutinesSingleScreen() {
           </ThemedText>
 
           {tasks.map((item) => (
-            <TaskCard
+            <RoutineItemCard
               key={item.id + item.itemId}
               item={item}
               handlePress={() =>
@@ -100,7 +107,7 @@ export default function RoutinesSingleScreen() {
           </ThemedText>
 
           {exercises.map((item) => (
-            <ExerciseCard
+            <RoutineItemCard
               key={item.id + item.itemId}
               item={item}
               handlePress={() =>

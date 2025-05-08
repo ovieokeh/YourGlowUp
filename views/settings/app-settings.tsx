@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import React, { useEffect, useState } from "react";
-import { Alert, SafeAreaView, StyleSheet, Switch, useColorScheme, View } from "react-native";
+import { Alert, StyleSheet, Switch, useColorScheme, View } from "react-native";
 
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
@@ -56,37 +56,33 @@ export default function AppSettingsView() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <ThemedView style={styles.container}>
-        <ThemedText type="title">Manage your experience</ThemedText>
-
-        <View style={styles.section}>
-          <ThemedText type="subtitle">Theme</ThemedText>
-          <View style={styles.themeRow}>
-            {["light", "dark", "system"].map((val) => (
-              <ThemedButton
-                key={val}
-                title={val.charAt(0).toUpperCase() + val.slice(1)}
-                onPress={() => onThemeChange(val as ThemePreference)}
-                variant={theme === val ? "solid" : "outline"}
-                icon={val === "light" ? "sun.max" : val === "dark" ? "moon.fill" : "arrow.uturn.down"}
-                iconPlacement="left"
-                disabled={theme === val}
-                style={{ flex: 1 }}
-              />
-            ))}
-          </View>
+    <ThemedView style={styles.container}>
+      <View style={styles.section}>
+        <ThemedText type="subtitle">Theme</ThemedText>
+        <View style={styles.themeRow}>
+          {["light", "dark", "system"].map((val) => (
+            <ThemedButton
+              key={val}
+              title={val.charAt(0).toUpperCase() + val.slice(1)}
+              onPress={() => onThemeChange(val as ThemePreference)}
+              variant={theme === val ? "solid" : "outline"}
+              icon={val === "light" ? "sun.max" : val === "dark" ? "moon.fill" : "arrow.uturn.down"}
+              iconPlacement="left"
+              disabled={theme === val}
+              style={{ flex: 1 }}
+            />
+          ))}
         </View>
+      </View>
 
-        <View style={styles.section}>
-          <ThemedText type="subtitle">Notifications</ThemedText>
-          <View style={styles.row}>
-            <ThemedText>Daily Reminders</ThemedText>
-            <Switch value={notificationsEnabled} onValueChange={toggleNotifications} />
-          </View>
+      <View style={styles.section}>
+        <ThemedText type="subtitle">Notifications</ThemedText>
+        <View style={styles.row}>
+          <ThemedText>Daily Reminders</ThemedText>
+          <Switch value={notificationsEnabled} onValueChange={toggleNotifications} />
         </View>
-      </ThemedView>
-    </SafeAreaView>
+      </View>
+    </ThemedView>
   );
 }
 
@@ -97,7 +93,6 @@ const styles = StyleSheet.create({
     gap: 24,
   },
   section: {
-    marginTop: 20,
     gap: 12,
   },
   row: {
