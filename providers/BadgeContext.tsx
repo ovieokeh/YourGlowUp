@@ -1,10 +1,20 @@
-import { useGetShownToasts, useGetUserBadges, useSetBadgeStatus, useSetShownToasts } from "@/queries/gamification";
+import {
+  useAddXP,
+  useGetShownToasts,
+  useGetUserBadges,
+  useGetUserXP,
+  useSetBadgeStatus,
+  useSetShownToasts,
+} from "@/queries/gamification";
 import { Badge, BadgeKey, BADGES, BadgeStatus } from "@/queries/gamification/gamification";
+import { UseMutationResult } from "@tanstack/react-query";
 import React, { createContext, useCallback, useContext, useMemo } from "react";
 import Toast from "react-native-toast-message";
 
 type BadgeContextType = {
   badges: Record<BadgeKey, Badge>;
+  xp: number;
+  addXP: UseMutationResult<void, Error, number, unknown>;
   awardBadge: (key: BadgeKey) => Promise<void>;
   hasBadge: (key: BadgeKey) => boolean;
 };
@@ -15,10 +25,14 @@ export const BadgeProvider = ({ children }: { children: React.ReactNode }) => {
   const shownToastsQuery = useGetShownToasts();
   const shownToasts = useMemo(() => new Set(shownToastsQuery.data || []), [shownToastsQuery.data]);
   const userBadgesQuery = useGetUserBadges();
-  const userBadges = userBadgesQuery.data;
+  const userBadges = useMemo(() => userBadgesQuery.data, [userBadgesQuery.data]);
 
-  const setBadgesMutation = useSetBadgeStatus();
-  const setShownToastsMutation = useSetShownToasts();
+  const { mutateAsync: setBadges } = useSetBadgeStatus();
+  const { mutateAsync: setShownToasts } = useSetShownToasts();
+
+  const currentXPMutation = useGetUserXP();
+  const xp = currentXPMutation.data || 0;
+  const addXP = useAddXP();
 
   const badges = useMemo(() => {
     if (userBadges) {
@@ -35,22 +49,23 @@ export const BadgeProvider = ({ children }: { children: React.ReactNode }) => {
 
   const updateBadge = useCallback(
     async (key: BadgeKey, status: BadgeStatus) => {
-      await setBadgesMutation.mutateAsync({ key, status });
+      await setBadges({ key, status });
     },
-    [setBadgesMutation]
+    [setBadges]
   );
 
   const saveShownToast = useCallback(
     async (key: BadgeKey) => {
       const updated = new Set(shownToasts).add(key);
-      await setShownToastsMutation.mutateAsync(updated);
+      await setShownToasts(updated);
     },
-    [shownToasts, setShownToastsMutation]
+    [shownToasts, setShownToasts]
   );
 
   const awardBadge = useCallback(
     async (key: BadgeKey) => {
       const badge = badges[key];
+
       if (!badge || badge.status === BadgeStatus.EARNED) return;
 
       await updateBadge(key, BadgeStatus.EARNED);
@@ -64,6 +79,7 @@ export const BadgeProvider = ({ children }: { children: React.ReactNode }) => {
             // e.g. showBadgeModal(); implement in UI logic
           },
         });
+
         await saveShownToast(key);
       }
     },
@@ -72,7 +88,7 @@ export const BadgeProvider = ({ children }: { children: React.ReactNode }) => {
 
   const hasBadge = (key: BadgeKey) => badges[key]?.status === BadgeStatus.EARNED;
 
-  return <BadgeContext.Provider value={{ badges, awardBadge, hasBadge }}>{children}</BadgeContext.Provider>;
+  return <BadgeContext.Provider value={{ badges, xp, addXP, awardBadge, hasBadge }}>{children}</BadgeContext.Provider>;
 };
 
 export const useBadges = () => {

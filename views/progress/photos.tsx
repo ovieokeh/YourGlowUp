@@ -5,7 +5,6 @@ import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { ProgressReview } from "@/components/ProgressReview";
 import { ThemedFabButton } from "@/components/ThemedFabButton";
 import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
 import { Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useGetPhotoLogs } from "@/queries/logs";
@@ -39,40 +38,43 @@ export function ProgressPhotoView() {
   );
 
   return (
-    <ScrollView contentContainerStyle={{ flex: 1 }}>
-      <ThemedView style={styles.container}>
-        {filtered.length ? (
-          <View style={styles.selectorRow}>
-            {RANGE_OPTIONS.map((r) => (
-              <Pressable
-                key={r}
-                onPress={() => setRange(r as any)}
-                style={[
-                  styles.rangeBtn,
-                  { borderColor },
-                  range === r && { backgroundColor: accentColor, borderColor: accentColor },
-                ]}
-              >
-                <ThemedText style={{ fontWeight: "500", color: range === r ? "#fff" : textColor }}>{r}</ThemedText>
-              </Pressable>
-            ))}
-          </View>
-        ) : null}
+    <View style={styles.container}>
+      {filtered.length ? (
+        <View style={styles.selectorRow}>
+          {RANGE_OPTIONS.map((r) => (
+            <Pressable
+              key={r}
+              onPress={() => setRange(r as any)}
+              style={[
+                styles.rangeBtn,
+                { borderColor },
+                range === r && { backgroundColor: accentColor, borderColor: accentColor },
+              ]}
+            >
+              <ThemedText style={{ fontWeight: "500", color: range === r ? "#fff" : textColor }}>{r}</ThemedText>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
 
-        <ProgressReview photoLogs={filtered} />
+      <ScrollView>
+        <View style={{ paddingBottom: 96 }}>
+          <ProgressReview photoLogs={filtered} />
+        </View>
+      </ScrollView>
 
-        <ThemedFabButton
-          icon="camera"
-          title="Log progress"
-          onPress={() => {
-            router.push({
-              pathname: "/add-photo-log",
-              params: { activeTab: "Self Reports" },
-            });
-          }}
-        />
-      </ThemedView>
-    </ScrollView>
+      <ThemedFabButton
+        icon="camera"
+        title="Log progress"
+        onPress={() => {
+          router.push({
+            pathname: "/add-photo-log",
+            params: { activeTab: "Self Reports" },
+          });
+        }}
+        bottom={96}
+      />
+    </View>
   );
 }
 

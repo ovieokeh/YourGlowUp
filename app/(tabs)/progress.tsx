@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
+import { Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -55,19 +55,14 @@ export default function ProgressScreen() {
         ))}
         <Animated.View style={[styles.underline, { width: tabWidth, backgroundColor: underline }, underlineStyle]} />
       </View>
-      <ScrollView
-        style={{
-          flex: 1,
-        }}
-      >
-        {activeTab === "Stats" ? (
-          <ProgressStatsView />
-        ) : activeTab === "Logs" ? (
-          <ProgressLogsView />
-        ) : (
-          <ProgressPhotoView />
-        )}
-      </ScrollView>
+
+      {activeTab === "Stats" ? (
+        <ProgressStatsView />
+      ) : activeTab === "Logs" ? (
+        <ProgressLogsView />
+      ) : (
+        <ProgressPhotoView />
+      )}
     </ThemedView>
   );
 }

@@ -2,11 +2,12 @@ import { BackButton } from "@/components/BackButton";
 import { ThemeProviderCustom, useAppTheme } from "@/hooks/theme/context";
 import { BadgeProvider } from "@/providers/BadgeContext";
 import { queryClient } from "@/queries";
-import { resetBadges, resetXP } from "@/queries/gamification/gamification";
+import { resetBadges, resetShownToasts, resetXP } from "@/queries/gamification/gamification";
 import { initLogsTable } from "@/queries/logs/logs";
 import { getOnboardingStatus, OnboardingStatus, setOnboardingStatus } from "@/queries/onboarding/onboarding";
 import { initRoutinesTables } from "@/queries/routines/routines";
 import { supabase } from "@/supabase";
+import { useNotificationRedirect } from "@/utils/notifications";
 import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Buffer } from "buffer";
@@ -49,6 +50,8 @@ function App() {
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
 
+  useNotificationRedirect();
+
   useEffect(() => {
     const init = async () => {
       const onboarded = await getOnboardingStatus("main-onboarding");
@@ -75,18 +78,18 @@ function App() {
   }, [loaded]);
 
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const nuke = async () => {
       initLogsTable(true);
       initRoutinesTables(true);
       await resetBadges();
       await resetXP();
+      await resetShownToasts();
       setOnboardingStatus("main-onboarding", {
         step: 0,
         status: OnboardingStatus.NOT_STARTED,
       });
     };
-    // nuke();
+    nuke();
   }, []);
 
   if (!loaded) {

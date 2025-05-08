@@ -1,4 +1,4 @@
-import { router, Tabs } from "expo-router";
+import { router, Tabs, useFocusEffect } from "expo-router";
 import React from "react";
 import { Platform, Pressable } from "react-native";
 
@@ -8,6 +8,7 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { XPCounter } from "@/components/XPCounter";
 import { useAwardEarnedBadges } from "@/hooks/useAwardEarnedBadges";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { scheduleNotificationWithStats } from "@/utils/notifications";
 
 const SettingsButton = () => {
   const accent = useThemeColor({}, "accent");
@@ -30,6 +31,9 @@ export default function TabLayout() {
   const tint = useThemeColor({}, "tint");
   const accent = useThemeColor({}, "accent");
 
+  useFocusEffect(() => {
+    scheduleNotificationWithStats();
+  });
   useAwardEarnedBadges();
 
   return (
@@ -85,7 +89,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="routines/[id]"
         options={{
-          title: "Single Routine",
+          title: "My Routine",
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="clock" color={color} />,
         }}
       />

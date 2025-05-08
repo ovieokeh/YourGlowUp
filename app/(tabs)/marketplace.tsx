@@ -10,6 +10,7 @@ import { ThemedTextInput } from "@/components/ThemedTextInput";
 import { ThemedView } from "@/components/ThemedView";
 import { BorderRadii, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { useBadges } from "@/providers/BadgeContext";
 import { useLocalSearchParams } from "expo-router";
 
 // Type definitions for future extensibility
@@ -29,45 +30,56 @@ const fetchAffiliateProducts = async (): Promise<AffiliateProduct[]> => {
   return [
     {
       id: "jawline-1",
-      name: "Jawzrsize Jaw, Face, and Neck Exerciser",
+      name: "Jawzrsize Pop 'N Go",
       description:
         "Resistance training device for jaw and facial muscles that helps tone the jawline and slim the face.",
-      price: "$29.95",
-      image: "",
+      price: "$20.90",
+      image: "https://m.media-amazon.com/images/I/61WTC4mWezL._AC_SX679_.jpg",
       category: "Jawline Tools",
-      affiliateLink: "https://www.amazon.com/dp/B07B...",
+      affiliateLink: "https://amzn.to/3YBs7d4",
       network: "amazon",
     },
     {
       id: "jawline-2",
-      name: "Jade Roller & Gua Sha Set",
+      name: "Kitsch Stainless Steel Gua Sha Facial Tool",
       description:
-        "Natural jade roller and gua sha tools that reduce puffiness and improve circulation for a glowing complexion.",
-      price: "$17.99",
-      image: "",
+        "With its sleek and stylish design, the Kitsch gua sha stainless steel adds a touch of modern elegance to your skincare collection. It’s not only functional but also a beautiful addition to any vanity.",
+      price: "$11.99",
+      image: "https://m.media-amazon.com/images/I/71ltgGuuNqL._SX679_.jpg",
       category: "Jawline Tools",
-      affiliateLink: "https://www.amazon.com/dp/B07...",
+      affiliateLink: "https://amzn.to/4k8gNxe",
       network: "amazon",
     },
     {
       id: "jawline-3",
-      name: "NuFACE Mini Facial Toning Device",
+      name: "NuFACE MINI Starter Kit",
       description:
-        "At-home microcurrent device that gently lifts and contours the face and jawline for a firmer appearance.",
-      price: "$209.00",
-      image: "",
+        "The NuFACE Mini gently stimulates the larger surface areas of your face and neck to help improve contour and tone, and improve the appearance of fine lines and wrinkles",
+      price: "$193.97",
+      image: "https://m.media-amazon.com/images/I/41-Pfv8THBL._SX679_.jpg",
       category: "Jawline Tools",
-      affiliateLink: "https://www.amazon.com/dp/B00LVFWZ38",
+      affiliateLink: "https://amzn.to/4iWL7tU",
+      network: "amazon",
+    },
+    {
+      id: "jawline-4",
+      name: "Chios Mastiha Tears Gum ",
+      description:
+        "Fresh Chios Mastiha Tears Gum Greek 100% Natural Mastic - Gathered From The Mastic Growers Of Chios Island. It comes from the mastic tree that only grows in the island of Chios and it is hand-cleaned piece by piece by mastic growers. Its unique properties are unique and recognized all around the world in the scientific community.",
+      price: "$16.50",
+      image: "https://m.media-amazon.com/images/I/71RNhTEXmwL._SY879_.jpg",
+      category: "Jawline Tools",
+      affiliateLink: "https://amzn.to/4mo26Z9",
       network: "amazon",
     },
     {
       id: "cleanser-1",
       name: "CeraVe Hydrating Facial Cleanser",
       description: "Gentle cleanser with ceramides and hyaluronic acid that cleanses without stripping moisture.",
-      price: "$14.99",
-      image: "",
+      price: "$18.51",
+      image: "https://m.media-amazon.com/images/I/51flyLJHWtL._SX679_.jpg",
       category: "Facial Care",
-      affiliateLink: "https://www.amazon.com/dp/B01MSSDEPK",
+      affiliateLink: "https://amzn.to/4iVEOGJ",
       network: "amazon",
     },
     {
@@ -75,21 +87,10 @@ const fetchAffiliateProducts = async (): Promise<AffiliateProduct[]> => {
       name: "Cetaphil Gentle Skin Cleanser",
       description:
         "Soap-free, fragrance-free cleanser ideal for sensitive skin, helping to remove dirt while maintaining skin’s pH balance.",
-      price: "$12.99",
-      image: "",
+      price: "$13.44",
+      image: "https://m.media-amazon.com/images/I/414EGEsGvmL._SX300_SY300_QL70_FMwebp_.jpg",
       category: "Facial Care",
-      affiliateLink: "https://www.amazon.com/dp/B001ET76CY",
-      network: "amazon",
-    },
-    {
-      id: "cleanser-3",
-      name: "La Roche-Posay Toleriane Hydrating Gentle Cleanser",
-      description:
-        "Creamy facial cleanser with ceramides and niacinamide that gently cleanses and soothes dry, sensitive skin.",
-      price: "$15.99",
-      image: "",
-      category: "Facial Care",
-      affiliateLink: "https://www.amazon.com/dp/B01NCI8B02",
+      affiliateLink: "https://amzn.to/4d7YJRK",
       network: "amazon",
     },
     {
@@ -105,24 +106,24 @@ const fetchAffiliateProducts = async (): Promise<AffiliateProduct[]> => {
     },
     {
       id: "moisturizer-2",
-      name: "Neutrogena Hydro Boost Water Gel",
+      name: "L'Oreal Paris Collagen Daily Face Moisturizer",
       description:
-        "Oil-free gel moisturizer with hyaluronic acid that provides intense hydration and a dewy, refreshed glow.",
-      price: "$19.99",
-      image: "",
+        "Day and night face and chest moisturizer: provides skin with a daily dose of intense hydration that helps to fill in the appearance of lines and wrinkles and helps restore moisture for smoother, plumper skin",
+      price: "$22.98",
+      image: "https://m.media-amazon.com/images/I/71qa57UEBnL._SX679_.jpg",
       category: "Moisturizers",
-      affiliateLink: "https://www.amazon.com/dp/B00NR1YQK4",
+      affiliateLink: "https://amzn.to/3EZzPaa",
       network: "amazon",
     },
     {
       id: "moisturizer-3",
-      name: "Olay Regenerist Micro-Sculpting Cream",
+      name: "Olay Smooth & Renew Retinol Face Moisturizer",
       description:
         "Popular anti-aging cream with peptides and niacinamide that hydrates to plump skin and minimize fine lines.",
       price: "$28.99",
-      image: "",
+      image: "https://m.media-amazon.com/images/I/61CbMBiV9BL._SX679_.jpg",
       category: "Moisturizers",
-      affiliateLink: "https://www.amazon.com/dp/B0039OHE3A",
+      affiliateLink: "https://amzn.to/436DScO",
       network: "amazon",
     },
     {
@@ -130,10 +131,10 @@ const fetchAffiliateProducts = async (): Promise<AffiliateProduct[]> => {
       name: "The Ordinary Niacinamide 10% + Zinc 1%",
       description:
         "High-strength niacinamide serum that reduces blemishes and visible pores while balancing oily skin.",
-      price: "$6.00",
-      image: "https://media.ulta.com/i/ulta/2551167",
+      price: "$8.99",
+      image: "https://m.media-amazon.com/images/I/51cn3TDkaML._SX679_.jpg",
       category: "Serums",
-      affiliateLink: "https://www.amazon.com/dp/B01MDTVZTZ",
+      affiliateLink: "https://amzn.to/4kcW1wH",
       network: "amazon",
     },
     {
@@ -141,10 +142,10 @@ const fetchAffiliateProducts = async (): Promise<AffiliateProduct[]> => {
       name: "TruSkin Vitamin C Serum",
       description:
         "Brightening serum with vitamin C, vitamin E, and hyaluronic acid that targets dark spots and uneven tone for a radiant complexion.",
-      price: "$21.99",
-      image: "",
+      price: "$18.68",
+      image: "https://m.media-amazon.com/images/I/71S3iW6010L._SX679_.jpg",
       category: "Serums",
-      affiliateLink: "https://www.amazon.com/dp/B01M4MCUAF",
+      affiliateLink: "https://amzn.to/42ODgtE",
       network: "amazon",
     },
     {
@@ -152,10 +153,10 @@ const fetchAffiliateProducts = async (): Promise<AffiliateProduct[]> => {
       name: "CeraVe Resurfacing Retinol Serum",
       description:
         "Encapsulated retinol serum with licorice root that fades post-acne marks, refines skin texture, and smooths fine lines.",
-      price: "$21.99",
-      image: "https://media.ulta.com/i/ulta/2556947",
+      price: "$18.68",
+      image: "https://m.media-amazon.com/images/I/71zvPJqU7FL._SX679_.jpg",
       category: "Serums",
-      affiliateLink: "https://www.amazon.com/dp/B07VWSN95S",
+      affiliateLink: "https://amzn.to/4m56sUL",
       network: "amazon",
     },
     {
@@ -164,9 +165,9 @@ const fetchAffiliateProducts = async (): Promise<AffiliateProduct[]> => {
       description:
         "Leave-on salicylic acid exfoliant that unclogs pores, smooths wrinkles, and evens skin tone for brighter, clearer skin.",
       price: "$35.00",
-      image: "https://static.thcdn.com/productimg/original/11174178-5605201471599659.jpg",
+      image: "https://m.media-amazon.com/images/I/61zhzjgd2xL._SX522_.jpg",
       category: "Exfoliators",
-      affiliateLink: "https://www.amazon.com/dp/B00949CTQQ",
+      affiliateLink: "https://amzn.to/456lDXs",
       network: "amazon",
     },
     {
@@ -175,9 +176,9 @@ const fetchAffiliateProducts = async (): Promise<AffiliateProduct[]> => {
       description:
         "Intense 10-minute at-home peel with alpha and beta hydroxy acids that resurfaces skin for improved texture and radiance.",
       price: "$9.50",
-      image: "https://media.ulta.com/i/ulta/2551153",
+      image: "https://m.media-amazon.com/images/I/51i1m6pqEWL._SX522_.jpg",
       category: "Exfoliators",
-      affiliateLink: "https://www.amazon.com/dp/B0872ZHB3Y",
+      affiliateLink: "https://amzn.to/431kttJ",
       network: "amazon",
     },
     {
@@ -186,9 +187,9 @@ const fetchAffiliateProducts = async (): Promise<AffiliateProduct[]> => {
       description:
         "Cult-favorite glycolic acid toner that gently exfoliates dead cells to reveal brighter, more even and glowing skin.",
       price: "$29.00",
-      image: "https://www.pixibeauty.com/cdn/shop/products/GlowTonic-250ml-MAY19_5.jpg?v=1744417559",
+      image: "https://m.media-amazon.com/images/I/61lw7881TNL._AC_SX679_.jpg",
       category: "Exfoliators",
-      affiliateLink: "https://www.amazon.com/dp/B00KH6QX08",
+      affiliateLink: "https://amzn.to/3GYFJZJ",
       network: "amazon",
     },
   ];
@@ -208,6 +209,13 @@ export default function MarketplaceScreen() {
 
   const textColor = useThemeColor({}, "text");
   const borderColor = useThemeColor({}, "border");
+
+  const { awardBadge } = useBadges();
+
+  useEffect(() => {
+    awardBadge("explorer");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (typeof q === "string") setQuery(q);

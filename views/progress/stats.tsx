@@ -121,23 +121,22 @@ export function ProgressStatsView() {
 
   return (
     <ThemedView style={{ flex: 1 }}>
+      <View style={styles.selectorRow}>
+        {RANGE_OPTIONS.map((r) => (
+          <Pressable
+            key={r}
+            onPress={() => setRange(r as any)}
+            style={[
+              styles.rangeBtn,
+              { borderColor },
+              range === r && { backgroundColor: accentColor, borderColor: accentColor },
+            ]}
+          >
+            <ThemedText style={{ fontWeight: "500", color: range === r ? "#fff" : textColor }}>{r}</ThemedText>
+          </Pressable>
+        ))}
+      </View>
       <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.selectorRow}>
-          {RANGE_OPTIONS.map((r) => (
-            <Pressable
-              key={r}
-              onPress={() => setRange(r as any)}
-              style={[
-                styles.rangeBtn,
-                { borderColor },
-                range === r && { backgroundColor: accentColor, borderColor: accentColor },
-              ]}
-            >
-              <ThemedText style={{ fontWeight: "500", color: range === r ? "#fff" : textColor }}>{r}</ThemedText>
-            </Pressable>
-          ))}
-        </View>
-
         <View style={styles.cardGrid}>
           <StatCard label="Current Streak" value={`${streak} days`} />
           {/* <StatCard label="Avg Symmetry" value={symmetryAvg} /> */}
@@ -234,7 +233,8 @@ const styles = StyleSheet.create({
   selectorRow: {
     flexDirection: "row",
     gap: Spacings.md,
-    marginBottom: Spacings.lg,
+
+    padding: Spacings.md,
   },
   rangeBtn: {
     paddingVertical: Spacings.xs,

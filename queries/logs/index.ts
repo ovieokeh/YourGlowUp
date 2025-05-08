@@ -42,7 +42,7 @@ export const useSaveExerciseLog = (routineId: string) => {
       saveExerciseLog(exercise, duration, routineId),
     onSuccess: () => {
       // Invalidate the query to refetch the data
-      queryClient.invalidateQueries({ queryKey: ["logs"] });
+      queryClient.refetchQueries({ queryKey: ["logs"] });
     },
   });
 };
@@ -54,7 +54,7 @@ export const useSavePhotoLog = (routineId: string) => {
     mutationFn: (args: PhotoLogCreate) => savePhotoLog({ ...args, routineId }),
     onSuccess: () => {
       // Invalidate the query to refetch the data
-      queryClient.invalidateQueries({ queryKey: ["logs"] });
+      queryClient.refetchQueries({ queryKey: ["logs"] });
     },
   });
 };
@@ -66,7 +66,7 @@ export const useSaveTaskLog = () => {
     mutationFn: ({ task, note }: { task: string; note?: string }) => saveTaskLog(task, note),
     onSuccess: () => {
       // Invalidate the query to refetch the data
-      queryClient.invalidateQueries({ queryKey: ["logs"] });
+      queryClient.refetchQueries({ queryKey: ["logs"] });
     },
   });
 };

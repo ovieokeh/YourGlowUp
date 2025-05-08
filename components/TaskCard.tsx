@@ -1,10 +1,12 @@
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { RoutineTaskItem } from "@/queries/routines/routines";
 import { useMemo, useState } from "react";
 import { Alert, Modal, Pressable, SafeAreaView, StyleSheet, View } from "react-native";
 
 import { BorderRadii, Spacings } from "@/constants/Theme";
+import { useBadges } from "@/providers/BadgeContext";
+import { LOG_TYPE_XP_MAP } from "@/queries/gamification/gamification";
 import { useGetLogsByTask, useSaveTaskLog } from "@/queries/logs";
+import { RoutineTaskItem } from "@/queries/routines/shared";
 import Toast from "react-native-toast-message";
 import { ThemedButton } from "./ThemedButton";
 import { ThemedPicker } from "./ThemedPicker";
@@ -30,6 +32,7 @@ export const TaskCard = ({ item, allowCompletion, mode = "display", handlePress 
   const logs = useMemo(() => logsByTaskQuery.data || [], [logsByTaskQuery.data]);
 
   const saveTaskLogMutation = useSaveTaskLog();
+  const { addXP } = useBadges();
 
   const [questionModalVisible, setQuestionModalVisible] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -45,6 +48,10 @@ export const TaskCard = ({ item, allowCompletion, mode = "display", handlePress 
       task: item.name,
       note: "",
     });
+    await addXP.mutateAsync(LOG_TYPE_XP_MAP["task"]).catch((err) => {
+      console.error("Error adding XP:", err);
+    });
+
     Toast.show({
       type: "success",
       text1: "Task completed",
@@ -106,8 +113,16 @@ export const TaskCard = ({ item, allowCompletion, mode = "display", handlePress 
   };
 
   const todayLogs = useMemo(() => {
-    const today = new Date().toISOString().split("T")[0];
-    return logs.filter((log) => log.completedAt.startsWith(today));
+    const now = new Date();
+    const startOfDay = new Date(now);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(now);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    return logs.filter((log) => {
+      const completed = new Date(log.completedAt).getTime();
+      return completed >= startOfDay.getTime() && completed <= endOfDay.getTime();
+    });
   }, [logs]);
 
   const hasTodayLogs = todayLogs.length > 0;
@@ -116,8 +131,9 @@ export const TaskCard = ({ item, allowCompletion, mode = "display", handlePress 
     <Pressable
       style={[
         styles.card,
+        { backgroundColor: cardBg, borderColor: cardBorder },
+
         {
-          backgroundColor: cardBg,
           ...(mode === "action"
             ? {
                 borderColor: hasTodayLogs ? successColor : cardBorder,
@@ -130,13 +146,14 @@ export const TaskCard = ({ item, allowCompletion, mode = "display", handlePress 
     >
       <View style={{ padding: Spacings.sm }}>
         <ThemedText style={styles.exerciseArea}>{item.area}</ThemedText>
+        <ThemedText style={styles.exerciseName}>{item.name}</ThemedText>
         <View style={styles.row}>
           {item.notificationTimes?.length ? (
             <View style={styles.row}>
               <IconSymbol name={"alarm"} size={16} color={textColor} />
               {item.notificationTimes.slice(0, 3).map((time, index) => (
                 <View style={styles.row} key={time + index}>
-                  {index % 2 === 0 ? null : <ThemedText>-</ThemedText>}
+                  {index % 2 === 0 ? null : <ThemedText>,</ThemedText>}
                   <ThemedText style={styles.description}>{time}</ThemedText>
                 </View>
               ))}
@@ -146,7 +163,6 @@ export const TaskCard = ({ item, allowCompletion, mode = "display", handlePress 
             </View>
           ) : null}
         </View>
-        <ThemedText style={styles.exerciseName}>{item.name}</ThemedText>
 
         {mode === "action" && hasTodayLogs && (
           <View style={styles.row}>

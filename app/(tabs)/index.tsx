@@ -11,7 +11,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { TodaysStats } from "@/components/TodaysStats";
 import { BorderRadii, Spacings } from "@/constants/Theme";
 import { useAddRoutine, useGetRoutineById, useGetRoutines } from "@/queries/routines";
-import { isRoutineExerciseItem, isRoutineTaskItem } from "@/queries/routines/routines";
+import { isRoutineExerciseItem, isRoutineTaskItem } from "@/queries/routines/shared";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -29,7 +29,7 @@ export default function HomeScreen() {
           routineId: "my-routine",
           name: "My Routine",
           description: "Your default routine",
-          itemsIds: ["tongue-posture"],
+          itemsIds: ["tongue-posture", "cleanse", "moisturize", "hydrate"],
         });
       }
     }, [mutate, routine, routineQuery.isSuccess])

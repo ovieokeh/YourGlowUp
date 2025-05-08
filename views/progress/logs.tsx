@@ -94,6 +94,7 @@ export function ProgressLogsView() {
             iconPlacement="right"
             title="Log progress"
             variant="solid"
+            bottom={96}
           />
         </>
       ) : (
@@ -136,6 +137,7 @@ export function ProgressLogsView() {
             iconPlacement="right"
             title="Start an Exercise"
             variant="solid"
+            bottom={96}
           />
         </>
       )}

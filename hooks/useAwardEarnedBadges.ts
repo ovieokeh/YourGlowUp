@@ -1,38 +1,30 @@
 import { useBadges } from "@/providers/BadgeContext";
-import { badgeConditions, BadgeKey, BadgeStatus, getStreak } from "@/queries/gamification/gamification";
-import { useGetLogs } from "@/queries/logs";
-import { useFocusEffect } from "expo-router";
-import { useMemo } from "react";
+import { badgeConditions, BadgeKey, getStreak } from "@/queries/gamification/gamification";
+import { useGetLogs, useGetPhotoLogs } from "@/queries/logs";
+import { useEffect, useMemo } from "react";
 
 export const useAwardEarnedBadges = () => {
   const logsQuery = useGetLogs();
   const logs = useMemo(() => logsQuery.data || [], [logsQuery.data]);
-  const { awardBadge, badges } = useBadges();
+  const photoLogsQuery = useGetPhotoLogs("my-routine");
+  const photoLogs = useMemo(() => photoLogsQuery.data || [], [photoLogsQuery.data]);
+  const { awardBadge } = useBadges();
 
-  useFocusEffect(() => {
+  useEffect(() => {
     const checkAndAward = async () => {
+      if (!logs.length && !photoLogs.length) return;
+
       const streak = getStreak(logs);
-      const current = badges;
 
       const entries = Object.entries(badgeConditions) as [BadgeKey, (typeof badgeConditions)[BadgeKey]][];
 
       for (const [key, conditionFn] of entries) {
-        const badge = current[key];
-        if (!badge || badge.status === BadgeStatus.EARNED) continue;
-
-        if (conditionFn({ logs, streak })) {
+        if (conditionFn({ logs, photoLogs, streak })) {
           await awardBadge(key);
         }
       }
     };
 
-    const interval = setInterval(() => {
-      checkAndAward();
-    }, 1000 * 60 * 5); // Check every 5 minutes
-
     checkAndAward();
-    return () => {
-      clearInterval(interval);
-    };
-  });
+  }, [logs, photoLogs, awardBadge]);
 };

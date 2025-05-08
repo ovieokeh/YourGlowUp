@@ -8,7 +8,7 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { BorderRadii, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { ExerciseLog, getLogsByExercise } from "@/queries/logs/logs";
-import { RoutineExerciseItem } from "@/queries/routines/routines";
+import { RoutineExerciseItem } from "@/queries/routines/shared";
 
 interface ExerciseCardProps {
   item: RoutineExerciseItem;
@@ -31,8 +31,16 @@ export const ExerciseCard = ({ item, mode = "display", handlePress }: ExerciseCa
   );
 
   const todayLogs = useMemo(() => {
-    const today = new Date().toISOString().split("T")[0];
-    return logs.filter((log) => log.completedAt.startsWith(today));
+    const now = new Date();
+    const startOfDay = new Date(now);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(now);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    return logs.filter((log) => {
+      const completed = new Date(log.completedAt).getTime();
+      return completed >= startOfDay.getTime() && completed <= endOfDay.getTime();
+    });
   }, [logs]);
   const hasTodayLogs = useMemo(() => todayLogs.length > 0, [todayLogs]);
 
@@ -78,15 +86,22 @@ export const ExerciseCard = ({ item, mode = "display", handlePress }: ExerciseCa
             <ThemedText style={[styles.description, { opacity: 0.7 }]}>{readableDuration(item.duration)}</ThemedText>
           </View>
 
-          {item.notificationTimes
-            ? item.notificationTimes.map((time, index) => (
+          {item.notificationTimes?.length ? (
+            <View style={styles.row}>
+              <ThemedText>-</ThemedText>
+
+              <IconSymbol name={"alarm"} size={16} color={textColor} />
+              {item.notificationTimes.slice(0, 3).map((time, index) => (
                 <View style={styles.row} key={time + index}>
-                  <ThemedText>-</ThemedText>
-                  <IconSymbol name={"alarm"} size={16} color={textColor} />
+                  {index % 2 === 0 ? null : <ThemedText>,</ThemedText>}
                   <ThemedText style={styles.description}>{time}</ThemedText>
                 </View>
-              ))
-            : null}
+              ))}
+              {item.notificationTimes.length > 3 ? (
+                <ThemedText style={styles.description}>+{item.notificationTimes.length - 3} more</ThemedText>
+              ) : null}
+            </View>
+          ) : null}
         </View>
         <ThemedText style={styles.exerciseName}>{item.name}</ThemedText>
 

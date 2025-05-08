@@ -10,14 +10,14 @@ import { ThemedTextInput } from "@/components/ThemedTextInput";
 import { ThemedView } from "@/components/ThemedView";
 import { Spacings } from "@/constants/Theme";
 import { useGetRoutineItem, useUpdateRoutineItem } from "@/queries/routines";
-import { RoutineItem } from "@/queries/routines/routines";
+import { RoutineItem } from "@/queries/routines/shared";
 import { Ionicons } from "@expo/vector-icons";
 import { useSearchParams } from "expo-router/build/hooks";
 import Toast from "react-native-toast-message";
 
-const timeOptions = Array.from({ length: 24 * 4 }, (_, i) => {
-  const hour = String(Math.floor(i / 4)).padStart(2, "0");
-  const minute = String((i % 4) * 15).padStart(2, "0");
+const timeOptions = Array.from({ length: 24 * 12 }, (_, i) => {
+  const hour = String(Math.floor(i / 12)).padStart(2, "0");
+  const minute = String((i % 12) * 5).padStart(2, "0");
   return `${hour}:${minute}`;
 });
 

@@ -30,10 +30,17 @@ export const TodaysStats: React.FC = () => {
   }, [logs]);
 
   const todayLogs = useMemo(() => {
-    const today = new Date().toDateString();
-    return logs.filter((log) => new Date(log.completedAt).toDateString() === today);
-  }, [logs]);
+    const now = new Date();
+    const startOfDay = new Date(now);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(now);
+    endOfDay.setHours(23, 59, 59, 999);
 
+    return logs.filter((log) => {
+      const completed = new Date(log.completedAt).getTime();
+      return completed >= startOfDay.getTime() && completed <= endOfDay.getTime();
+    });
+  }, [logs]);
   const exercisesToday = todayLogs.filter(isExerciseLog);
   const lastExercise = exercisesToday.sort(
     (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()

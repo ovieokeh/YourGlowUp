@@ -6,10 +6,10 @@ import {
   getRoutineItem,
   getUserRoutines,
   removeRoutine,
-  Routine,
   updateRoutine,
   updateRoutineItem,
 } from "./routines";
+import { Routine } from "./shared";
 
 export const useGetRoutines = () => {
   return useQuery({

@@ -19,7 +19,15 @@ import { AccountBenefits } from "@/components/AccountBenefits";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { getLogs, isUserLog, Log, saveExerciseLog, saveUserLog, UserLog } from "@/queries/logs/logs";
+import {
+  getLogs,
+  getPhotoLogs,
+  isExerciseLog,
+  isTaskLog,
+  Log,
+  saveExerciseLog,
+  saveTaskLog,
+} from "@/queries/logs/logs";
 import { supabase } from "@/supabase";
 import Toast from "react-native-toast-message";
 
@@ -100,20 +108,24 @@ export default function AccountView() {
   }
 
   const exportData = async () => {
+    // @todo rewrite this to support new structure
+
     const logs = await getLogs();
+    const photoLogs = await getPhotoLogs("my-routine");
 
     const IMAGE_URI_BLOB_MAP: Record<string, string> = {};
-    const userLogs = logs.filter(isUserLog) as UserLog[];
-    const imagesBase64Blobs = userLogs
-      .filter((log) => log.photoUri)
-      .map(async (log) => {
-        const uri = log.photoUri!;
+    const imagesBase64Blobs = photoLogs.map(async (log) => {
+      const uris = [log.photos.front?.uri, log.photos.left?.uri, log.photos.right?.uri].filter(
+        (uri) => typeof uri === "string"
+      );
+      return uris.map((uri) => {
         const base64 = FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
         return base64.then((base64String) => {
           IMAGE_URI_BLOB_MAP[uri] = base64String;
           return `data:image/jpg;base64,${base64String}`;
         });
       });
+    });
     await Promise.allSettled(imagesBase64Blobs);
     const notificationsEnabled = await AsyncStorage.getItem(NOTIF_ENABLED_KEY);
     const notificationTimeRaw = await AsyncStorage.getItem(NOTIF_TIME_KEY);
@@ -163,6 +175,7 @@ export default function AccountView() {
       {
         text: "Continue",
         onPress: async () => {
+          // @todo rewrite this to support new structure
           const result = await DocumentPicker.getDocumentAsync({ type: "application/json" });
           if (result.canceled) return;
 
@@ -181,17 +194,14 @@ export default function AccountView() {
               await FileSystem.writeAsStringAsync(newUri, blob, {
                 encoding: FileSystem.EncodingType.Base64,
               });
-              const log = logs.filter(isUserLog).find((log) => log.photoUri === uri);
-              if (log) {
-                log.photoUri = newUri;
-              }
+              // @todo: bring back photo logs
             }
 
             for (const log of logs) {
-              if (log.type === "exercise") {
+              if (isExerciseLog(log)) {
                 saveExerciseLog(log.exercise, log.duration);
-              } else if (log.type === "user") {
-                await saveUserLog(log);
+              } else if (isTaskLog(log)) {
+                await saveTaskLog(log as any);
               }
             }
 

@@ -1,4 +1,4 @@
-import { Link, router, Stack } from "expo-router";
+import { router, Stack } from "expo-router";
 import { ScrollView, StyleSheet, View } from "react-native";
 
 import { ExerciseCard } from "@/components/ExerciseCard";
@@ -11,7 +11,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useGetPendingItemsToday, useGetRoutineById, useUpdateRoutine } from "@/queries/routines";
-import { isRoutineExerciseItem, isRoutineTaskItem } from "@/queries/routines/routines";
+import { isRoutineExerciseItem, isRoutineTaskItem } from "@/queries/routines/shared";
 import { useLocalSearchParams } from "expo-router/build/hooks";
 import { useState } from "react";
 
@@ -28,27 +28,12 @@ export default function RoutinesSingleScreen() {
 
   const backgroundColor = useThemeColor({}, "background");
 
-  if (isLoading) {
+  if (isLoading || !routine) {
     // Show a loading state while fetching the routine
     return (
       <ThemedView style={styles.container}>
         <ThemedText type="title">Loading...</ThemedText>
       </ThemedView>
-    );
-  }
-
-  if (!routine) {
-    // If the routine is not found, show a 404 screen
-    return (
-      <>
-        <Stack.Screen options={{ title: "Oops!" }} />
-        <ThemedView style={styles.container}>
-          <ThemedText type="title">This screen doesn&apos;t exist.</ThemedText>
-          <Link href="/" style={styles.link}>
-            <ThemedText type="link">Go to home screen!</ThemedText>
-          </Link>
-        </ThemedView>
-      </>
     );
   }
 
@@ -61,7 +46,9 @@ export default function RoutinesSingleScreen() {
     <ThemedView style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.container}>
         <Stack.Screen options={{ title: routine.name }} />
-        <ThemedText>Customise your routine or generate a routine from a new face analysis.</ThemedText>
+        <ThemedText>
+          Customise your routine by clicking on an item to edit it or generate a routine from an AI face analysis.
+        </ThemedText>
 
         <View style={{ gap: Spacings.sm, marginBottom: Spacings.md }}>
           <ThemedButton

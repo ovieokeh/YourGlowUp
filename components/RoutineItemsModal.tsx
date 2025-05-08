@@ -142,7 +142,7 @@ export const RoutineItemsModal = ({ visible, selectedIds, onClose, onSave }: Pro
         />
 
         <ThemedButton
-          title={`Add ${selected.size} to Routine`}
+          title={`Update Routine (${selected.size} items)`}
           onPress={handleSave}
           style={styles.saveButton}
           disabled={selected.size === 0}

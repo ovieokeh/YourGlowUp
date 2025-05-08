@@ -99,10 +99,11 @@ export default function FaceAnalysisActionsView({ analysisResults }: FaceAnalysi
   const handleSaveRoutine = () => {
     updateRoutineMutation
       .mutateAsync({
+        replace: true,
         routineId: "my-routine",
         name: "My Routine",
         description: "Routine based on facial analysis on " + new Date().toLocaleDateString(),
-        itemsIds: [...selected],
+        itemsIds: [...Array.from(selected)],
       })
       .then(() => {
         router.replace("/(tabs)/routines/my-routine");

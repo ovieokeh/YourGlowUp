@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
 import { PhotoUpload, PhotoUploadViewProps } from "@/components/PhotoUpload";
@@ -44,6 +44,22 @@ export default function FaceAnalysisFormView({
   setLoading,
   onTransformChange,
 }: Props) {
+  const [isUploadingFront, setIsUploadingFront] = useState(false);
+  const [isUploadingLeft, setIsUploadingLeft] = useState(false);
+  const [isUploadingRight, setIsUploadingRight] = useState(false);
+
+  const localIsUploading = useMemo(() => {
+    return isUploadingFront || isUploadingLeft || isUploadingRight;
+  }, [isUploadingFront, isUploadingLeft, isUploadingRight]);
+
+  useEffect(() => {
+    if (localIsUploading) {
+      setLoading(true);
+    } else {
+      setLoading(false);
+    }
+  }, [localIsUploading, setLoading]);
+
   const textColor = useThemeColor({}, "text");
   const gray10 = useThemeColor({}, "gray10");
   const handlePick = async (
@@ -71,23 +87,14 @@ export default function FaceAnalysisFormView({
         Make sure your face is centered, well-lit, and expressionless in each view.
       </ThemedText>
 
-      {hasAtLeastOnePhoto && (
-        <View style={{ gap: Spacings.sm, backgroundColor: gray10, padding: Spacings.sm, borderRadius: 6 }}>
-          <IconSymbol name="info.circle" size={16} color={textColor} />
-          <ThemedText style={[styles.tipText]}>
-            Click on the thumbnail to align your face with the overlay for best results.
-          </ThemedText>
-        </View>
-      )}
-
       <Field
         label="Front View"
         photo={photos.front}
         onPick={(data) => handlePick("front", data)}
         onTransformChange={(t) => handleTransformChange("front", t)}
         error={errors.front}
-        loading={loading}
-        setLoading={setLoading}
+        loading={isUploadingFront}
+        setLoading={setIsUploadingFront}
         showPreview={showPreview}
         allowTransform={allowTransform}
         overlay={require("@/assets/images/eyes-overlay.png")}
@@ -99,8 +106,8 @@ export default function FaceAnalysisFormView({
         onPick={(data) => handlePick("left", data)}
         onTransformChange={(t) => handleTransformChange("left", t)}
         error={errors.left}
-        loading={loading}
-        setLoading={setLoading}
+        loading={isUploadingLeft}
+        setLoading={setIsUploadingLeft}
         showPreview={showPreview}
         allowTransform={allowTransform}
       />
@@ -111,11 +118,28 @@ export default function FaceAnalysisFormView({
         onPick={(data) => handlePick("right", data)}
         onTransformChange={(t) => handleTransformChange("right", t)}
         error={errors.right}
-        loading={loading}
-        setLoading={setLoading}
+        loading={isUploadingRight}
+        setLoading={setIsUploadingRight}
         showPreview={showPreview}
         allowTransform={allowTransform}
       />
+
+      {hasAtLeastOnePhoto && (
+        <View
+          style={{
+            marginTop: "auto",
+            gap: Spacings.sm,
+            backgroundColor: gray10,
+            padding: Spacings.sm,
+            borderRadius: 6,
+          }}
+        >
+          <IconSymbol name="info.circle" size={16} color={textColor} />
+          <ThemedText style={[styles.tipText]}>
+            Click on the thumbnail to align your face with the overlay for best results.
+          </ThemedText>
+        </View>
+      )}
     </ScrollView>
   );
 }

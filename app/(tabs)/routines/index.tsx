@@ -6,7 +6,8 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { Routine, getUserRoutines } from "@/queries/routines/routines";
+import { getUserRoutines } from "@/queries/routines/routines";
+import { Routine } from "@/queries/routines/shared";
 
 export default function RoutinesScreen() {
   const router = useRouter();

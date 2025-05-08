@@ -8,7 +8,6 @@ import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemePreference, useAppTheme } from "@/hooks/theme/context";
-import { getLogs, isUserLog, UserLog } from "@/queries/logs/logs";
 
 const NOTIF_ENABLED_KEY = "settings.notifications.enabled";
 
@@ -42,37 +41,9 @@ export default function AppSettingsView() {
     } else {
       const time = new Date();
       time.setHours(9, 0, 0); // Set to 9 AM
-      await scheduleNotificationWithStats(time);
     }
     setNotificationsEnabled(newValue);
     await AsyncStorage.setItem(NOTIF_ENABLED_KEY, String(newValue));
-  };
-
-  const scheduleNotificationWithStats = async (time: Date) => {
-    const hour = time.getHours();
-    const minute = time.getMinutes();
-
-    const logs = await getLogs();
-    const userLogs = logs.filter(isUserLog) as UserLog[];
-    const totalLogs = userLogs.length;
-    const avgRating = (userLogs.reduce((sum, log) => sum + log.symmetryRating, 0) / (totalLogs || 1)).toFixed(1);
-
-    const body = totalLogs
-      ? `You’ve logged ${totalLogs} entries. Your avg rating is ${avgRating}/5. Time for today’s check-in.`
-      : `Start your first facial symmetry log today.`;
-
-    await Notifications.cancelAllScheduledNotificationsAsync();
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: "Face Symmetry Reminder",
-        body,
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DAILY,
-        hour,
-        minute,
-      },
-    });
   };
 
   const deviceTheme = useColorScheme() === "dark" ? "dark" : "light";

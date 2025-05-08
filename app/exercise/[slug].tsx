@@ -11,18 +11,17 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { EXERCISES } from "@/constants/Exercises";
 import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useAddXP } from "@/queries/gamification";
+import { useBadges } from "@/providers/BadgeContext";
 import { LOG_TYPE_XP_MAP } from "@/queries/gamification/gamification";
-import { saveExerciseLog } from "@/queries/logs/logs";
+import { useSaveExerciseLog } from "@/queries/logs";
 import { useSearchParams } from "expo-router/build/hooks";
-import Toast from "react-native-toast-message";
 
 export default function ExerciseSession() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const searchParams = useSearchParams();
   const routineId = searchParams.get("routineId") || "";
   const router = useRouter();
-  const addXPMutation = useAddXP();
+  const { addXP } = useBadges();
 
   const exercise = useMemo(
     () => EXERCISES.find((e) => e.itemId === slug || e.name === decodeURIComponent(slug)),
@@ -34,6 +33,8 @@ export default function ExerciseSession() {
   const [completed, setCompleted] = useState(false);
 
   const progress = useSharedValue(0);
+
+  const saveExerciseLogMutation = useSaveExerciseLog(routineId);
 
   const textColor = useThemeColor({}, "text");
   const background = useThemeColor({}, "background");
@@ -55,13 +56,6 @@ export default function ExerciseSession() {
       timer = setInterval(() => setTimeLeft((t) => t - 1), 1000);
     } else if (timeLeft === 0 && started && !completed) {
       setCompleted(true);
-      Toast.show({
-        type: "success",
-        text1: "Session Complete",
-        text2: `You completed ${exercise?.name} in ${(exercise?.duration ?? 0) - timeLeft} seconds.`,
-        position: "top",
-        visibilityTime: 3000,
-      });
     }
 
     return () => clearInterval(timer);
@@ -99,8 +93,8 @@ export default function ExerciseSession() {
 
   const handleComplete = async () => {
     if (!exercise) return;
-    await saveExerciseLog(exercise.name, exercise.duration, routineId);
-    addXPMutation
+    await saveExerciseLogMutation.mutateAsync({ exercise: exercise.name, duration: exercise.duration });
+    addXP
       .mutateAsync(LOG_TYPE_XP_MAP["exercise"] + exercise.duration)
       .catch((err) => {
         console.error("Error adding XP:", err);

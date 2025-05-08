@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { IconSymbolName } from "@/components/ui/IconSymbol";
-import { Log } from "../logs/logs";
+import { Log, PhotoLog } from "../logs/logs";
 
 export enum BadgeStatus {
   NOT_EARNED = "NOT_EARNED",
@@ -10,19 +10,18 @@ export enum BadgeStatus {
 
 export type BadgeKey =
   | "new-beginnings" // account creation
-  | "say-cheese" // first selfie
   | "explorer" // first visit to the marketplace
   | "testing-waters" // first exercise
   | "face-gym-rat" // 10 exercises
   | "face-gym-enthusiast" // 30 exercises
   | "face-gym-sweat" // 50 exercises
   | "face-gym-obsessed" // 100 exercises
-  | "testing-pen" // first self-log
-  | "junior-reporter" // 10 self-logs
-  | "medior-reporter" // 30 self-logs
-  | "senior-reporter" // 50 self-logs
-  | "established-reporter" // 100 self-logs
-  | "narcissus" // 200 exercises & 200 self-logs
+  | "say-cheese" // first selfie
+  | "junior-reporter" // 10 selfies
+  | "medior-reporter" // 30 selfies
+  | "senior-reporter" // 50 selfies
+  | "established-reporter" // 100 selfies
+  | "narcissus" // 200 selfies
   | "beginner-task-master" // 10 tasks
   | "dilligent-task-master" // 30 tasks
   | "pro-task-master" // 50 tasks
@@ -50,14 +49,6 @@ export const BADGES: Record<BadgeKey, Badge> = {
     name: "New Beginnings",
     description: "You created your account. Welcome to the family!",
     icon: "camera.macro",
-    level: BadgeLevel.BRONZE,
-    status: BadgeStatus.NOT_EARNED,
-  },
-  "say-cheese": {
-    id: "say-cheese",
-    name: "Say Cheese",
-    description: "You took your first selfie. Smile!",
-    icon: "camera.aperture",
     level: BadgeLevel.BRONZE,
     status: BadgeStatus.NOT_EARNED,
   },
@@ -109,18 +100,18 @@ export const BADGES: Record<BadgeKey, Badge> = {
     level: BadgeLevel.GOLD,
     status: BadgeStatus.NOT_EARNED,
   },
-  "testing-pen": {
-    id: "testing-pen",
-    name: "Testing the Pen",
-    description: "You completed your first self-log. Tell us more!",
-    icon: "pencil.and.scribble",
+  "say-cheese": {
+    id: "reporter",
+    name: "Say Cheese",
+    description: "You took your first selfie. Smile!",
+    icon: "camera.aperture",
     level: BadgeLevel.BRONZE,
     status: BadgeStatus.NOT_EARNED,
   },
   "junior-reporter": {
     id: "reporter",
     name: "Junior Reporter",
-    description: "You completed 10 self-logs. You're getting the hang of it!",
+    description: "You took 10 selfies. You're getting the hang of it!",
     icon: "pencil.and.scribble",
     level: BadgeLevel.BRONZE,
     status: BadgeStatus.NOT_EARNED,
@@ -128,7 +119,7 @@ export const BADGES: Record<BadgeKey, Badge> = {
   "medior-reporter": {
     id: "reporter",
     name: "Medior Reporter",
-    description: "You completed 30 self-logs. You're a pro!",
+    description: "You took 30 selfies. So stunning!",
     icon: "pencil.and.scribble",
     level: BadgeLevel.SILVER,
     status: BadgeStatus.NOT_EARNED,
@@ -136,7 +127,7 @@ export const BADGES: Record<BadgeKey, Badge> = {
   "senior-reporter": {
     id: "reporter",
     name: "Senior Reporter",
-    description: "You completed 50 self-logs. You're a master!",
+    description: "You took 50 selfies. We can't get enough of you!",
     icon: "pencil.and.scribble",
     level: BadgeLevel.GOLD,
     status: BadgeStatus.NOT_EARNED,
@@ -144,15 +135,15 @@ export const BADGES: Record<BadgeKey, Badge> = {
   "established-reporter": {
     id: "reporter",
     name: "Established Reporter",
-    description: "You completed 100 self-logs. You're a legend!",
+    description: "You took 100 selfies. You are majestic and we love you!",
     icon: "pencil.and.scribble",
     level: BadgeLevel.GOLD,
     status: BadgeStatus.NOT_EARNED,
   },
   narcissus: {
-    id: "narcissus",
+    id: "reporter",
     name: "Narcissus",
-    description: "You completed 200 exercises and 200 self-logs. You're the ultimate face gym enthusiast!",
+    description: "You took 200 selfies. Do you know the story of Narcissus?",
     icon: "person.and.background.dotted",
     level: BadgeLevel.PLATINUM,
     status: BadgeStatus.NOT_EARNED,
@@ -267,57 +258,53 @@ export const resetXP = async () => {
     console.error("Error resetting XP:", error);
   }
 };
-export const LOG_TYPE_XP_MAP: Record<Log["type"], number> = {
+export const LOG_TYPE_XP_MAP: Record<Log["type"] | "photo", number> = {
   exercise: 10,
-  user: 5,
+  photo: 5,
   task: 2,
 };
-
 export const getStreak = (logs: Log[]) => {
-  const today = new Date();
-  const streak = logs.reduce((acc, log) => {
-    const logDate = new Date(log.completedAt);
-    if (logDate.toDateString() === today.toDateString()) {
-      acc += 1;
-    } else if (logDate.getTime() === today.getTime() - 86400000) {
-      acc += 1;
-    } else {
-      acc = 0;
-    }
-    return acc;
-  }, 0);
+  const MS_IN_DAY = 86_400_000;
+  const daySet = new Set(logs.map((log) => Math.floor(log.completedAt / MS_IN_DAY)));
+
+  let streak = 0;
+  let currentDay = Math.floor(Date.now() / MS_IN_DAY);
+
+  while (daySet.has(currentDay)) {
+    streak++;
+    currentDay--; // check previous day
+  }
+
   return streak;
 };
-
-type BadgeConditionFn = (params: { logs: Log[]; streak: number }) => boolean;
+type BadgeConditionFn = (params: { logs: Log[]; photoLogs: PhotoLog[]; streak: number }) => boolean;
 
 export const badgeConditions: Record<BadgeKey, BadgeConditionFn> = {
-  "testing-waters": ({ logs }) => count(logs, "exercise") >= 1,
-  "face-gym-rat": ({ logs }) => count(logs, "exercise") >= 10,
-  "face-gym-enthusiast": ({ logs }) => count(logs, "exercise") >= 30,
-  "face-gym-sweat": ({ logs }) => count(logs, "exercise") >= 50,
-  "face-gym-obsessed": ({ logs }) => count(logs, "exercise") >= 100,
+  "testing-waters": ({ logs }) => countLogs(logs, "exercise") >= 1,
+  "face-gym-rat": ({ logs }) => countLogs(logs, "exercise") >= 10,
+  "face-gym-enthusiast": ({ logs }) => countLogs(logs, "exercise") >= 30,
+  "face-gym-sweat": ({ logs }) => countLogs(logs, "exercise") >= 50,
+  "face-gym-obsessed": ({ logs }) => countLogs(logs, "exercise") >= 100,
 
-  "testing-pen": ({ logs }) => count(logs, "user") >= 1,
-  "junior-reporter": ({ logs }) => count(logs, "user") >= 10,
-  "medior-reporter": ({ logs }) => count(logs, "user") >= 30,
-  "senior-reporter": ({ logs }) => count(logs, "user") >= 50,
-  "established-reporter": ({ logs }) => count(logs, "user") >= 100,
+  "say-cheese": ({ photoLogs }) => countPhotoLogs(photoLogs) >= 1,
+  "junior-reporter": ({ photoLogs }) => countPhotoLogs(photoLogs) >= 10,
+  "medior-reporter": ({ photoLogs }) => countPhotoLogs(photoLogs) >= 30,
+  "senior-reporter": ({ photoLogs }) => countPhotoLogs(photoLogs) >= 50,
+  "established-reporter": ({ photoLogs }) => countPhotoLogs(photoLogs) >= 100,
+  narcissus: ({ photoLogs }) => countPhotoLogs(photoLogs) >= 200,
 
-  "beginner-task-master": ({ logs }) => count(logs, "task") >= 10,
-  "dilligent-task-master": ({ logs }) => count(logs, "task") >= 30,
-  "pro-task-master": ({ logs }) => count(logs, "task") >= 50,
-  "established-task-master": ({ logs }) => count(logs, "task") >= 100,
-
-  narcissus: ({ logs }) => count(logs, "exercise") >= 200 && count(logs, "user") >= 200,
-  "say-cheese": ({ logs }) => logs.some((log) => log.type === "user" && !!log.photoUri),
+  "beginner-task-master": ({ logs }) => countLogs(logs, "task") >= 10,
+  "dilligent-task-master": ({ logs }) => countLogs(logs, "task") >= 30,
+  "pro-task-master": ({ logs }) => countLogs(logs, "task") >= 50,
+  "established-task-master": ({ logs }) => countLogs(logs, "task") >= 100,
 
   // non-log based (example, you can check account creation, selfie taken, etc.)
   "new-beginnings": () => false,
   explorer: () => false,
 };
 
-const count = (logs: Log[], type: Log["type"]) => logs.filter((l) => l.type === type).length;
+const countLogs = (logs: Log[], type: Log["type"]) => logs.filter((l) => l.type === type).length;
+const countPhotoLogs = (logs: PhotoLog[]) => logs.length;
 
 const SHOWN_TOASTS_KEY = "shown_toasts";
 export const getShownToasts = async (): Promise<Set<BadgeKey>> => {
@@ -337,5 +324,12 @@ export const setShownToasts = async (shown: Set<BadgeKey>) => {
     await AsyncStorage.setItem(SHOWN_TOASTS_KEY, JSON.stringify(Array.from(shown)));
   } catch (error) {
     console.error("Error setting shown toasts:", error);
+  }
+};
+export const resetShownToasts = async () => {
+  try {
+    await AsyncStorage.setItem(SHOWN_TOASTS_KEY, JSON.stringify([]));
+  } catch (error) {
+    console.error("Error resetting shown toasts:", error);
   }
 };
