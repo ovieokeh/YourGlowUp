@@ -97,7 +97,7 @@ export default function FaceAnalysisFormView({
         setLoading={setIsUploadingFront}
         showPreview={showPreview}
         allowTransform={allowTransform}
-        overlay={require("@/assets/images/eyes-overlay.png")}
+        overlay={require("@/assets/images/eye-grid.png")}
       />
 
       <Field
@@ -110,6 +110,7 @@ export default function FaceAnalysisFormView({
         setLoading={setIsUploadingLeft}
         showPreview={showPreview}
         allowTransform={allowTransform}
+        overlay={require("@/assets/images/left-nose-grid.png")}
       />
 
       <Field
@@ -122,6 +123,7 @@ export default function FaceAnalysisFormView({
         setLoading={setIsUploadingRight}
         showPreview={showPreview}
         allowTransform={allowTransform}
+        overlay={require("@/assets/images/right-nose-grid.png")}
       />
 
       {hasAtLeastOnePhoto && (

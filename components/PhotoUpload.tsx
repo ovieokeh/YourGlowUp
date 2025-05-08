@@ -263,15 +263,15 @@ export function PhotoUpload({
                   style={[
                     styles.overlay,
                     {
-                      height: height * 0.5,
+                      height: "auto",
                       width: "100%",
                       alignSelf: "center",
-                      transform: [
-                        { scale: 0.5 }, // Apply the scale transformation
-                      ],
+                      opacity: 0.5,
+
+                      // zIndex: 3,
                     },
                   ]}
-                  resizeMode="contain"
+                  resizeMode="cover"
                 />
               )}
             </View>
@@ -297,10 +297,11 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadii.md,
   },
   photoContainer: {
+    flex: 1,
     width: "100%",
     position: "relative",
     backgroundColor: "#dedede ",
-    aspectRatio: 1,
+    // aspectRatio: 1,
     overflow: "hidden",
   },
   photo: {

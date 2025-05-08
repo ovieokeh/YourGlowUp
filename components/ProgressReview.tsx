@@ -81,7 +81,7 @@ const PhotoProgressScroll = ({
             resizeMode="cover"
           />
         )}
-        {showGrid && <Image source={require("@/assets/images/grid.png")} style={styles.grid} resizeMode="cover" />}
+        {showGrid && <Image source={require("@/assets/images/eye-grid.png")} style={styles.grid} resizeMode="cover" />}
       </View>
 
       <View style={styles.controls}>

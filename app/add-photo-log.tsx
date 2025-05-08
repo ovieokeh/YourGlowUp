@@ -1,6 +1,6 @@
 import { Stack, useRouter } from "expo-router";
 import React, { useState } from "react";
-import { KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StyleSheet, TextInput, View } from "react-native";
+import { KeyboardAvoidingView, Platform, StyleSheet, TextInput, View } from "react-native";
 
 import { Collapsible } from "@/components/Collapsible";
 import { ThemedButton } from "@/components/ThemedButton";
@@ -112,7 +112,7 @@ export default function AddPhotoLogScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <>
       <Stack.Screen
         options={{
           headerRight: () => {
@@ -132,50 +132,53 @@ export default function AddPhotoLogScreen() {
           },
         }}
       />
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
-        <ScrollView>
-          <ThemedView style={styles.container}>
-            <FaceAnalysisFormView
-              photos={photos}
-              setPhotos={setPhotos}
-              onTransformChange={(key: "front" | "left" | "right", transform: any) => {
-                setPhotos((prev) => ({
-                  ...prev,
-                  [key]: { ...prev[key], transform },
-                }));
-              }}
-              loading={isUploading}
-              errors={errors}
-              setErrors={setErrors}
-              setLoading={setIsUploading}
-              showPreview
-              allowTransform
-            />
 
-            <ThemedText style={styles.label}>Would you like to share anything else about today?</ThemedText>
-            <TextInput
-              multiline
-              numberOfLines={4}
-              style={[styles.textArea, { borderColor, color: inputTextColor }]}
-              value={notes}
-              onChangeText={setNotes}
-              placeholder="Optional notes..."
-              placeholderTextColor={inputTextColor}
-            />
+      <ThemedView style={styles.container}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          keyboardVerticalOffset={84}
+        >
+          <FaceAnalysisFormView
+            photos={photos}
+            setPhotos={setPhotos}
+            onTransformChange={(key: "front" | "left" | "right", transform: any) => {
+              setPhotos((prev) => ({
+                ...prev,
+                [key]: { ...prev[key], transform },
+              }));
+            }}
+            loading={isUploading}
+            errors={errors}
+            setErrors={setErrors}
+            setLoading={setIsUploading}
+            showPreview
+            allowTransform
+          />
 
-            <View style={{ marginVertical: 24 }}>
-              <Collapsible title="Tips, Timeline, and What to Avoid">
-                {TIPS.map((tip, index) => (
-                  <ThemedText key={index} style={{ marginBottom: 8 }}>
-                    {index + 1}. {tip}
-                  </ThemedText>
-                ))}
-              </Collapsible>
-            </View>
-          </ThemedView>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+          <ThemedText style={styles.label}>Would you like to share anything else about today?</ThemedText>
+          <TextInput
+            multiline
+            numberOfLines={4}
+            style={[styles.textArea, { borderColor, color: inputTextColor }]}
+            value={notes}
+            onChangeText={setNotes}
+            placeholder="Optional notes..."
+            placeholderTextColor={inputTextColor}
+          />
+
+          <View style={{ marginVertical: 24 }}>
+            <Collapsible title="Tips, Timeline, and What to Avoid">
+              {TIPS.map((tip, index) => (
+                <ThemedText key={index} style={{ marginBottom: 8 }}>
+                  {index + 1}. {tip}
+                </ThemedText>
+              ))}
+            </Collapsible>
+          </View>
+        </KeyboardAvoidingView>
+      </ThemedView>
+    </>
   );
 }
 
@@ -183,6 +186,8 @@ const styles = StyleSheet.create({
   container: {
     padding: Spacings.lg,
     paddingBottom: Spacings.xl * 3,
+    flexGrow: 1,
+    flexShrink: 1,
   },
   title: {
     fontSize: 22,

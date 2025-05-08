@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Modal, Pressable, SafeAreaView, StyleSheet, useWindowDimensions, View } from "react-native";
+import { Alert, Modal, Pressable, SafeAreaView, StyleSheet, useWindowDimensions, View } from "react-native";
 
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
@@ -14,6 +14,7 @@ import { isRoutineExerciseItem, isRoutineTaskItem, RoutineItem, RoutineTaskItem 
 import { useSound } from "@/utils/sounds";
 import { Image } from "expo-image";
 import Toast from "react-native-toast-message";
+import { RedoBadge } from "./RedoBadge";
 import { ThemedPicker } from "./ThemedPicker";
 import { ThemedTextInput } from "./ThemedTextInput";
 
@@ -32,7 +33,6 @@ export const RoutineItemCard = ({
   const cardBorder = useThemeColor({}, "border");
   const textColor = useThemeColor({}, "text");
   const successColor = useThemeColor({}, "success");
-  const tint = useThemeColor({}, "tint");
   const successBg = useThemeColor({}, "successBg");
   const [questionModalVisible, setQuestionModalVisible] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -104,7 +104,7 @@ export const RoutineItemCard = ({
             </>
           )}
 
-          {item.notificationTimes?.length ? (
+          {!allowCompletion && item.notificationTimes?.length ? (
             <View style={styles.row}>
               <IconSymbol name="alarm" size={16} color={textColor} />
               {item.notificationTimes.slice(0, 3).map((time, i) => (
@@ -119,21 +119,6 @@ export const RoutineItemCard = ({
             </View>
           ) : null}
         </View>
-
-        {mode === "action" && hasTodayLogs && (
-          <View
-            style={[
-              styles.row,
-              {
-                position: "absolute",
-                top: 0,
-                left: -12,
-              },
-            ]}
-          >
-            <ThemedText style={[styles.description, { color: tint }]}>{todayLogs.length}x</ThemedText>
-          </View>
-        )}
       </View>
 
       {mode === "display" && (
@@ -142,17 +127,23 @@ export const RoutineItemCard = ({
         </View>
       )}
 
-      {allowCompletion && isRoutineTaskItem(item) && (
-        <ThemedButton
-          onPress={handleTaskCompletion}
-          variant="ghost"
-          icon={hasTodayLogs ? "arrow.circlepath" : "checkmark.circle"}
-          iconPlacement="right"
-          style={{ marginLeft: "auto" }}
-          textStyle={{ color: successColor }}
-          iconSize={28}
-        />
-      )}
+      {allowCompletion &&
+        isRoutineTaskItem(item) &&
+        (hasTodayLogs ? (
+          <Pressable style={{ padding: Spacings.sm, marginLeft: "auto" }} onPress={handleTaskCompletion}>
+            <RedoBadge count={todayLogs.length} color={successColor} textColor={textColor} size={38} />
+          </Pressable>
+        ) : (
+          <ThemedButton
+            onPress={handleTaskCompletion}
+            variant="ghost"
+            icon={"checkmark.circle"}
+            iconPlacement="right"
+            style={{ marginLeft: "auto" }}
+            textStyle={{ color: successColor }}
+            iconSize={32}
+          />
+        ))}
 
       {/* Modal for task questions */}
       {isRoutineTaskItem(item) && item.questions?.length && (
@@ -160,7 +151,32 @@ export const RoutineItemCard = ({
           currentQuestionIndex={currentQuestionIndex}
           item={item}
           isVisible={questionModalVisible}
-          handleSkipQuestions={() => setQuestionModalVisible(false)}
+          handleSkipQuestions={() => {
+            Alert.alert(
+              "Skip Questions",
+              "Are you sure you want to skip the questions?",
+              [
+                {
+                  text: "Cancel",
+                  style: "cancel",
+                },
+                {
+                  text: "Mark as complete",
+                  onPress: () => {
+                    handleTaskCompletion();
+                  },
+                },
+                {
+                  text: "Exit task",
+                  style: "destructive",
+                  onPress: () => {
+                    setQuestionModalVisible(false);
+                  },
+                },
+              ],
+              { cancelable: true }
+            );
+          }}
           handleSubmitAnswers={async () => {
             await saveTaskLogMutation.mutateAsync({ task: item.name, note: JSON.stringify(answers) });
             await addXP.mutateAsync(LOG_TYPE_XP_MAP["task"]);
@@ -230,6 +246,7 @@ const TaskQuestionsModal = ({
     <Modal visible={isVisible} animationType="slide" presentationStyle="pageSheet">
       <ThemedView
         style={{
+          flex: 1,
           padding: 24,
           height: screenHeight / 2, // Half screen height
         }}

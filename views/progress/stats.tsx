@@ -52,43 +52,6 @@ export function ProgressStatsView() {
     return count;
   }, [logs]);
 
-  // const userLogs = useMemo(() => filtered.filter(isUserLog) as UserLog[], [filtered]);
-
-  // const symmetryAvg = useMemo(() => {
-  //   const vals = userLogs.map((l) => l.symmetryRating);
-  //   if (!vals.length) return "N/A";
-  //   const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-  //   return avg.toFixed(2);
-  // }, [userLogs]);
-
-  // const chewingTime = useMemo(() => {
-  //   const totalMin = userLogs.filter(isUserLog).reduce((sum, l) => sum + (l.chewingDuration || 0), 0);
-  //   return `${Math.floor(totalMin / 60)}h ${totalMin % 60}m`;
-  // }, [userLogs]);
-
-  // const gumTime = useMemo(() => {
-  //   const totalMin = userLogs.filter(isUserLog).reduce((sum, l) => sum + (l.gumChewingDuration || 0), 0);
-  //   return `${Math.floor(totalMin / 60)}h ${totalMin % 60}m`;
-  // }, [userLogs]);
-
-  // const lineData = useMemo(() => {
-  //   const map = new Map<string, number[]>();
-  //   userLogs.filter(isUserLog).forEach((l) => {
-  //     const day = new Date(l.completedAt).toLocaleDateString();
-  //     if (map.has(day)) {
-  //       map.get(day)!.push(l.symmetryRating);
-  //     } else {
-  //       map.set(day, [l.symmetryRating]);
-  //     }
-  //   });
-  //   const labels = Array.from(map.keys()).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
-  //   const data = labels.map((date) => {
-  //     const arr = map.get(date)!;
-  //     return arr.reduce((a, b) => a + b, 0) / arr.length;
-  //   });
-  //   return { labels, datasets: [{ data }] };
-  // }, [userLogs]);
-
   const pieData = useMemo(() => {
     const map = new Map<string, number>();
     filtered.forEach((l) => {
