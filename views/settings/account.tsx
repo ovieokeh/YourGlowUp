@@ -224,54 +224,56 @@ export default function AccountView() {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
-      <ScrollView style={styles.inner}>
-        {isAnonymous ? (
-          <>
-            <AccountBenefits />
-          </>
-        ) : (
-          <>
-            <ThemedText type="title" style={{ marginHorizontal: "auto" }}>
-              Your Account
-            </ThemedText>
+      <ScrollView style={{ flex: 1 }}>
+        <View style={styles.inner}>
+          {isAnonymous ? (
+            <>
+              <AccountBenefits />
+            </>
+          ) : (
+            <>
+              <ThemedText type="title" style={{ marginHorizontal: "auto" }}>
+                Your Account
+              </ThemedText>
 
-            <ThemedText style={[styles.label, { color: muted }]}>Name</ThemedText>
-            <TextInput
-              style={[styles.input, { backgroundColor: bg, color: text, borderColor: border }]}
-              placeholder="Full Name"
-              placeholderTextColor={muted}
-              value={name}
-              onChangeText={setName}
-            />
+              <ThemedText style={[styles.label, { color: muted }]}>Name</ThemedText>
+              <TextInput
+                style={[styles.input, { backgroundColor: bg, color: text, borderColor: border }]}
+                placeholder="Full Name"
+                placeholderTextColor={muted}
+                value={name}
+                onChangeText={setName}
+              />
 
-            <ThemedText style={[styles.label, { color: muted, marginTop: 16 }]}>Email</ThemedText>
-            <TextInput
-              style={[styles.input, { backgroundColor: bg, color: text, borderColor: border }]}
-              value={user.email}
-              editable={false}
-            />
+              <ThemedText style={[styles.label, { color: muted, marginTop: 16 }]}>Email</ThemedText>
+              <TextInput
+                style={[styles.input, { backgroundColor: bg, color: text, borderColor: border }]}
+                value={user.email}
+                editable={false}
+              />
 
-            <ThemedButton
-              title="Save"
-              onPress={handleSave}
-              disabled={saving || name === (user.user_metadata?.full_name || "")}
-              style={{ ...styles.button }}
-            />
+              <ThemedButton
+                title="Save"
+                onPress={handleSave}
+                disabled={saving || name === (user.user_metadata?.full_name || "")}
+                style={{ ...styles.button }}
+              />
 
-            <ThemedButton
-              title="Log Out"
-              onPress={handleLogout}
-              variant="outline"
-              style={{ ...styles.button, marginTop: 8 }}
-            />
+              <ThemedButton
+                title="Log Out"
+                onPress={handleLogout}
+                variant="outline"
+                style={{ ...styles.button, marginTop: 8 }}
+              />
 
-            <View style={styles.section}>
-              <ThemedText type="subtitle">Data</ThemedText>
-              <ThemedButton title="Export Data" onPress={exportData} variant="outline" />
-              <ThemedButton title="Import Data" onPress={importData} variant="outline" />
-            </View>
-          </>
-        )}
+              <View style={styles.section}>
+                <ThemedText type="subtitle">Data</ThemedText>
+                <ThemedButton title="Export Data" onPress={exportData} variant="outline" />
+                <ThemedButton title="Import Data" onPress={importData} variant="outline" />
+              </View>
+            </>
+          )}
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -281,7 +283,7 @@ const styles = StyleSheet.create({
   inner: {
     flex: 1,
     paddingHorizontal: 24,
-    marginBottom: 64,
+    paddingBottom: 64,
     gap: 16,
   },
   label: {

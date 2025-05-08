@@ -116,7 +116,16 @@ export default function OnboardingScreen() {
               {slide.cta && (
                 <ThemedButton
                   title={slide.cta.title}
-                  onPress={() => router.replace(slide.cta.link as any)}
+                  onPress={async () => {
+                    await setOnboardingStatusMutation.mutateAsync({
+                      key: "main-onboarding",
+                      value: {
+                        step: 0,
+                        status: OnboardingStatus.COMPLETED,
+                      },
+                    });
+                    router.replace(slide.cta.link as any);
+                  }}
                   variant="outline"
                   style={styles.ctaButton}
                 />

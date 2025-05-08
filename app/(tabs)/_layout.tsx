@@ -11,7 +11,7 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { scheduleNotificationWithStats } from "@/utils/notifications";
 
 const SettingsButton = () => {
-  const accent = useThemeColor({}, "accent");
+  const tint = useThemeColor({}, "tint");
 
   return (
     <Pressable
@@ -21,7 +21,7 @@ const SettingsButton = () => {
         borderRadius: 100,
       }}
     >
-      <IconSymbol size={34} name="person.circle" color={accent} />
+      <IconSymbol size={34} name="person.circle" color={tint} />
     </Pressable>
   );
 };
@@ -29,7 +29,7 @@ export default function TabLayout() {
   const background = useThemeColor({}, "background");
   const border = useThemeColor({}, "border");
   const tint = useThemeColor({}, "tint");
-  const accent = useThemeColor({}, "accent");
+  const muted = useThemeColor({}, "muted");
 
   useFocusEffect(() => {
     scheduleNotificationWithStats();
@@ -39,8 +39,8 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: accent,
-        tabBarInactiveTintColor: tint,
+        tabBarActiveTintColor: tint,
+        tabBarInactiveTintColor: muted,
         tabBarButton: HapticTab,
         headerLeft: () => <SettingsButton />,
         headerRight: () => <XPCounter />,

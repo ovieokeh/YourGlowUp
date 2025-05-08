@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Pressable, SafeAreaView, StyleSheet, useWindowDimensions, View } from "react-native";
+import { Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
@@ -39,20 +39,18 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <ThemedView style={[styles.container]}>
-        <View style={[styles.tabBar, { borderColor: tabBorder }]}>
-          {TABS.map((tab, idx) => (
-            <Pressable key={tab} style={styles.tabButton} onPress={() => handleTabPress(tab, idx)}>
-              <ThemedText style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab}</ThemedText>
-            </Pressable>
-          ))}
-          <Animated.View style={[styles.underline, { width: tabWidth, backgroundColor: underline }, underlineStyle]} />
-        </View>
+    <ThemedView style={[styles.container]}>
+      <View style={[styles.tabBar, { borderColor: tabBorder }]}>
+        {TABS.map((tab, idx) => (
+          <Pressable key={tab} style={styles.tabButton} onPress={() => handleTabPress(tab, idx)}>
+            <ThemedText style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab}</ThemedText>
+          </Pressable>
+        ))}
+        <Animated.View style={[styles.underline, { width: tabWidth, backgroundColor: underline }, underlineStyle]} />
+      </View>
 
-        {activeTab === "Account" ? <AccountView /> : <AppSettingsView />}
-      </ThemedView>
-    </SafeAreaView>
+      {activeTab === "Account" ? <AccountView /> : <AppSettingsView />}
+    </ThemedView>
   );
 }
 

@@ -15,6 +15,7 @@ export const XPCounter = () => {
   const textColor = useThemeColor({}, "text");
   const accent = useThemeColor({}, "accent");
   const border = useThemeColor({}, "border");
+  const background = useThemeColor({}, "background");
 
   const xpCounterUnit = useMemo(
     () => (
@@ -61,7 +62,7 @@ export const XPCounter = () => {
       </Pressable>
 
       <Modal visible={modalVisible} animationType="slide" presentationStyle="pageSheet">
-        <SafeAreaView>
+        <SafeAreaView style={{ flex: 1, backgroundColor: background }}>
           <View style={styles.modalHeader}>
             <View
               style={{

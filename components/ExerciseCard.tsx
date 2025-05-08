@@ -1,13 +1,12 @@
 import { Image } from "expo-image";
-import { useFocusEffect } from "expo-router";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { BorderRadii, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { ExerciseLog, getLogsByExercise } from "@/queries/logs/logs";
+import { useGetLogsByExercise } from "@/queries/logs";
 import { RoutineExerciseItem } from "@/queries/routines/shared";
 
 interface ExerciseCardProps {
@@ -20,15 +19,10 @@ export const ExerciseCard = ({ item, mode = "display", handlePress }: ExerciseCa
   const cardBorder = useThemeColor({}, "border");
   const textColor = useThemeColor({}, "text");
   const successColor = useThemeColor({}, "success");
-  const [logs, setLogs] = useState<ExerciseLog[]>([]);
-
-  useFocusEffect(
-    useCallback(() => {
-      getLogsByExercise(item.name, (res) => {
-        setLogs(res);
-      });
-    }, [item.name])
-  );
+  const logsQuery = useGetLogsByExercise(item.name);
+  const logs = useMemo(() => {
+    return logsQuery.data || [];
+  }, [logsQuery.data]);
 
   const todayLogs = useMemo(() => {
     const now = new Date();

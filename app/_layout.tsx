@@ -78,6 +78,7 @@ function App() {
   }, [loaded]);
 
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const nuke = async () => {
       initLogsTable(true);
       initRoutinesTables(true);
@@ -89,7 +90,7 @@ function App() {
         status: OnboardingStatus.NOT_STARTED,
       });
     };
-    nuke();
+    // nuke();
   }, []);
 
   if (!loaded) {

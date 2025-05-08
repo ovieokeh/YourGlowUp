@@ -42,8 +42,6 @@ export default function HomeScreen() {
     <ThemedView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.content}>
-          <TodaysStats />
-
           <View style={styles.cards}>
             <ThemedText style={styles.title} type="subtitle">
               Today&apos;s tasks
@@ -90,6 +88,8 @@ export default function HomeScreen() {
             iconPlacement="right"
           />
         </View>
+
+        <TodaysStats />
       </ScrollView>
 
       <ThemedFabButton

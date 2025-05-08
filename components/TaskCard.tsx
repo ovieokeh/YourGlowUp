@@ -1,12 +1,13 @@
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useMemo, useState } from "react";
-import { Alert, Modal, Pressable, SafeAreaView, StyleSheet, View } from "react-native";
+import { Alert, Modal, Pressable, SafeAreaView, StyleSheet, useWindowDimensions, View } from "react-native";
 
 import { BorderRadii, Spacings } from "@/constants/Theme";
 import { useBadges } from "@/providers/BadgeContext";
 import { LOG_TYPE_XP_MAP } from "@/queries/gamification/gamification";
 import { useGetLogsByTask, useSaveTaskLog } from "@/queries/logs";
 import { RoutineTaskItem } from "@/queries/routines/shared";
+import { useSound } from "@/utils/sounds";
 import Toast from "react-native-toast-message";
 import { ThemedButton } from "./ThemedButton";
 import { ThemedPicker } from "./ThemedPicker";
@@ -27,6 +28,7 @@ export const TaskCard = ({ item, allowCompletion, mode = "display", handlePress 
   const cardBorder = useThemeColor({}, "border");
   const textColor = useThemeColor({}, "text");
   const successColor = useThemeColor({}, "success");
+  const { play } = useSound();
 
   const logsByTaskQuery = useGetLogsByTask(item.name);
   const logs = useMemo(() => logsByTaskQuery.data || [], [logsByTaskQuery.data]);
@@ -52,6 +54,8 @@ export const TaskCard = ({ item, allowCompletion, mode = "display", handlePress 
       console.error("Error adding XP:", err);
     });
 
+    await play("complete-task");
+
     Toast.show({
       type: "success",
       text1: "Task completed",
@@ -65,6 +69,7 @@ export const TaskCard = ({ item, allowCompletion, mode = "display", handlePress 
       task: item.name,
       note: JSON.stringify(answers),
     });
+    await play("complete-task");
     Toast.show({
       type: "success",
       text1: "Task completed",
@@ -218,6 +223,8 @@ const TaskQuestionsModal = ({
   answers: { [key: string]: string };
   setAnswers: React.Dispatch<React.SetStateAction<{ [key: string]: string }>>;
 }) => {
+  const screenHeight = useWindowDimensions().height;
+
   const currentQuestion = useMemo(() => {
     const q = item.questions?.[currentQuestionIndex];
     if (!q) return null;
@@ -242,8 +249,13 @@ const TaskQuestionsModal = ({
   if (!item.questions || !currentQuestion) return null;
 
   return (
-    <Modal visible={isVisible} animationType="slide" presentationStyle="formSheet">
-      <ThemedView style={{ padding: 24 }}>
+    <Modal visible={isVisible} animationType="slide" presentationStyle="pageSheet">
+      <ThemedView
+        style={{
+          padding: 24,
+          height: screenHeight / 2, // Half screen height
+        }}
+      >
         <SafeAreaView>
           <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 16 }}>
             <ThemedText type="subtitle">
@@ -278,6 +290,7 @@ const TaskQuestionsModal = ({
               onValueChange={(val) => setAnswers({ ...answers, [currentQuestion.questionId]: val })}
               items={currentQuestion.options.map((opt) => ({ label: opt, value: opt }))}
               placeholder="Select an option"
+              style={{ width: "100%" }}
             />
           ) : currentQuestion.answerType === "number" ? (
             <ThemedTextInput

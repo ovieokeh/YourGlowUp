@@ -10,6 +10,7 @@ import { Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { supabase } from "@/supabase";
 import { parseJSONCleaned } from "@/utils/json";
+import { useSound } from "@/utils/sounds";
 
 const FACTOIDS = [
   "Facial symmetry is often linked to perceptions of attractiveness and health.",
@@ -56,6 +57,8 @@ export default function FaceAnalysisResultsView({
   const borderColor = useThemeColor({}, "border");
   const scoreColor = useThemeColor({}, "accent");
   const flatListRef = useRef<FlatList>(null);
+
+  const { play } = useSound();
 
   useEffect(() => {
     let factoidIndex = 0;
@@ -130,6 +133,7 @@ Only output valid JSON with no explanations or surrounding text. This will be pa
 
         setResult(parsed);
         onResult(parsed);
+        play("complete-face-analysis");
       } catch (err) {
         console.error("AI Analysis failed:", err);
         if (isMounted) {

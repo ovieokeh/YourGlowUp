@@ -45,8 +45,11 @@ export const RoutineItemsModal = ({ visible, selectedIds, onClose, onSave }: Pro
 
   const toggleSelect = (id: string) => {
     const next = new Set(selected);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
     setSelected(next);
   };
 

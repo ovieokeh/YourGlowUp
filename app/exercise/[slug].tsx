@@ -14,6 +14,7 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { useBadges } from "@/providers/BadgeContext";
 import { LOG_TYPE_XP_MAP } from "@/queries/gamification/gamification";
 import { useSaveExerciseLog } from "@/queries/logs";
+import { useSound } from "@/utils/sounds";
 import { useSearchParams } from "expo-router/build/hooks";
 
 export default function ExerciseSession() {
@@ -35,6 +36,7 @@ export default function ExerciseSession() {
   const progress = useSharedValue(0);
 
   const saveExerciseLogMutation = useSaveExerciseLog(routineId);
+  const { play } = useSound();
 
   const textColor = useThemeColor({}, "text");
   const background = useThemeColor({}, "background");
@@ -51,15 +53,22 @@ export default function ExerciseSession() {
 
   useEffect(() => {
     let timer: number | undefined;
+    let soundTimer: number | undefined;
 
     if (started && timeLeft > 0) {
-      timer = setInterval(() => setTimeLeft((t) => t - 1), 1000);
+      timer = setInterval(() => {
+        play("tick");
+        setTimeLeft((t) => t - 1);
+      }, 1000);
     } else if (timeLeft === 0 && started && !completed) {
       setCompleted(true);
     }
 
-    return () => clearInterval(timer);
-  }, [completed, started, timeLeft, exercise?.name, exercise?.duration]);
+    return () => {
+      clearInterval(timer);
+      clearInterval(soundTimer);
+    };
+  }, [completed, started, timeLeft, exercise?.name, exercise?.duration, play]);
 
   const handleStart = () => setStarted(true);
 
@@ -94,6 +103,7 @@ export default function ExerciseSession() {
   const handleComplete = async () => {
     if (!exercise) return;
     await saveExerciseLogMutation.mutateAsync({ exercise: exercise.name, duration: exercise.duration });
+    play("complete-exercise");
     addXP
       .mutateAsync(LOG_TYPE_XP_MAP["exercise"] + exercise.duration)
       .catch((err) => {

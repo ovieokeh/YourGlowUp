@@ -9,7 +9,6 @@ import { ThemedFabButton } from "@/components/ThemedFabButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Spacings } from "@/constants/Theme";
-import { useThemeColor } from "@/hooks/useThemeColor";
 import { useGetPendingItemsToday, useGetRoutineById, useUpdateRoutine } from "@/queries/routines";
 import { isRoutineExerciseItem, isRoutineTaskItem } from "@/queries/routines/shared";
 import { useLocalSearchParams } from "expo-router/build/hooks";
@@ -25,8 +24,6 @@ export default function RoutinesSingleScreen() {
 
   const pendingItemsQuery = useGetPendingItemsToday(id);
   const { data: pendingItems } = pendingItemsQuery;
-
-  const backgroundColor = useThemeColor({}, "background");
 
   if (isLoading || !routine) {
     // Show a loading state while fetching the routine
@@ -122,7 +119,7 @@ export default function RoutinesSingleScreen() {
         </View>
       </ScrollView>
       <ThemedFabButton
-        variant="outline"
+        variant="solid"
         title="Update Routine"
         onPress={() => {
           setShowSelector(true);
@@ -130,10 +127,6 @@ export default function RoutinesSingleScreen() {
         icon="pencil"
         iconPlacement="right"
         bottom={96}
-        style={{
-          backgroundColor: backgroundColor,
-          borderColor: "transparent",
-        }}
       />
       <RoutineItemsModal
         visible={showSelector}
@@ -159,7 +152,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: Spacings.xl,
     padding: Spacings.lg,
-    paddingBottom: 96,
+    paddingBottom: 152,
   },
   link: {
     marginTop: Spacings.md,

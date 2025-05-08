@@ -280,7 +280,7 @@ export const TASKS: Task[] = [
         minLength: 1,
       },
       {
-        questionId: "dominantSide",
+        questionId: "chewingDuration",
         question: "How long did you chew? (in minutes)",
         answer: "",
         answerType: "number",

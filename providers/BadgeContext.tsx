@@ -7,6 +7,7 @@ import {
   useSetShownToasts,
 } from "@/queries/gamification";
 import { Badge, BadgeKey, BADGES, BadgeStatus } from "@/queries/gamification/gamification";
+import { useSound } from "@/utils/sounds";
 import { UseMutationResult } from "@tanstack/react-query";
 import React, { createContext, useCallback, useContext, useMemo } from "react";
 import Toast from "react-native-toast-message";
@@ -33,6 +34,8 @@ export const BadgeProvider = ({ children }: { children: React.ReactNode }) => {
   const currentXPMutation = useGetUserXP();
   const xp = currentXPMutation.data || 0;
   const addXP = useAddXP();
+
+  const { play } = useSound();
 
   const badges = useMemo(() => {
     if (userBadges) {
@@ -71,6 +74,7 @@ export const BadgeProvider = ({ children }: { children: React.ReactNode }) => {
       await updateBadge(key, BadgeStatus.EARNED);
 
       if (!shownToasts.has(key)) {
+        play("badge-awarded");
         Toast.show({
           type: "success",
           text1: `🏅 ${badge.name} Unlocked!`,
@@ -83,7 +87,7 @@ export const BadgeProvider = ({ children }: { children: React.ReactNode }) => {
         await saveShownToast(key);
       }
     },
-    [badges, shownToasts, updateBadge, saveShownToast]
+    [badges, shownToasts, updateBadge, saveShownToast, play]
   );
 
   const hasBadge = (key: BadgeKey) => badges[key]?.status === BadgeStatus.EARNED;
