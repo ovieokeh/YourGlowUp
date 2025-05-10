@@ -65,7 +65,9 @@ export default function ExerciseSession() {
     if (started && timeLeft > 0) {
       timer = setInterval(() => {
         setTimeLeft((t) => t - 1);
-        play("tick");
+        if (timeLeft > 1) {
+          play("tick");
+        }
       }, 1000);
     } else if (timeLeft === 0 && started && !completed) {
       setCompleted(true);

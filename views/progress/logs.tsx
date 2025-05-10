@@ -106,7 +106,7 @@ export function ProgressLogsView() {
                     <ThemedText style={styles.rowText}>{renderTaskNote(item.notes)}</ThemedText>
                   </View>
                 )}
-                <ThemedText style={styles.timestamp}>{new Date(item.completedAt).toLocaleString()}</ThemedText>
+                <ThemedText style={styles.timestamp}>{new Date(item.createdAt).toLocaleString()}</ThemedText>
               </View>
             )}
           />
@@ -148,7 +148,7 @@ export function ProgressLogsView() {
                       Duration: <ThemedText style={styles.bold}>{item.duration} min</ThemedText>
                     </ThemedText>
                   </View>
-                  <ThemedText style={styles.timestamp}>{new Date(item.completedAt).toLocaleString()}</ThemedText>
+                  <ThemedText style={styles.timestamp}>{new Date(item.createdAt).toLocaleString()}</ThemedText>
                 </View>
               </View>
             )}

@@ -37,12 +37,12 @@ export function ProgressStatsView() {
   }, [now, range]);
 
   const filtered = useMemo(
-    () => logs.filter((l) => (rangeStart ? new Date(l.completedAt) >= rangeStart! : true)),
+    () => logs.filter((l) => (rangeStart ? new Date(l.createdAt) >= rangeStart! : true)),
     [logs, rangeStart]
   );
 
   const streak = useMemo(() => {
-    const days = new Set(logs.map((l) => new Date(l.completedAt).toDateString()));
+    const days = new Set(logs.map((l) => new Date(l.createdAt).toDateString()));
     let count = 0;
     let d = new Date();
     while (days.has(d.toDateString())) {

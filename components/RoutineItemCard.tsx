@@ -49,7 +49,7 @@ export const RoutineItemCard = ({
     const start = new Date(now.setHours(0, 0, 0, 0)).getTime();
     const end = new Date(now.setHours(23, 59, 59, 999)).getTime();
     return logs.filter((log) => {
-      const t = new Date(log.completedAt).getTime();
+      const t = new Date(log.createdAt).getTime();
       return t >= start && t <= end;
     });
   }, [logs]);
@@ -67,7 +67,7 @@ export const RoutineItemCard = ({
     await saveTaskLogMutation.mutateAsync({ task: item.name, routineId: item.routineId, note: "" });
     await play("complete-task");
     await addXP.mutateAsync(LOG_TYPE_XP_MAP["task"]);
-    Toast.show({ type: "success", text1: "Task completed", text2: `You completed ${item.name}`, position: "bottom" });
+    Toast.show({ type: "success", text1: "Task completed", text2: `You completed ${item.name}` });
   };
 
   const readableDuration = (seconds: number) => `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
@@ -192,7 +192,6 @@ export const RoutineItemCard = ({
               type: "success",
               text1: "Task completed",
               text2: `You completed ${item.name}`,
-              position: "bottom",
             });
             setQuestionModalVisible(false);
           }}

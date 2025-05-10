@@ -1,5 +1,5 @@
 import { format, parse } from "date-fns"; // added isToday
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useMemo } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
@@ -24,9 +24,14 @@ export default function HomeScreen() {
 
   const items = useMemo(() => routineQuery.data || [], [routineQuery?.data]);
 
+  useFocusEffect(() => {
+    routineQuery.refetch();
+    logsQuery.refetch();
+  });
+
   const isRoutineItemCompleted = useCallback(
     (item: RoutineItem) => {
-      // completed if there's any log for this routineId + itemId with completedAt today
+      // completed if there's any log for this routineId + itemId with createdAt today
       return logs.some((log) => log.routineId === item.routineId && log.slug === item.slug);
     },
     [logs]

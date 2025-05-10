@@ -1,3 +1,4 @@
+import { scheduleNotificationWithStats } from "@/utils/notifications";
 import { db } from "../../utils/db";
 import { getCurrentUserEmail } from "../shared";
 
@@ -22,8 +23,7 @@ export const initLogsTable = (reset?: boolean) => {
         gumUsed INTEGER,
         gumChewingDuration INTEGER,
         symmetryRating INTEGER,
-        notes TEXT,
-        completedAt TEXT DEFAULT CURRENT_TIMESTAMP
+        notes TEXT
     );`
   );
 
@@ -47,19 +47,23 @@ export interface ExerciseLog {
   slug: string;
   type: "exercise";
   duration: number;
-  completedAt: number;
+  createdAt: number;
 }
 
 export const saveExerciseLog = async (slug: string, duration: number, routineId: number) => {
   const userEmail = await getCurrentUserEmail();
-  const nowEpoch = new Date();
-  const now = nowEpoch.getTime();
-  db.runAsync(
-    `INSERT INTO logs (type, routineId, slug, duration, completedAt, userEmail) VALUES ("exercise", ?, ?, ?, ?)`,
-    [routineId, slug, duration, now, userEmail]
-  ).catch((err) => {
-    console.error("Error saving exercise log", err);
-  });
+  db.runAsync(`INSERT INTO logs (type, routineId, slug, duration, userEmail) VALUES ("exercise", ?, ?, ?, ?)`, [
+    routineId,
+    slug,
+    duration,
+    userEmail,
+  ])
+    .catch((err) => {
+      console.error("Error saving exercise log", err);
+    })
+    .finally(() => {
+      scheduleNotificationWithStats();
+    });
 };
 
 export interface TaskLog {
@@ -68,20 +72,22 @@ export interface TaskLog {
   slug: string;
   type: "task";
   notes: string;
-  completedAt: number;
+  createdAt: number;
 }
-export const saveTaskLog = async (task: string, routineId: number, note?: string) => {
+export const saveTaskLog = async (slug: string, routineId: number, note?: string) => {
   const userEmail = await getCurrentUserEmail();
-  const now = new Date().getTime();
-  db.runAsync(`INSERT INTO logs (type, task, routineId, notes, completedAt, userEmail) VALUES ("task", ?, ?, ?, ?)`, [
-    task,
+  db.runAsync(`INSERT INTO logs (type, slug, routineId, notes, userEmail) VALUES ("task", ?, ?, ?, ?)`, [
+    slug,
     routineId,
     note ?? "",
-    now,
     userEmail,
-  ]).catch((err) => {
-    console.error("Error saving task log", err);
-  });
+  ])
+    .catch((err) => {
+      console.error("Error saving task log", err);
+    })
+    .finally(() => {
+      scheduleNotificationWithStats();
+    });
 };
 
 export type Log = ExerciseLog | TaskLog;
@@ -95,7 +101,7 @@ export const isTaskLog = (log: Log): log is TaskLog => {
 
 export const getLogs = async () => {
   const userEmail = await getCurrentUserEmail();
-  const rows = (await db.getAllAsync(`SELECT * FROM logs WHERE userEmail = ? ORDER BY completedAt DESC;`, [
+  const rows = (await db.getAllAsync(`SELECT * FROM logs WHERE userEmail = ? ORDER BY createdAt DESC;`, [
     userEmail,
   ])) as Log[];
   return rows;
@@ -103,7 +109,7 @@ export const getLogs = async () => {
 
 export const getLogsBySlug = async (slug: string, callback?: (rows: ExerciseLog[]) => void) => {
   const userEmail = await getCurrentUserEmail();
-  const rows = (await db.getAllAsync(`SELECT * FROM logs WHERE slug = ? AND userEmail = ? ORDER BY completedAt DESC;`, [
+  const rows = (await db.getAllAsync(`SELECT * FROM logs WHERE slug = ? AND userEmail = ? ORDER BY createdAt DESC;`, [
     slug,
     userEmail,
   ])) as ExerciseLog[];
@@ -117,10 +123,11 @@ export const getTodayLogs = async () => {
   const now = new Date();
   const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime();
-  const rows = (await db.getAllAsync(
-    `SELECT * FROM logs WHERE userEmail = ? AND completedAt >= ? AND completedAt < ?;`,
-    [userEmail, startOfDay, endOfDay]
-  )) as Log[];
+  const rows = (await db.getAllAsync(`SELECT * FROM logs WHERE userEmail = ? AND createdAt >= ? AND createdAt < ?;`, [
+    userEmail,
+    startOfDay,
+    endOfDay,
+  ])) as Log[];
   return rows;
 };
 
@@ -148,11 +155,9 @@ export const savePhotoLog = async (
   }
 ) => {
   const userEmail = await getCurrentUserEmail();
-  const now = new Date().toISOString();
   return db
-    .runAsync(`INSERT INTO photo_logs (routineId, createdAt, photos, notes, userEmail) VALUES (?, ?, ?, ?, ?)`, [
+    .runAsync(`INSERT INTO photo_logs (routineId, photos, notes, userEmail) VALUES (?, ?, ?, ?)`, [
       log.routineId,
-      now,
       JSON.stringify({
         front: log.front,
         left: log.left,
@@ -163,6 +168,9 @@ export const savePhotoLog = async (
     ])
     .catch((err) => {
       console.error("Error saving photo log", err);
+    })
+    .finally(() => {
+      scheduleNotificationWithStats();
     });
 };
 

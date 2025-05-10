@@ -77,6 +77,7 @@ export const useUpdateRoutineItems = (routineId: string) => {
     onSuccess: () => {
       // Invalidate the query to refetch the data
       queryClient.invalidateQueries({ queryKey: ["routine-items"] });
+      queryClient.invalidateQueries({ queryKey: ["routines"] });
     },
   });
 };
@@ -115,6 +116,7 @@ export const useUpdateRoutineItem = (itemId: string) => {
     onSuccess: () => {
       // Invalidate the query to refetch the data
       queryClient.invalidateQueries({ queryKey: ["routine-items"] });
+      queryClient.invalidateQueries({ queryKey: ["routines"] });
     },
   });
 };

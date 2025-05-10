@@ -265,7 +265,7 @@ export const LOG_TYPE_XP_MAP: Record<Log["type"] | "photo", number> = {
 };
 export const getStreak = (logs: Log[]) => {
   const MS_IN_DAY = 86_400_000;
-  const daySet = new Set(logs.map((log) => Math.floor(log.completedAt / MS_IN_DAY)));
+  const daySet = new Set(logs.map((log) => Math.floor(log.createdAt / MS_IN_DAY)));
 
   let streak = 0;
   let currentDay = Math.floor(Date.now() / MS_IN_DAY);

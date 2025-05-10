@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS routine_items (
   name TEXT,
   description TEXT,
   type TEXT,
-  completionType TEXT DEFAULT NULL,
+  notificationType TEXT DEFAULT NULL,
   notificationTimes TEXT DEFAULT NULL,
   addedAt TEXT DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (routineId) REFERENCES routines(id) ON DELETE CASCADE
@@ -398,7 +398,7 @@ export const getPendingItemsToday = async () => {
           return log.slug === item.slug;
         })
         .filter((log) => {
-          const completed = new Date(log.completedAt).getTime();
+          const completed = new Date(log.createdAt).getTime();
           return completed >= startOfDay.getTime() && completed <= endOfDay.getTime();
         });
     })();

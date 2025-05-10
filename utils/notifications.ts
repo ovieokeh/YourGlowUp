@@ -2,8 +2,8 @@ import { withRoutine } from "@/queries/routines/helper";
 import * as Notifications from "expo-notifications";
 import { useFocusEffect, useRouter } from "expo-router";
 
-export const scheduleNotificationWithStats = async () => {
-  withRoutine("my-routine", async (routine) => {
+export const scheduleNotificationWithStats = async (routineId = "1") => {
+  withRoutine(routineId, async (routine) => {
     const routineItems = routine?.items || [];
 
     await Notifications.cancelAllScheduledNotificationsAsync();
@@ -23,11 +23,11 @@ export const scheduleNotificationWithStats = async () => {
               : `Don't forget to complete your task: ${item.name}!`;
           await Notifications.scheduleNotificationAsync({
             content: {
-              title: "Face Symmetry Reminder",
+              title: "Your Glow Up",
               body,
               data: {
-                routineId: "my-routine",
-                itemId: item.itemId,
+                routineId: routineId,
+                itemId: item.slug,
               },
             },
             trigger: {

@@ -37,17 +37,17 @@ export const TodaysStats: React.FC = () => {
     endOfDay.setHours(23, 59, 59, 999);
 
     return logs.filter((log) => {
-      const completed = new Date(log.completedAt).getTime();
+      const completed = new Date(log.createdAt).getTime();
       return completed >= startOfDay.getTime() && completed <= endOfDay.getTime();
     });
   }, [logs]);
   const exercisesToday = todayLogs.filter(isExerciseLog);
   const lastExercise = exercisesToday.sort(
-    (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   )[0];
 
   const tasksToday = todayLogs.filter((log) => isTaskLog(log));
-  const lastTask = tasksToday.sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())[0];
+  const lastTask = tasksToday.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
 
   if (!exercisesToday.length && !tasksToday.length) {
     return (
@@ -112,8 +112,8 @@ export const TodaysStats: React.FC = () => {
           <StatCard
             icon="checkmark"
             label="Last Task"
-            value={lastTask.task}
-            subValue={formatDistanceToNow(new Date(lastTask.completedAt), {
+            value={lastTask.slug}
+            subValue={formatDistanceToNow(new Date(lastTask.createdAt), {
               addSuffix: true,
             })}
             color={accent}
@@ -125,8 +125,8 @@ export const TodaysStats: React.FC = () => {
           <StatCard
             icon="clock"
             label="Last Exercise"
-            value={lastExercise.exercise}
-            subValue={formatDistanceToNow(new Date(lastExercise.completedAt), {
+            value={lastExercise.slug}
+            subValue={formatDistanceToNow(new Date(lastExercise.createdAt), {
               addSuffix: true,
             })}
             color={accent}
