@@ -1,10 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getLogs,
-  getLogsByExercise,
-  getLogsByTask,
-  getLogsByTaskOrExercise,
+  getLogsBySlug,
   getPhotoLogs,
+  getTodayLogs,
   PhotoLogCreate,
   saveExerciseLog,
   savePhotoLog,
@@ -19,31 +18,15 @@ export const useGetLogs = () => {
   });
 };
 
-export const useGetLogsByExercise = (exercise: string) => {
-  return useQuery({
-    queryKey: ["logs", exercise],
-    queryFn: () => getLogsByExercise(exercise),
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  });
-};
-
-export const useGetLogsByTask = (task: string) => {
-  return useQuery({
-    queryKey: ["logs", task],
-    queryFn: () => getLogsByTask(task),
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  });
-};
-
 export const useGetLogsByTaskOrExercise = (taskOrExercise: string) => {
   return useQuery({
     queryKey: ["logs", taskOrExercise],
-    queryFn: () => getLogsByTaskOrExercise(taskOrExercise),
+    queryFn: () => getLogsBySlug(taskOrExercise),
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };
 
-export const useSaveExerciseLog = (routineId: string) => {
+export const useSaveExerciseLog = (routineId: number) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationKey: ["logs"],
@@ -72,7 +55,8 @@ export const useSaveTaskLog = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationKey: ["logs"],
-    mutationFn: ({ task, note }: { task: string; note?: string }) => saveTaskLog(task, note),
+    mutationFn: ({ task, routineId, note }: { task: string; routineId: number; note?: string }) =>
+      saveTaskLog(task, routineId, note),
     onSuccess: () => {
       // Invalidate the query to refetch the data
       queryClient.refetchQueries({ queryKey: ["logs"] });
@@ -84,6 +68,14 @@ export const useGetPhotoLogs = (routineId: string) => {
   return useQuery({
     queryKey: ["logs", routineId],
     queryFn: () => getPhotoLogs(routineId),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+export const useGetTodayLogs = () => {
+  return useQuery({
+    queryKey: ["logs", "today"],
+    queryFn: () => getTodayLogs(),
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };

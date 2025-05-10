@@ -21,13 +21,14 @@ export default function ExerciseSession() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const searchParams = useSearchParams();
   const routineId = searchParams.get("routineId") || "";
+  const routineIdNum = parseInt(routineId, 10);
   const router = useRouter();
   const { addXP } = useBadges();
 
   const exercise = useMemo(
     () =>
-      EXERCISES.find((e) => e.itemId === slug || e.name === decodeURIComponent(slug)) ||
-      TASKS.find((e) => e.itemId === slug || e.name === decodeURIComponent(slug)),
+      EXERCISES.find((e) => e.slug === slug || e.name === decodeURIComponent(slug)) ||
+      TASKS.find((e) => e.slug === slug || e.name === decodeURIComponent(slug)),
     [slug]
   );
 
@@ -39,7 +40,7 @@ export default function ExerciseSession() {
 
   const progress = useSharedValue(0);
 
-  const saveExerciseLogMutation = useSaveExerciseLog(routineId);
+  const saveExerciseLogMutation = useSaveExerciseLog(routineIdNum);
   const { play } = useSound();
 
   const textColor = useThemeColor({}, "text");

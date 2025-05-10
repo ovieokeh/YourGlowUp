@@ -15,6 +15,7 @@ export interface CustomPickerProps<T> {
   items: PickerItem<T>[];
   selectedValue: T | null;
   onValueChange: (value: T) => void;
+  disabled?: boolean;
   placeholder?: string;
   style?: StyleProp<ViewStyle>;
   itemStyle?: StyleProp<ViewStyle>;
@@ -24,11 +25,12 @@ export interface CustomPickerProps<T> {
 export function ThemedPicker<T extends unknown>({
   items,
   selectedValue,
-  onValueChange,
+  disabled,
   placeholder = "Select…",
   style,
   itemStyle,
   labelStyle,
+  onValueChange,
 }: CustomPickerProps<T>) {
   const [open, setOpen] = useState(false);
   const background = useThemeColor({}, "background");
@@ -58,6 +60,7 @@ export function ThemedPicker<T extends unknown>({
           open && { borderColor: accent },
           style,
         ]}
+        disabled={disabled}
       >
         <ThemedText style={[styles.inputLabel, { color: text }, labelStyle]}>{displayLabel}</ThemedText>
         <IconSymbol name={open ? "chevron.up" : "chevron.down"} size={20} color={text} />
@@ -110,7 +113,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacings.md,
     borderWidth: 1,
     borderRadius: BorderRadii.md,
-    alignSelf: "center",
     gap: Spacings.sm,
   },
   inputLabel: {

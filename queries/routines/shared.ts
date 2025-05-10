@@ -2,18 +2,22 @@ import { Exercise, Task } from "@/constants/Exercises";
 
 export interface Routine {
   id: number;
-  routineId: string;
+  slug: string;
   name: string;
   description: string;
-  itemsIds: string[];
+  itemsSlugs: string[];
 }
 
 export type RoutineTaskItem = Task & {
   id: number;
+  routineId: number;
+  slug: string;
   addedAt: string;
 };
 export type RoutineExerciseItem = Exercise & {
   id: number;
+  routineId: number;
+  slug: string;
   addedAt: string;
 };
 

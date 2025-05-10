@@ -2,7 +2,6 @@ import { router, Tabs, useFocusEffect } from "expo-router";
 import React from "react";
 import { Platform, Pressable } from "react-native";
 
-import { BackButton } from "@/components/BackButton";
 import { HapticTab } from "@/components/HapticTab";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { XPCounter } from "@/components/XPCounter";
@@ -42,8 +41,8 @@ export default function TabLayout() {
         tabBarActiveTintColor: tint,
         tabBarInactiveTintColor: muted,
         tabBarButton: HapticTab,
-        headerLeft: () => <SettingsButton />,
-        headerRight: () => <XPCounter />,
+        headerShown: true,
+
         tabBarStyle: Platform.select({
           default: {},
           ios: {
@@ -66,7 +65,7 @@ export default function TabLayout() {
         headerTitleStyle: {
           // fontSize: 20,
           // fontWeight: "600",
-          color: "transparent",
+          // color: "transparent",
         },
       }}
     >
@@ -75,35 +74,26 @@ export default function TabLayout() {
         options={{
           title: "Today",
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="calendar" color={color} />,
-
+          headerShown: true,
+          headerLeft: () => <SettingsButton />,
+          headerRight: () => <XPCounter />,
           headerStyle: {
+            backgroundColor: background,
+            // borderBottomWidth: 0.5,
+            // borderBottomColor: border,
             shadowColor: "transparent",
           },
         }}
       />
       <Tabs.Screen
-        name="routines/index"
+        name="routines"
         options={{
-          title: "Routine",
-          href: null,
+          title: "My Routines",
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="clock" color={color} />,
+          headerShown: false,
         }}
       />
-      <Tabs.Screen
-        name="routines/explore"
-        options={{
-          title: "Explore",
-          href: null,
-          headerLeft: () => <BackButton />,
-        }}
-      />
-      <Tabs.Screen
-        name="routines/[id]"
-        options={{
-          title: "My Routine",
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="clock" color={color} />,
-        }}
-      />
+
       <Tabs.Screen
         name="progress"
         options={{

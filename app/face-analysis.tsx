@@ -102,6 +102,7 @@ export default function FaceAnalysisScreen() {
               errors={errors}
               setErrors={setErrors}
               setLoading={setLoading}
+              showPreview
             />
           )}
           {step === "results" && (

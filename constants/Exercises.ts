@@ -1,10 +1,24 @@
+export enum NotificationType {
+  DAILY = "daily",
+  WEEKLY = "weekly",
+  NONE = "",
+}
+
+/**
+ * Notification for a task or exercise.
+ * - `none`: No notification
+ * - `daily`: Daily notification (can be an array of times)
+ * - `weekly`: Weekly notification (can be an array of daytime strings)
+ */
+
 interface SharedExerciseAndTask {
-  itemId: string;
+  slug: string;
   type: "exercise" | "task";
   name: string;
   area: string;
   description: string;
-  notificationTimes?: string[] | null;
+  notificationType?: NotificationType;
+  notificationTimes?: string[] | null; // only if recurring
   itemsNeeded?: string[];
 }
 
@@ -19,7 +33,7 @@ export interface Exercise extends SharedExerciseAndTask {
 
 export const EXERCISES: Exercise[] = [
   {
-    itemId: "tongue-posture",
+    slug: "tongue-posture",
     type: "exercise",
     name: "Tongue Posture (Mewing)",
     area: "Skull support",
@@ -38,7 +52,7 @@ export const EXERCISES: Exercise[] = [
     color: "#FF5733",
   },
   {
-    itemId: "chin-tuck",
+    slug: "chin-tuck",
     type: "exercise",
     name: "Chin Tucks",
     area: "Neck posture",
@@ -56,7 +70,7 @@ export const EXERCISES: Exercise[] = [
     color: "#FAC800",
   },
   {
-    itemId: "smile-symmetry",
+    slug: "smile-symmetry",
     type: "exercise",
     name: "Smile Symmetry Drill",
     area: "Zygomatic control",
@@ -75,7 +89,7 @@ export const EXERCISES: Exercise[] = [
     color: "#00BFFF",
   },
   {
-    itemId: "fish-face",
+    slug: "fish-face",
     type: "exercise",
     name: "Fish Face",
     area: "Buccinator tone",
@@ -89,7 +103,7 @@ export const EXERCISES: Exercise[] = [
     color: "#A0FF00",
   },
   {
-    itemId: "jaw-push-resist",
+    slug: "jaw-push-resist",
     type: "exercise",
     name: "Jaw Push-Resist",
     area: "Jaw strength",
@@ -107,7 +121,7 @@ export const EXERCISES: Exercise[] = [
     color: "#00FF7F",
   },
   {
-    itemId: "neck-curl-ups",
+    slug: "neck-curl-ups",
     type: "exercise",
     name: "Neck Curl-Ups",
     area: "Cervical tone",
@@ -150,7 +164,7 @@ export interface Task extends SharedExerciseAndTask {
 }
 export const TASKS: Task[] = [
   {
-    itemId: "cleanse",
+    slug: "cleanse",
     type: "task",
     name: "Cleanse",
     area: "Facial Care",
@@ -170,7 +184,7 @@ export const TASKS: Task[] = [
     itemsNeeded: ["cleanser"],
   },
   {
-    itemId: "exfoliate",
+    slug: "exfoliate",
     type: "task",
     name: "Exfoliate",
     area: "Facial Care",
@@ -189,7 +203,7 @@ export const TASKS: Task[] = [
     itemsNeeded: ["exfoliator"],
   },
   {
-    itemId: "serum",
+    slug: "serum",
     type: "task",
     name: "Apply Serum",
     area: "Facial Care",
@@ -207,7 +221,7 @@ export const TASKS: Task[] = [
     itemsNeeded: ["serum"],
   },
   {
-    itemId: "moisturize",
+    slug: "moisturize",
     type: "task",
     name: "Moisturize",
     area: "Facial Care",
@@ -220,7 +234,7 @@ export const TASKS: Task[] = [
     itemsNeeded: ["moisturizer"],
   },
   {
-    itemId: "sunscreen",
+    slug: "sunscreen",
     type: "task",
     name: "Apply Sunscreen",
     area: "Facial Care",
@@ -236,9 +250,11 @@ export const TASKS: Task[] = [
       "https://lvaengmvyffyrughoqmc.supabase.co/storage/v1/object/public/app-assets/images/sunscreen-feature-image.png",
     color: "#FFD700",
     itemsNeeded: ["sunscreen"],
+    notificationType: NotificationType.DAILY,
+    notificationTimes: ["08:00"],
   },
   {
-    itemId: "hydrate",
+    slug: "hydrate",
     type: "task",
     name: "Hydrate",
     area: "Hydration",
@@ -248,10 +264,11 @@ export const TASKS: Task[] = [
     animation:
       "https://lvaengmvyffyrughoqmc.supabase.co/storage/v1/object/public/app-assets/images/hydrate-feature-image.png",
     color: "#00FF00",
-    notificationTimes: ["random"],
+    notificationType: NotificationType.DAILY,
+    notificationTimes: ["08:00", "12:00", "18:00"],
   },
   {
-    itemId: "chewing",
+    slug: "chewing",
     type: "task",
     name: "Chewing (Mastic Gum)",
     area: "Masseter hypertrophy",
@@ -267,7 +284,6 @@ export const TASKS: Task[] = [
       "https://lvaengmvyffyrughoqmc.supabase.co/storage/v1/object/public/app-assets/images/chewing-feature-image.png",
     color: "#DCFF00",
     itemsNeeded: ["gum"],
-    notificationTimes: ["random"],
     questions: [
       {
         questionId: "dominantSide",

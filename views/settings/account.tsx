@@ -199,9 +199,9 @@ export default function AccountView() {
 
             for (const log of logs) {
               if (isExerciseLog(log)) {
-                saveExerciseLog(log.exercise, log.duration);
+                saveExerciseLog(log.slug, log.duration, "my-routine");
               } else if (isTaskLog(log)) {
-                await saveTaskLog(log as any);
+                await saveTaskLog(log as any, "my-routine", log.notes);
               }
             }
 

@@ -1,39 +1,35 @@
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useMemo } from "react";
 import { FlatList, Image, Pressable, StyleSheet, View } from "react-native";
 
+import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { getUserRoutines } from "@/queries/routines/routines";
-import { Routine } from "@/queries/routines/shared";
+import { useGetRoutines } from "@/queries/routines";
 
 export default function RoutinesScreen() {
   const router = useRouter();
-  const [routines, setRoutines] = useState<Routine[]>([]);
+
+  const routinesQuery = useGetRoutines();
+
+  const isLoading = routinesQuery.isLoading;
+  const routines = useMemo(() => routinesQuery.data || [], [routinesQuery.data]);
 
   const background = useThemeColor({}, "background");
   const border = useThemeColor({}, "border");
   const text = useThemeColor({}, "text");
 
-  useEffect(() => {
-    const init = async () => {
-      try {
-        const data = await getUserRoutines();
-        if (data) {
-          setRoutines(data);
-        } else {
-          setRoutines([]);
-        }
-      } catch (error) {
-        console.error("Error fetching routines:", error);
-      }
-    };
-    init();
-  }, []);
-
   const sorted = routines;
+
+  if (isLoading) {
+    return (
+      <ThemedView style={styles.container}>
+        <ThemedText>Loading...</ThemedText>
+      </ThemedView>
+    );
+  }
 
   return (
     <ThemedView style={styles.container}>
@@ -79,17 +75,14 @@ export default function RoutinesScreen() {
       />
 
       <View style={styles.actions}>
-        <Pressable style={[styles.actionButton, { borderColor: border }]} onPress={() => router.push("/face-analysis")}>
-          <IconSymbol name="face.smiling" size={18} color={text} />
-          <ThemedText style={styles.actionText}>Start Face Analysis</ThemedText>
-        </Pressable>
-        <Pressable
-          style={[styles.actionButton, { borderColor: border }]}
-          onPress={() => router.push("/routines/explore")}
-        >
-          <IconSymbol name="sparkles" size={18} color={text} />
-          <ThemedText style={styles.actionText}>Browse All Routines</ThemedText>
-        </Pressable>
+        <ThemedButton
+          variant="solid"
+          title="Generate AI Routine"
+          onPress={() => {
+            router.push("/face-analysis");
+          }}
+          icon="wand.and.stars"
+        />
       </View>
     </ThemedView>
   );

@@ -64,7 +64,7 @@ export const RoutineItemCard = ({
       setQuestionModalVisible(true);
       return;
     }
-    await saveTaskLogMutation.mutateAsync({ task: item.name, note: "" });
+    await saveTaskLogMutation.mutateAsync({ task: item.name, routineId: item.routineId, note: "" });
     await play("complete-task");
     await addXP.mutateAsync(LOG_TYPE_XP_MAP["task"]);
     Toast.show({ type: "success", text1: "Task completed", text2: `You completed ${item.name}`, position: "bottom" });
@@ -181,7 +181,11 @@ export const RoutineItemCard = ({
             );
           }}
           handleSubmitAnswers={async () => {
-            await saveTaskLogMutation.mutateAsync({ task: item.name, note: JSON.stringify(answers) });
+            await saveTaskLogMutation.mutateAsync({
+              task: item.name,
+              routineId: item.routineId,
+              note: JSON.stringify(answers),
+            });
             await addXP.mutateAsync(LOG_TYPE_XP_MAP["task"]);
             await play("complete-task");
             Toast.show({

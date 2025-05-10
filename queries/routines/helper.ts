@@ -12,11 +12,11 @@ const getRoutineById = async (routineId: string) => {
 
   for (const routine of mappedRows) {
     const items = (await db.getAllAsync(`SELECT * FROM routine_items WHERE routineId = ?`, [
-      routine.routineId,
+      routine.id,
     ])) as RoutineItem[];
     (routine as unknown as RoutineWithItems).items = items.map((item) => {
-      const exercise = EXERCISES.find((e) => e.itemId === item.itemId);
-      const task = TASKS.find((t) => t.itemId === item.itemId);
+      const exercise = EXERCISES.find((e) => e.slug === item.slug);
+      const task = TASKS.find((t) => t.slug === item.slug);
       if (exercise) {
         return {
           ...exercise,

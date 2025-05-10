@@ -47,8 +47,8 @@ const RecomendationsRenderer = ({
   return (
     <View style={{ gap: Spacings.sm }}>
       {analysisResults.recommendations.map((rec) => {
-        const exercise = EXERCISES.find((e) => e.itemId === rec);
-        const task = TASKS.find((t) => t.itemId === rec);
+        const exercise = EXERCISES.find((e) => e.slug === rec);
+        const task = TASKS.find((t) => t.slug === rec);
         const item = exercise || task;
 
         if (!item) return null;
@@ -100,10 +100,10 @@ export default function FaceAnalysisActionsView({ analysisResults }: FaceAnalysi
     updateRoutineMutation
       .mutateAsync({
         replace: true,
-        routineId: "my-routine",
         name: "My Routine",
+        slug: "my-routine",
         description: "Routine based on facial analysis on " + new Date().toLocaleDateString(),
-        itemsIds: [...Array.from(selected)],
+        itemsSlugs: [...Array.from(selected)],
       })
       .then(() => {
         router.replace("/(tabs)/routines/my-routine");

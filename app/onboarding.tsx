@@ -140,7 +140,20 @@ export default function OnboardingScreen() {
             ))}
           </View>
           <View style={styles.buttons}>
-            <ThemedButton title="Skip" variant="outline" onPress={() => router.replace("/auth")} />
+            <ThemedButton
+              title="Skip"
+              variant="outline"
+              onPress={async () => {
+                await setOnboardingStatusMutation.mutateAsync({
+                  key: "main-onboarding",
+                  value: {
+                    step: 0,
+                    status: OnboardingStatus.COMPLETED,
+                  },
+                });
+                router.replace("/auth");
+              }}
+            />
             <ThemedButton
               title={index === slides.length - 1 ? "Get Started" : "Next"}
               variant="solid"

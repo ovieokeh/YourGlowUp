@@ -36,7 +36,6 @@ interface Props {
 export default function FaceAnalysisFormView({
   photos,
   errors,
-  loading,
   showPreview = false,
   allowTransform = false,
   setErrors,

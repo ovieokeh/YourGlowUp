@@ -1,5 +1,5 @@
-import { format, parse } from "date-fns";
-import { useFocusEffect, useRouter } from "expo-router";
+import { format, parse } from "date-fns"; // added isToday
+import { useRouter } from "expo-router";
 import React, { useCallback, useMemo } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
@@ -10,68 +10,66 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { TodaysStats } from "@/components/TodaysStats";
 import { BorderRadii, Spacings } from "@/constants/Theme";
-import { useAddRoutine, useGetRoutineById, useGetRoutines } from "@/queries/routines";
-import { isRoutineTaskItem } from "@/queries/routines/shared";
+import { useGetTodayLogs } from "@/queries/logs";
+import { useGetAllRoutineItems } from "@/queries/routines";
+import { isRoutineTaskItem, RoutineItem } from "@/queries/routines/shared";
 
 export default function HomeScreen() {
   const router = useRouter();
-  const routinesQuery = useGetRoutines();
 
-  const routines = useMemo(() => routinesQuery.data || [], [routinesQuery.data]);
-  const routineQuery = useGetRoutineById(routines[0]?.routineId || "my-routine");
-  const { mutate } = useAddRoutine();
-  const routine = routineQuery.data;
+  const routineQuery = useGetAllRoutineItems();
 
-  useFocusEffect(
-    useCallback(() => {
-      if (!routine && routineQuery.isSuccess) {
-        mutate({
-          routineId: "my-routine",
-          name: "My Routine",
-          description: "Your default routine",
-          itemsIds: ["tongue-posture", "cleanse", "moisturize", "hydrate"],
-        });
-      }
-    }, [mutate, routine, routineQuery.isSuccess])
+  const logsQuery = useGetTodayLogs();
+  const logs = useMemo(() => logsQuery.data || [], [logsQuery.data]);
+
+  const items = useMemo(() => routineQuery.data || [], [routineQuery?.data]);
+
+  const isRoutineItemCompleted = useCallback(
+    (item: RoutineItem) => {
+      // completed if there's any log for this routineId + itemId with completedAt today
+      return logs.some((log) => log.routineId === item.routineId && log.slug === item.slug);
+    },
+    [logs]
   );
-
-  const items = useMemo(() => routine?.items || [], [routine?.items]);
 
   const groupedByTime = useMemo(() => {
     const map: Record<string, typeof items> = {};
+    const now = new Date();
 
     for (const item of items) {
       const times = item.notificationTimes || ["Unscheduled"];
-
+      const hasLog = isRoutineItemCompleted(item);
       for (const time of times) {
+        // filter out past occurrences when the item has any log
+        if (time !== "Unscheduled") {
+          const parsedTime = parse(time, "HH:mm", new Date());
+          if (hasLog && now > parsedTime) {
+            continue;
+          }
+        }
+
         if (!map[time]) map[time] = [];
         map[time].push(item);
       }
     }
 
     return Object.entries(map)
-      .sort(([a], [b]) => a.localeCompare(b)) // Sort time keys
+      .sort(([a], [b]) => a.localeCompare(b))
       .reduce((acc, [time, group]) => {
         acc.push({ time, items: group });
         return acc;
       }, [] as { time: string; items: typeof items }[]);
-  }, [items]);
+  }, [items, isRoutineItemCompleted]);
 
   return (
     <ThemedView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.content}>
-          <TodaysStats />
-
           <ThemedText style={styles.title} type="subtitle">
             Today&apos;s tasks
           </ThemedText>
 
-          <View
-            style={{
-              gap: Spacings.xl,
-            }}
-          >
+          <View style={{ gap: Spacings.xl }}>
             {groupedByTime.map(({ time, items }) => {
               const formatted =
                 time === "Unscheduled" ? "Unscheduled" : format(parse(time, "HH:mm", new Date()), "h:mm a");
@@ -81,14 +79,14 @@ export default function HomeScreen() {
                   <ThemedText style={styles.title}>{formatted}</ThemedText>
                   {items.map((item) => (
                     <RoutineItemCard
-                      key={item.id + item.itemId}
+                      key={item.id + item.slug}
                       item={item}
                       handlePress={() => {
                         router.push({
                           pathname: "/exercise/[slug]",
                           params: {
-                            slug: encodeURIComponent(item.itemId || item.name),
-                            routineId: routine?.routineId,
+                            slug: encodeURIComponent(item.slug || item.name),
+                            routineId: item.routineId,
                           },
                         });
                       }}
@@ -100,15 +98,16 @@ export default function HomeScreen() {
               );
             })}
           </View>
-
-          <ThemedButton
-            title="View Routine"
-            onPress={() => router.push(`/(tabs)/routines/${routine?.routineId}`)}
-            variant="outline"
-            icon="chevron.right"
-            iconPlacement="right"
-          />
         </View>
+
+        <ThemedButton
+          title="View Routines"
+          onPress={() => router.push(`/(tabs)/routines`)}
+          variant="outline"
+          icon="chevron.right"
+          iconPlacement="right"
+        />
+        <TodaysStats />
       </ScrollView>
 
       <ThemedFabButton
@@ -130,6 +129,7 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     paddingBottom: 96,
+    gap: Spacings.xl,
   },
   content: {
     flex: 1,

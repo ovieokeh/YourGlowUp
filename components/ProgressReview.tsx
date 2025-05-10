@@ -1,5 +1,5 @@
 import Slider from "@react-native-community/slider";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Dimensions, Image, StyleSheet, View } from "react-native";
 
 import { Spacings } from "@/constants/Theme";
@@ -61,8 +61,6 @@ const PhotoProgressScroll = ({
       timer.current && clearInterval(timer.current);
     };
   }, [playing, fpsInterval, photos.length]);
-
-  console.log("current", photos[current]);
 
   return (
     <View style={{ backgroundColor: background, width: "100%" }}>
@@ -126,17 +124,7 @@ const PhotoProgressScroll = ({
 
 export const ProgressReview: React.FC<Props> = ({ photoLogs }) => {
   const background = useThemeColor({}, "background");
-
-  if (!photoLogs?.length)
-    return (
-      <View style={{ gap: Spacings.md, width: "100%" }}>
-        <ThemedText type="subtitle">No photos available</ThemedText>
-        <ThemedText type="default">
-          Please take some photos to review your progress. You can do this by adding a self-report log and including a
-          progress photo.
-        </ThemedText>
-      </View>
-    );
+  const [currentTab, setCurrentTab] = useState<"left" | "right" | "front">("front");
 
   const leftPhotos = photoLogs
     .map((log) => {
@@ -157,21 +145,47 @@ export const ProgressReview: React.FC<Props> = ({ photoLogs }) => {
     })
     .filter((photo) => !!photo);
 
+  const label = currentTab === "left" ? "Left View" : currentTab === "right" ? "Right View" : "Front View";
+  const photos = useMemo(
+    () => (currentTab === "left" ? leftPhotos : currentTab === "right" ? rightPhotos : frontPhotos),
+    [currentTab, leftPhotos, rightPhotos, frontPhotos]
+  );
+
   return (
-    <View style={{ backgroundColor: background, width: "100%" }}>
-      <View>
-        <ThemedText type="subtitle">Front View</ThemedText>
-        <PhotoProgressScroll photos={frontPhotos} />
+    <View style={{ backgroundColor: background, width: "100%", gap: Spacings.md }}>
+      <View style={{ flexDirection: "row", gap: Spacings.md }}>
+        <ThemedButton
+          title="Left"
+          onPress={() => setCurrentTab("left")}
+          variant={currentTab === "left" ? "solid" : "outline"}
+          active={currentTab === "left"}
+        />
+        <ThemedButton
+          title="Front"
+          onPress={() => setCurrentTab("front")}
+          variant={currentTab === "front" ? "solid" : "outline"}
+          active={currentTab === "front"}
+        />
+        <ThemedButton
+          title="Right"
+          onPress={() => setCurrentTab("right")}
+          variant={currentTab === "right" ? "solid" : "outline"}
+          active={currentTab === "right"}
+        />
       </View>
-
-      <View>
-        <ThemedText type="subtitle">Left View</ThemedText>
-        <PhotoProgressScroll photos={leftPhotos} />
-      </View>
-
-      <View>
-        <ThemedText type="subtitle">Right View</ThemedText>
-        <PhotoProgressScroll photos={rightPhotos} />
+      <View style={{ gap: Spacings.md }}>
+        <ThemedText type="subtitle">{label}</ThemedText>
+        {photos.length > 0 ? (
+          <PhotoProgressScroll photos={photos} />
+        ) : (
+          <View style={{ gap: Spacings.md, width: "100%" }}>
+            <ThemedText type="subtitle">No photos available</ThemedText>
+            <ThemedText type="default">
+              Please take some photos to review your progress. You can do this by adding a self-report log and including
+              a progress photo.
+            </ThemedText>
+          </View>
+        )}
       </View>
     </View>
   );

@@ -15,17 +15,17 @@ import { ThemedView } from "./ThemedView";
 
 interface Props {
   visible: boolean;
-  selectedIds: string[];
+  selectedSlugs: string[];
   onClose: () => void;
   onSave: (selected: (Exercise | Task)[]) => void;
 }
 
 const allItems = [...EXERCISES, ...TASKS];
-export const RoutineItemsModal = ({ visible, selectedIds, onClose, onSave }: Props) => {
+export const RoutineItemsModal = ({ visible, selectedSlugs, onClose, onSave }: Props) => {
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "exercise" | "task">("all");
   const [areaFilter, setAreaFilter] = useState<string>("all");
-  const [selected, setSelected] = useState<Set<string>>(new Set(selectedIds.map((id) => id.toString())));
+  const [selected, setSelected] = useState<Set<string>>(new Set(selectedSlugs.map((id) => id.toString())));
 
   const textColor = useThemeColor({}, "text");
   const borderColor = useThemeColor({}, "border");
@@ -54,7 +54,7 @@ export const RoutineItemsModal = ({ visible, selectedIds, onClose, onSave }: Pro
   };
 
   const handleSave = () => {
-    const selectedItems = allItems.filter((i) => selected.has(i.itemId));
+    const selectedItems = allItems.filter((i) => selected.has(i.slug));
     onSave(selectedItems);
     setSelected(new Set());
     setQuery("");
@@ -110,12 +110,12 @@ export const RoutineItemsModal = ({ visible, selectedIds, onClose, onSave }: Pro
 
         <FlatList
           data={matches}
-          keyExtractor={(item) => item.itemId}
+          keyExtractor={(item) => item.slug}
           numColumns={2}
           columnWrapperStyle={{ gap: Spacings.sm }}
           contentContainerStyle={{ padding: Spacings.md, paddingBottom: 96 }}
           renderItem={({ item }) => {
-            const isSelected = selected.has(item.itemId);
+            const isSelected = selected.has(item.slug);
             return (
               <View style={[styles.item, { borderColor }]}>
                 {item.featureImage && (
@@ -134,7 +134,7 @@ export const RoutineItemsModal = ({ visible, selectedIds, onClose, onSave }: Pro
                   <ThemedButton
                     variant="ghost"
                     title={isSelected ? "Remove" : "Add"}
-                    onPress={() => toggleSelect(item.itemId)}
+                    onPress={() => toggleSelect(item.slug)}
                     icon="plus.circle"
                     textStyle={{ color: isSelected ? Colors.light.danger : Colors.light.accent }}
                   />

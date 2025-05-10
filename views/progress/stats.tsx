@@ -55,7 +55,7 @@ export function ProgressStatsView() {
   const pieData = useMemo(() => {
     const map = new Map<string, number>();
     filtered.forEach((l) => {
-      const key = isExerciseLog(l) ? l.exercise : isTaskLog(l) ? l.task : "";
+      const key = isExerciseLog(l) ? l.slug : isTaskLog(l) ? l.slug : "";
       map.set(key, (map.get(key) || 0) + 1);
     });
     return Array.from(map.entries()).map(([name, count]) => {

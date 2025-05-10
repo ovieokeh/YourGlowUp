@@ -1,6 +1,6 @@
 import { invariant } from "es-toolkit";
 import { Link, router, Stack } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
 import { ThemedButton } from "@/components/ThemedButton";
@@ -23,7 +23,7 @@ const timeOptions = Array.from({ length: 24 * 12 }, (_, i) => {
 
 export default function EditRoutineItemScreen() {
   const searchParams = useSearchParams();
-  const id = searchParams.get("id") || "my-routine";
+  const id = searchParams.get("id") || "";
   const routineId = searchParams.get("routineId") || "";
   invariant(id, "id is required");
   invariant(routineId, "routineId is required");
@@ -36,10 +36,12 @@ export default function EditRoutineItemScreen() {
     notificationTimes: [],
   });
 
-  const itemQuery = useGetRoutineItem(id, routineId);
-  const { data: item, isLoading: itemLoading } = itemQuery;
+  const itemQuery = useGetRoutineItem(id);
+  const item = useMemo(() => {
+    return itemQuery.data;
+  }, [itemQuery.data]);
 
-  const updateItemMutation = useUpdateRoutineItem(id, routineId);
+  const updateItemMutation = useUpdateRoutineItem(id);
 
   useEffect(() => {
     const item = itemQuery.data;
@@ -92,7 +94,7 @@ export default function EditRoutineItemScreen() {
     });
   };
 
-  if (itemLoading) {
+  if (itemQuery.isLoading) {
     return (
       <ThemedView style={styles.container}>
         <ThemedText type="title">Loading...</ThemedText>
