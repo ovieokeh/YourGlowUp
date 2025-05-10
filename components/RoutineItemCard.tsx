@@ -130,7 +130,10 @@ export const RoutineItemCard = ({
       {allowCompletion &&
         isRoutineTaskItem(item) &&
         (hasTodayLogs ? (
-          <Pressable style={{ padding: Spacings.sm, marginLeft: "auto" }} onPress={handleTaskCompletion}>
+          <Pressable
+            style={{ padding: Spacings.sm, paddingRight: 0, marginLeft: "auto" }}
+            onPress={handleTaskCompletion}
+          >
             <RedoBadge count={todayLogs.length} color={successColor} textColor={textColor} size={38} />
           </Pressable>
         ) : (

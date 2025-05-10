@@ -62,6 +62,8 @@ const PhotoProgressScroll = ({
     };
   }, [playing, fpsInterval, photos.length]);
 
+  console.log("current", photos[current]);
+
   return (
     <View style={{ backgroundColor: background, width: "100%" }}>
       <View style={[styles.wrapper, { backgroundColor: background }]} ref={containerRef}>
@@ -81,7 +83,7 @@ const PhotoProgressScroll = ({
             resizeMode="cover"
           />
         )}
-        {showGrid && <Image source={require("@/assets/images/eye-grid.png")} style={styles.grid} resizeMode="cover" />}
+        {showGrid && <Image source={require("@/assets/images/grid.png")} style={styles.grid} resizeMode="cover" />}
       </View>
 
       <View style={styles.controls}>

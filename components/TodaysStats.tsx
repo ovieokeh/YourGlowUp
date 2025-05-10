@@ -1,7 +1,7 @@
 import { formatDistanceToNow } from "date-fns";
 import { useRouter } from "expo-router";
 import React, { useMemo } from "react";
-import { Dimensions, Image, StyleSheet, View } from "react-native";
+import { Image, StyleSheet, View } from "react-native";
 
 import { ThemedText } from "@/components/ThemedText";
 import { isExerciseLog, isTaskLog } from "@/queries/logs/logs";
@@ -22,7 +22,7 @@ export const TodaysStats: React.FC = () => {
   const wrapperBorder = useThemeColor({}, "border");
   const muted = useThemeColor({}, "muted");
   const text = useThemeColor({}, "text");
-  const tint = useThemeColor({}, "tint");
+  const accent = useThemeColor({}, "accent");
   const gray10 = useThemeColor({}, "gray10");
 
   const streak = useMemo(() => {
@@ -78,68 +78,69 @@ export const TodaysStats: React.FC = () => {
       </ThemedText>
 
       <View style={styles.statsGrid}>
-        <StatCard
-          icon="calendar"
-          label="Current Streak"
-          value={`${streak} days`}
-          color={tint}
-          muted={muted}
-          text={text}
-        />
         <View style={{ flexDirection: "row", gap: Spacings.sm }}>
           <StatCard
-            icon="figure.walk.circle"
-            label="Tasks Done"
-            value={tasksToday.length.toString()}
-            color={tint}
+            icon="calendar"
+            label="Streak"
+            value={`${streak} days`}
+            color={accent}
             muted={muted}
             text={text}
+            variant="vertical"
           />
           <StatCard
             icon="figure.walk.circle"
-            label="Exercises Done"
+            label="Exercises"
             value={exercisesToday.length.toString()}
-            color={tint}
+            color={accent}
             muted={muted}
             text={text}
+            variant="vertical"
+          />
+          <StatCard
+            icon="figure.walk.circle"
+            label="Tasks"
+            value={tasksToday.length.toString()}
+            color={accent}
+            muted={muted}
+            text={text}
+            variant="vertical"
           />
         </View>
 
-        <View style={{ flexDirection: "row", gap: Spacings.sm }}>
-          {lastExercise && (
-            <StatCard
-              icon="clock"
-              label="Last Exercise"
-              value={lastExercise.exercise}
-              subValue={formatDistanceToNow(new Date(lastExercise.completedAt), {
-                addSuffix: true,
-              })}
-              color={tint}
-              muted={muted}
-              text={text}
-            />
-          )}
-
-          {lastTask && (
-            <StatCard
-              icon="checkmark"
-              label="Last Task"
-              value={lastTask.task}
-              subValue={formatDistanceToNow(new Date(lastTask.completedAt), {
-                addSuffix: true,
-              })}
-              color={tint}
-              muted={muted}
-              text={text}
-            />
-          )}
-        </View>
+        {lastTask && (
+          <StatCard
+            icon="checkmark"
+            label="Last Task"
+            value={lastTask.task}
+            subValue={formatDistanceToNow(new Date(lastTask.completedAt), {
+              addSuffix: true,
+            })}
+            color={accent}
+            muted={muted}
+            text={text}
+          />
+        )}
+        {lastExercise && (
+          <StatCard
+            icon="clock"
+            label="Last Exercise"
+            value={lastExercise.exercise}
+            subValue={formatDistanceToNow(new Date(lastExercise.completedAt), {
+              addSuffix: true,
+            })}
+            color={accent}
+            muted={muted}
+            text={text}
+          />
+        )}
+        <View style={{ flexDirection: "row", gap: Spacings.sm }}></View>
       </View>
 
       <ThemedButton
         title="View Progress"
         onPress={() => router.replace("/progress?activeTab=Stats")}
-        variant="outline"
+        variant="ghost"
         icon="chevron.right"
         iconPlacement="right"
         style={styles.button}
@@ -156,6 +157,7 @@ const StatCard = ({
   color,
   muted,
   text,
+  variant = "horizontal",
 }: {
   icon: IconSymbolName;
   label: string;
@@ -164,9 +166,18 @@ const StatCard = ({
   color: string;
   muted: string;
   text: string;
+  variant?: "horizontal" | "vertical";
 }) => (
-  <View style={styles.card}>
+  <View
+    style={[
+      styles.card,
+      {
+        alignItems: variant === "horizontal" ? "center" : "flex-start",
+      },
+    ]}
+  >
     <IconSymbol name={icon} color={color} size={22} />
+
     <View style={{ marginLeft: Spacings.sm }}>
       <ThemedText style={[styles.cardLabel, { color: muted }]}>{label}</ThemedText>
       <ThemedText style={[styles.cardValue, { color: text }]}>{value}</ThemedText>
@@ -185,13 +196,26 @@ const styles = StyleSheet.create({
   title: {
     marginBottom: Spacings.sm,
   },
-  statsGrid: {},
+  statsGrid: {
+    gap: Spacings.sm,
+  },
   card: {
     flexDirection: "row",
     alignItems: "center",
     padding: Spacings.sm,
     borderRadius: BorderRadii.sm,
-    width: Dimensions.get("window").width / 2.5,
+    // maxWidth: Dimensions.get("window").width / 2.6,
+    flex: 1,
+    width: "100%",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.18,
+    elevation: 1,
+    shadowRadius: 1.0,
+    backgroundColor: "transparent",
   },
   cardLabel: {
     fontSize: 13,

@@ -1,5 +1,5 @@
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, Image, ScrollView, StyleSheet, View } from "react-native";
 import { useSharedValue, withTiming } from "react-native-reanimated";
 
@@ -63,8 +63,8 @@ export default function ExerciseSession() {
 
     if (started && timeLeft > 0) {
       timer = setInterval(() => {
-        play("tick");
         setTimeLeft((t) => t - 1);
+        play("tick");
       }, 1000);
     } else if (timeLeft === 0 && started && !completed) {
       setCompleted(true);
@@ -104,7 +104,7 @@ export default function ExerciseSession() {
     }
   };
 
-  const handleComplete = async () => {
+  const handleComplete = useCallback(async () => {
     if (!exercise) return;
     await saveExerciseLogMutation.mutateAsync({ exercise: exercise.name, duration: duration });
     play("complete-exercise");
@@ -116,7 +116,17 @@ export default function ExerciseSession() {
       .finally(() => {
         router.replace(`/exercise-complete?exercise=${exercise.name}`);
       });
-  };
+  }, [addXP, duration, exercise, play, router, saveExerciseLogMutation]);
+
+  useEffect(() => {
+    if (timeLeft === 0 && started) {
+      setCompleted(true);
+      setStarted(false);
+      setTimeLeft(duration);
+      progress.value = withTiming(0);
+      handleComplete();
+    }
+  }, [timeLeft, started, duration, progress, handleComplete]);
 
   if (!exercise) {
     return (
