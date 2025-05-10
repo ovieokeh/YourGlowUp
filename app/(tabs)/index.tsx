@@ -5,7 +5,6 @@ import { ScrollView, StyleSheet, View } from "react-native";
 
 import { RoutineItemCard } from "@/components/RoutineItemCard";
 import { ThemedButton } from "@/components/ThemedButton";
-import { ThemedFabButton } from "@/components/ThemedFabButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { TodaysStats } from "@/components/TodaysStats";
@@ -70,14 +69,24 @@ export default function HomeScreen() {
     <ThemedView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.content}>
-          <ThemedText style={styles.title} type="subtitle">
-            Today&apos;s tasks
-          </ThemedText>
+          {items.length > 0 && (
+            <>
+              <TodaysStats />
+              <ThemedText style={styles.title} type="subtitle">
+                Today&apos;s tasks
+              </ThemedText>
+            </>
+          )}
 
           <View style={{ gap: Spacings.xl }}>
             {groupedByTime.map(({ time, items }) => {
+              const isWeeklyTime = time.includes("-");
+              let timeString = time;
+              if (isWeeklyTime) {
+                timeString = time.split("-")[1];
+              }
               const formatted =
-                time === "Unscheduled" ? "Unscheduled" : format(parse(time, "HH:mm", new Date()), "h:mm a");
+                time === "Unscheduled" ? "Unscheduled" : format(parse(timeString, "HH:mm", new Date()), "h:mm a");
 
               return (
                 <View key={time} style={styles.cards}>
@@ -105,24 +114,33 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <ThemedButton
-          title="View Routines"
-          onPress={() => router.push(`/(tabs)/routines`)}
-          variant="outline"
-          icon="chevron.right"
-          iconPlacement="right"
-        />
-        <TodaysStats />
+        {items.length === 0 ? (
+          <View style={{ gap: Spacings.md }}>
+            <ThemedButton
+              title="Create a routine"
+              onPress={() => router.push(`/(tabs)/routines/create`)}
+              variant="outline"
+              icon="plus.circle"
+              iconPlacement="right"
+            />
+            <ThemedButton
+              title="Generate an AI routine"
+              onPress={() => router.push(`/face-analysis`)}
+              variant="solid"
+              icon="wand.and.stars"
+              iconPlacement="right"
+            />
+          </View>
+        ) : (
+          <ThemedButton
+            title="View Routines"
+            onPress={() => router.push(`/(tabs)/routines`)}
+            variant="outline"
+            icon="chevron.right"
+            iconPlacement="right"
+          />
+        )}
       </ScrollView>
-
-      <ThemedFabButton
-        onPress={() => router.push("/add-photo-log")}
-        icon="plus"
-        iconPlacement="right"
-        title="Log photo"
-        variant="solid"
-        bottom={96}
-      />
     </ThemedView>
   );
 }

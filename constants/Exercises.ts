@@ -1,7 +1,6 @@
 export enum NotificationType {
   DAILY = "daily",
-  WEEKLY = "weekly",
-  NONE = "",
+  CUSTOM = "custom",
 }
 
 /**
@@ -161,6 +160,7 @@ export interface Task extends SharedExerciseAndTask {
   color?: string;
   questions?: TaskQuestion[];
   instructions?: string[];
+  duration?: number;
 }
 export const TASKS: Task[] = [
   {

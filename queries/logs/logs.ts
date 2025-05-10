@@ -15,15 +15,9 @@ export const initLogsTable = (reset?: boolean) => {
         routineId INTEGER NOT NULL,
         userEmail TEXT NOT NULL,
         slug TEXT NOT NULL,
-        createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        type TEXT NOT NULL, -- "exercise" | "task"
-        duration INTEGER,
-        dominantSide TEXT,
-        chewingDuration INTEGER,
-        gumUsed INTEGER,
-        gumChewingDuration INTEGER,
-        symmetryRating INTEGER,
-        notes TEXT
+        createdAt INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000),
+        type TEXT NOT NULL,
+        meta TEXT
     );`
   );
 
@@ -32,7 +26,7 @@ export const initLogsTable = (reset?: boolean) => {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         routineId INTEGER NOT NULL,
         userEmail TEXT NOT NULL,
-        createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        createdAt INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000),
         photos TEXT NOT NULL,
         type TEXT NOT NULL DEFAULT "photo",
         notes TEXT
@@ -41,23 +35,32 @@ export const initLogsTable = (reset?: boolean) => {
   );
 };
 
-export interface ExerciseLog {
+export interface Log {
   id: number;
   routineId: number;
   slug: string;
-  type: "exercise";
-  duration: number;
+  type: "exercise" | "task";
+  meta: any;
   createdAt: number;
 }
 
-export const saveExerciseLog = async (slug: string, duration: number, routineId: number) => {
+export const isExerciseLog = (log: Log) => {
+  return log.type === "exercise";
+};
+export const isTaskLog = (log: Log) => {
+  return log.type === "task";
+};
+
+export const saveLog = async (type: "exercise" | "task", slug: string, routineId: number, meta?: any) => {
   const userEmail = await getCurrentUserEmail();
-  db.runAsync(`INSERT INTO logs (type, routineId, slug, duration, userEmail) VALUES ("exercise", ?, ?, ?, ?)`, [
-    routineId,
-    slug,
-    duration,
-    userEmail,
-  ])
+  await db
+    .runAsync(`INSERT INTO logs (type, slug, routineId, meta, userEmail) VALUES (?, ?, ?, ?, ?)`, [
+      type,
+      slug,
+      routineId,
+      JSON.stringify(meta),
+      userEmail,
+    ])
     .catch((err) => {
       console.error("Error saving exercise log", err);
     })
@@ -66,56 +69,40 @@ export const saveExerciseLog = async (slug: string, duration: number, routineId:
     });
 };
 
-export interface TaskLog {
-  id: number;
-  routineId: number;
-  slug: string;
-  type: "task";
-  notes: string;
-  createdAt: number;
-}
-export const saveTaskLog = async (slug: string, routineId: number, note?: string) => {
-  const userEmail = await getCurrentUserEmail();
-  db.runAsync(`INSERT INTO logs (type, slug, routineId, notes, userEmail) VALUES ("task", ?, ?, ?, ?)`, [
-    slug,
-    routineId,
-    note ?? "",
-    userEmail,
-  ])
-    .catch((err) => {
-      console.error("Error saving task log", err);
-    })
-    .finally(() => {
-      scheduleNotificationWithStats();
-    });
-};
-
-export type Log = ExerciseLog | TaskLog;
-
-export const isExerciseLog = (log: Log): log is ExerciseLog => {
-  return log.type === "exercise";
-};
-export const isTaskLog = (log: Log): log is TaskLog => {
-  return log.type === "task";
-};
-
 export const getLogs = async () => {
   const userEmail = await getCurrentUserEmail();
   const rows = (await db.getAllAsync(`SELECT * FROM logs WHERE userEmail = ? ORDER BY createdAt DESC;`, [
     userEmail,
   ])) as Log[];
-  return rows;
+  return rows.map((row) => {
+    if (row && row.meta) {
+      return {
+        ...row,
+        meta: JSON.parse(row.meta as unknown as string),
+      };
+    }
+    return row;
+  });
 };
 
-export const getLogsBySlug = async (slug: string, callback?: (rows: ExerciseLog[]) => void) => {
+export const getLogsBySlug = async (slug: string, callback?: (rows: Log[]) => void) => {
   const userEmail = await getCurrentUserEmail();
   const rows = (await db.getAllAsync(`SELECT * FROM logs WHERE slug = ? AND userEmail = ? ORDER BY createdAt DESC;`, [
     slug,
     userEmail,
-  ])) as ExerciseLog[];
-  if (callback) callback(rows);
+  ])) as Log[];
+  const mappedRows = rows.map((row) => {
+    if (row && row.meta) {
+      return {
+        ...row,
+        meta: JSON.parse(row.meta as unknown as string),
+      };
+    }
+    return row;
+  });
+  if (callback) callback(mappedRows);
 
-  return rows;
+  return mappedRows;
 };
 
 export const getTodayLogs = async () => {
@@ -128,7 +115,35 @@ export const getTodayLogs = async () => {
     startOfDay,
     endOfDay,
   ])) as Log[];
-  return rows;
+  return rows.map((row) => {
+    if (row && row.meta) {
+      return {
+        ...row,
+        meta: JSON.parse(row.meta as unknown as string),
+      };
+    }
+    return row;
+  });
+};
+
+export const getTodayLogsBySlug = async (slug: string) => {
+  const userEmail = await getCurrentUserEmail();
+  const now = new Date();
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime();
+  const rows = (await db.getAllAsync(
+    `SELECT * FROM logs WHERE slug = ? AND userEmail = ? AND createdAt >= ? AND createdAt < ?;`,
+    [slug, userEmail, startOfDay, endOfDay]
+  )) as Log[];
+  return rows.map((row) => {
+    if (row && row.meta) {
+      return {
+        ...row,
+        meta: JSON.parse(row.meta as unknown as string),
+      };
+    }
+    return row;
+  });
 };
 
 export interface PhotoLogTransform {
@@ -174,12 +189,14 @@ export const savePhotoLog = async (
     });
 };
 
-export const getPhotoLogs = async (routineId: string) => {
+export const getPhotoLogs = async (routineId: number) => {
   const userEmail = await getCurrentUserEmail();
+  console.log("photo lologogog", routineId);
   const rows = (await db.getAllAsync(
     `SELECT * FROM photo_logs WHERE routineId = ? AND userEmail = ? ORDER BY createdAt DESC;`,
     [routineId, userEmail]
   )) as PhotoLog[];
+  console.log("photo logs>>>>", rows);
   return rows.map((row) => {
     if (row && row.photos) {
       return {

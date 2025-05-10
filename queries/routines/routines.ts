@@ -3,7 +3,7 @@ import { scheduleNotificationWithStats } from "@/utils/notifications";
 import { db } from "../../utils/db";
 import { getLogs } from "../logs/logs";
 import { getCurrentUserEmail } from "../shared";
-import { Routine, RoutineExerciseItem, RoutineItem, RoutineTaskItem } from "./shared";
+import { Routine, RoutineItem } from "./shared";
 
 export enum RoutineItemCompletionType {
   RECURRING = "recurring",
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS routine_items (
   name TEXT,
   description TEXT,
   type TEXT,
-  notificationType TEXT DEFAULT NULL,
+  notificationType TEXT DEFAULT 'daily',
   notificationTimes TEXT DEFAULT NULL,
   addedAt TEXT DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (routineId) REFERENCES routines(id) ON DELETE CASCADE
@@ -267,15 +267,13 @@ export const getRoutineItem = async (id: number) => {
         ...exercise,
         ...item,
         notificationTimes: item.notificationTimes ? JSON.parse((item as any).notificationTimes) : null,
-        type: "exercise",
-      } as RoutineExerciseItem;
+      } as RoutineItem;
     } else if (task) {
       return {
         ...task,
         ...item,
         notificationTimes: item.notificationTimes ? JSON.parse((item as any).notificationTimes) : null,
-        type: "task",
-      } as RoutineTaskItem;
+      } as RoutineItem;
     }
     return null;
   } catch (error) {
@@ -299,14 +297,14 @@ export const getAllRoutineItems = async () => {
           ...item,
           notificationTimes: item.notificationTimes ? JSON.parse((item as any).notificationTimes) : null,
           type: "exercise",
-        } as RoutineExerciseItem;
+        } as RoutineItem;
       } else if (task) {
         return {
           ...task,
           ...item,
           notificationTimes: item.notificationTimes ? JSON.parse((item as any).notificationTimes) : null,
           type: "task",
-        } as RoutineTaskItem;
+        } as RoutineItem;
       }
       return null;
     });
@@ -334,14 +332,14 @@ export const getRoutineItems = async (routineId: number) => {
           ...item,
           notificationTimes: item.notificationTimes ? JSON.parse((item as any).notificationTimes) : null,
           type: "exercise",
-        } as RoutineExerciseItem;
+        } as RoutineItem;
       } else if (task) {
         return {
           ...task,
           ...item,
           notificationTimes: item.notificationTimes ? JSON.parse((item as any).notificationTimes) : null,
           type: "task",
-        } as RoutineTaskItem;
+        } as RoutineItem;
       }
       return null;
     });
@@ -363,7 +361,7 @@ export const updateRoutineItem = async (id: number, updatedItem: Partial<Routine
     const finalName = name ?? originalItem.name;
     const finalDescription = description ?? originalItem.description;
     const finalNotificationTimes = notificationTimes ?? originalItem.notificationTimes;
-    const finalNotificationType = notificationType ?? notificationType ?? NotificationType.NONE;
+    const finalNotificationType = notificationType ?? originalItem.notificationType ?? NotificationType.DAILY;
 
     const update = await db.runAsync(
       `UPDATE routine_items SET name = ?, description = ?, notificationType = ?, notificationTimes = ? WHERE id = ? AND userEmail = ?`,

@@ -104,14 +104,6 @@ function App() {
             <Stack.Screen name="onboarding" />
             <Stack.Screen name="auth" />
             <Stack.Screen
-              name="add-photo-log"
-              options={{
-                headerShown: true,
-                title: "Log photo",
-                headerTitleAlign: "center",
-              }}
-            />
-            <Stack.Screen
               name="settings"
               options={{
                 headerShown: true,

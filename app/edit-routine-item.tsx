@@ -8,18 +8,14 @@ import { ThemedPicker } from "@/components/ThemedPicker";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedTextInput } from "@/components/ThemedTextInput";
 import { ThemedView } from "@/components/ThemedView";
-import { Spacings } from "@/constants/Theme";
+import { NotificationType } from "@/constants/Exercises";
+import { BorderRadii, Spacings } from "@/constants/Theme";
+import { useThemeColor } from "@/hooks/useThemeColor";
 import { useGetRoutineItem, useUpdateRoutineItem } from "@/queries/routines";
 import { RoutineItem } from "@/queries/routines/shared";
 import { Ionicons } from "@expo/vector-icons";
 import { useSearchParams } from "expo-router/build/hooks";
 import Toast from "react-native-toast-message";
-
-const timeOptions = Array.from({ length: 24 * 12 }, (_, i) => {
-  const hour = String(Math.floor(i / 12)).padStart(2, "0");
-  const minute = String((i % 12) * 5).padStart(2, "0");
-  return `${hour}:${minute}`;
-});
 
 export default function EditRoutineItemScreen() {
   const searchParams = useSearchParams();
@@ -28,11 +24,14 @@ export default function EditRoutineItemScreen() {
   invariant(id, "id is required");
   invariant(routineId, "routineId is required");
 
+  const gray10 = useThemeColor({}, "gray10");
+
   const [itemState, setItemState] = useState<Partial<RoutineItem>>({
     name: "",
     area: "",
     description: "",
     instructions: [],
+    notificationType: NotificationType.DAILY,
     notificationTimes: [],
   });
 
@@ -51,6 +50,7 @@ export default function EditRoutineItemScreen() {
         area: item.area,
         description: item.description,
         instructions: item.instructions || [],
+        notificationType: item.notificationType || NotificationType.DAILY,
         notificationTimes: item.notificationTimes || [],
       });
     }
@@ -90,7 +90,10 @@ export default function EditRoutineItemScreen() {
   const addTime = () => {
     setItemState({
       ...itemState,
-      notificationTimes: [...(itemState.notificationTimes || []), "10:00"],
+      notificationTimes: [
+        ...(itemState.notificationTimes || []),
+        itemState.notificationType === NotificationType.CUSTOM ? "monday-10:00" : "10:00",
+      ],
     });
   };
 
@@ -126,6 +129,17 @@ export default function EditRoutineItemScreen() {
               <ThemedButton
                 title="Save"
                 onPress={() => {
+                  if (itemState.notificationType === NotificationType.CUSTOM) {
+                    const day = itemState.notificationTimes?.[0]?.split("-")[0];
+                    if (!day || day === "") {
+                      Toast.show({
+                        type: "error",
+                        text1: "Please select a day for weekly notifications",
+                        position: "bottom",
+                      });
+                      return;
+                    }
+                  }
                   updateItemMutation
                     .mutateAsync({
                       ...itemState,
@@ -190,17 +204,44 @@ export default function EditRoutineItemScreen() {
         <View style={{ gap: Spacings.xs }}>
           <ThemedText type="subtitle">Notification Times</ThemedText>
           <View style={{ gap: Spacings.xs }}>
+            <ThemedPicker
+              placeholder="Select Notification Type"
+              items={Object.values(NotificationType).map((type) => ({
+                label: type,
+                value: type,
+              }))}
+              selectedValue={itemState.notificationType}
+              onValueChange={(val) => {
+                setItemState({ ...itemState, notificationType: val });
+              }}
+            />
             {(itemState.notificationTimes || []).map((time, index) => (
-              <View key={`time-${index}`} style={styles.row}>
-                <ThemedPicker
-                  items={[...timeOptions, "random"].map((t) => ({ label: t, value: t }))}
-                  selectedValue={time}
-                  onValueChange={(val) => updateTime(index, val)}
-                  style={{ flex: 1, maxWidth: "90%" }}
+              <View
+                key={`time-${index}`}
+                style={{
+                  gap: Spacings.sm,
+                  padding: Spacings.sm,
+                  backgroundColor: gray10,
+                }}
+              >
+                <NotificationTimePicker
+                  value={time ?? "10:00"}
+                  type={itemState.notificationType}
+                  onChange={(val) => updateTime(index, val)}
                 />
-                <TouchableOpacity onPress={() => removeTime(index)}>
-                  <Ionicons name="remove" size={24} color="red" />
-                </TouchableOpacity>
+                <ThemedButton
+                  variant="ghost"
+                  icon="trash"
+                  title="Remove"
+                  onPress={() => {
+                    removeTime(index);
+                  }}
+                  style={
+                    {
+                      // als
+                    }
+                  }
+                />
               </View>
             ))}
           </View>
@@ -210,6 +251,83 @@ export default function EditRoutineItemScreen() {
     </ThemedView>
   );
 }
+
+export const NotificationTimePicker = ({
+  value = "10:00",
+  type,
+  onChange,
+}: {
+  value: string;
+  type: NotificationType | undefined;
+  onChange: (value: string) => void;
+}) => {
+  const borderColor = useThemeColor({}, "border");
+  const [selectedTime, setSelectedTime] = useState(() => {
+    if (type === NotificationType.CUSTOM) {
+      return value.split("-")[1];
+    }
+    return value;
+  }); // either time like "10:00" or "monday-10:00"
+  const [selectedDay, setSelectedDay] = useState<string>(() => {
+    if (type === NotificationType.CUSTOM) {
+      return value.split("-")[0];
+    }
+    return "monday";
+  });
+
+  const days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+  const hourOptions = new Array(24).fill(0).map((_, i) => String(i).padStart(2, "0"));
+  const minuteOptions = new Array(12).fill(0).map((_, i) => String(i * 5).padStart(2, "0"));
+  const dayOptions = days.map((day) => ({ label: day, value: day }));
+  const time = useMemo(() => {
+    if (type === NotificationType.DAILY) {
+      return selectedTime;
+    }
+    return selectedTime ? `${selectedDay}-${selectedTime}` : null;
+  }, [selectedTime, selectedDay, type]);
+  useEffect(() => {
+    if (time) {
+      onChange(time);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [time]);
+
+  return (
+    <View
+      style={{
+        gap: Spacings.sm,
+        padding: Spacings.sm,
+        borderWidth: 1,
+        borderRadius: BorderRadii.sm,
+        borderColor: borderColor,
+      }}
+    >
+      {type === NotificationType.CUSTOM && (
+        <ThemedPicker
+          items={dayOptions}
+          selectedValue={selectedDay}
+          onValueChange={(val) => setSelectedDay(val)}
+          placeholder="Select Day"
+        />
+      )}
+
+      <View style={{ flexDirection: "row", gap: Spacings.sm }}>
+        <ThemedPicker
+          items={hourOptions.map((hour) => ({ label: hour, value: hour }))}
+          selectedValue={selectedTime.split(":")[0]}
+          onValueChange={(val) => setSelectedTime(`${val}:${selectedTime.split(":")[1]}`)}
+          style={{ flex: 1, maxWidth: "90%" }}
+        />
+        <ThemedPicker
+          items={minuteOptions.map((minute) => ({ label: minute, value: minute }))}
+          selectedValue={selectedTime.split(":")[1]}
+          onValueChange={(val) => setSelectedTime(`${selectedTime.split(":")[0]}:${val}`)}
+          style={{ flex: 1, maxWidth: "90%" }}
+        />
+      </View>
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {

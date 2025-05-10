@@ -6,7 +6,7 @@ import { useEffect, useMemo } from "react";
 export const useAwardEarnedBadges = () => {
   const logsQuery = useGetLogs();
   const logs = useMemo(() => logsQuery.data || [], [logsQuery.data]);
-  const photoLogsQuery = useGetPhotoLogs("my-routine");
+  const photoLogsQuery = useGetPhotoLogs(1);
   const photoLogs = useMemo(() => photoLogsQuery.data || [], [photoLogsQuery.data]);
   const { awardBadge } = useBadges();
 

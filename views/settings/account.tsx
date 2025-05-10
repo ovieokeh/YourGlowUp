@@ -19,15 +19,7 @@ import { AccountBenefits } from "@/components/AccountBenefits";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import {
-  getLogs,
-  getPhotoLogs,
-  isExerciseLog,
-  isTaskLog,
-  Log,
-  saveExerciseLog,
-  saveTaskLog,
-} from "@/queries/logs/logs";
+import { getLogs, getPhotoLogs, Log, saveLog } from "@/queries/logs/logs";
 import { supabase } from "@/supabase";
 import Toast from "react-native-toast-message";
 
@@ -111,7 +103,7 @@ export default function AccountView() {
     // @todo rewrite this to support new structure
 
     const logs = await getLogs();
-    const photoLogs = await getPhotoLogs("my-routine");
+    const photoLogs = await getPhotoLogs(1);
 
     const IMAGE_URI_BLOB_MAP: Record<string, string> = {};
     const imagesBase64Blobs = photoLogs.map(async (log) => {
@@ -198,11 +190,7 @@ export default function AccountView() {
             }
 
             for (const log of logs) {
-              if (isExerciseLog(log)) {
-                saveExerciseLog(log.slug, log.duration, "my-routine");
-              } else if (isTaskLog(log)) {
-                await saveTaskLog(log as any, "my-routine", log.notes);
-              }
+              await saveLog(log.type, log.slug, log.routineId, log.meta);
             }
 
             Alert.alert("Import Successful", "Your data has been imported.");

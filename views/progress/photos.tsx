@@ -12,9 +12,9 @@ import { PhotoLog } from "@/queries/logs/logs";
 
 const RANGE_OPTIONS = ["7d", "30d", "3mo", "all"];
 
-export function ProgressPhotoView() {
+export function ProgressPhotoView({ selectedRoutine }: { selectedRoutine?: number | undefined }) {
   const router = useRouter();
-  const logsQuery = useGetPhotoLogs("my-routine");
+  const logsQuery = useGetPhotoLogs(selectedRoutine);
   const logs = useMemo(() => logsQuery.data || [], [logsQuery.data]);
   const [range, setRange] = useState<"7d" | "30d" | "3mo" | "all">("30d");
 
@@ -68,8 +68,10 @@ export function ProgressPhotoView() {
         title="Log photo"
         onPress={() => {
           router.push({
-            pathname: "/add-photo-log",
-            params: { activeTab: "Self Reports" },
+            pathname: "/routines/add-photo-log",
+            params: {
+              routineId: selectedRoutine,
+            },
           });
         }}
         bottom={96}

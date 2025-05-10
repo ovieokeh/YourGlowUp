@@ -94,19 +94,19 @@ const RecomendationsRenderer = ({
 
 export default function FaceAnalysisActionsView({ analysisResults }: FaceAnalysisActionsViewProps) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const updateRoutineMutation = useUpdateRoutine("my-routine");
+  const updateRoutineMutation = useUpdateRoutine("1");
 
   const handleSaveRoutine = () => {
     updateRoutineMutation
       .mutateAsync({
         replace: true,
         name: "My Routine",
-        slug: "my-routine",
+        slug: "1",
         description: "Routine based on facial analysis on " + new Date().toLocaleDateString(),
         itemsSlugs: [...Array.from(selected)],
       })
       .then(() => {
-        router.replace("/(tabs)/routines/my-routine");
+        router.replace("/(tabs)/routines/1");
       })
       .catch((error) => {
         Toast.show({

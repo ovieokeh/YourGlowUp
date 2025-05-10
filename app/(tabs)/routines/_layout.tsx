@@ -55,6 +55,16 @@ export default function RoutinesLayout() {
             },
           }}
         />
+        <Stack.Screen
+          name="add-photo-log"
+          options={{
+            headerShown: true,
+            title: "Log Photo",
+            headerStyle: {
+              backgroundColor: background,
+            },
+          }}
+        />
       </Stack>
     </>
   );

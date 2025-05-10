@@ -9,7 +9,7 @@ import { BorderRadii, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useBadges } from "@/providers/BadgeContext";
 import { LOG_TYPE_XP_MAP } from "@/queries/gamification/gamification";
-import { useGetLogsByTaskOrExercise, useSaveTaskLog } from "@/queries/logs";
+import { useGetTodayLogsBySlug, useSaveLog } from "@/queries/logs";
 import { isRoutineExerciseItem, isRoutineTaskItem, RoutineItem, RoutineTaskItem } from "@/queries/routines/shared";
 import { useSound } from "@/utils/sounds";
 import { Image } from "expo-image";
@@ -38,33 +38,23 @@ export const RoutineItemCard = ({
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<{ [key: string]: string }>({});
 
-  const getLogsQuery = useGetLogsByTaskOrExercise(item.name);
+  const getLogsQuery = useGetTodayLogsBySlug(item.slug);
 
   const logs = useMemo(() => {
     return getLogsQuery.data || [];
   }, [getLogsQuery.data]);
 
-  const todayLogs = useMemo(() => {
-    const now = new Date();
-    const start = new Date(now.setHours(0, 0, 0, 0)).getTime();
-    const end = new Date(now.setHours(23, 59, 59, 999)).getTime();
-    return logs.filter((log) => {
-      const t = new Date(log.createdAt).getTime();
-      return t >= start && t <= end;
-    });
-  }, [logs]);
-
-  const hasTodayLogs = todayLogs.length > 0;
+  const hasTodayLogs = logs.length > 0;
   const { addXP } = useBadges();
   const { play } = useSound();
-  const saveTaskLogMutation = useSaveTaskLog();
+  const saveTaskLogMutation = useSaveLog();
 
   const handleTaskCompletion = async () => {
     if (isRoutineTaskItem(item) && item.questions?.length) {
       setQuestionModalVisible(true);
       return;
     }
-    await saveTaskLogMutation.mutateAsync({ task: item.name, routineId: item.routineId, note: "" });
+    await saveTaskLogMutation.mutateAsync({ slug: item.slug, type: "task", routineId: item.routineId, meta: {} });
     await play("complete-task");
     await addXP.mutateAsync(LOG_TYPE_XP_MAP["task"]);
     Toast.show({ type: "success", text1: "Task completed", text2: `You completed ${item.name}` });
@@ -107,14 +97,20 @@ export const RoutineItemCard = ({
           {!allowCompletion && item.notificationTimes?.length ? (
             <View style={styles.row}>
               <IconSymbol name="alarm" size={16} color={textColor} />
-              {item.notificationTimes.slice(0, 3).map((time, i) => (
-                <ThemedText key={i} style={styles.description}>
-                  {time}
-                  {i < 2 && i < item.notificationTimes!.length - 1 ? ", " : ""}
-                </ThemedText>
-              ))}
-              {item.notificationTimes.length > 3 && (
-                <ThemedText style={styles.description}>+{item.notificationTimes.length - 3} more</ThemedText>
+              {item.notificationType === "custom" ? (
+                <ThemedText style={styles.description}>Custom</ThemedText>
+              ) : (
+                <>
+                  {item.notificationTimes.slice(0, 3).map((time, i) => (
+                    <ThemedText key={i} style={styles.description}>
+                      {time}
+                      {i < 2 && i < item.notificationTimes!.length - 1 ? ", " : ""}
+                    </ThemedText>
+                  ))}
+                  {item.notificationTimes.length > 3 && (
+                    <ThemedText style={styles.description}>+{item.notificationTimes.length - 3} more</ThemedText>
+                  )}
+                </>
               )}
             </View>
           ) : null}
@@ -134,7 +130,7 @@ export const RoutineItemCard = ({
             style={{ padding: Spacings.sm, paddingRight: 0, marginLeft: "auto" }}
             onPress={handleTaskCompletion}
           >
-            <RedoBadge count={todayLogs.length} color={successColor} textColor={textColor} size={38} />
+            <RedoBadge count={logs.length} color={successColor} textColor={textColor} size={38} />
           </Pressable>
         ) : (
           <ThemedButton
@@ -182,9 +178,10 @@ export const RoutineItemCard = ({
           }}
           handleSubmitAnswers={async () => {
             await saveTaskLogMutation.mutateAsync({
-              task: item.name,
+              slug: item.slug,
+              type: "task",
               routineId: item.routineId,
-              note: JSON.stringify(answers),
+              meta: answers,
             });
             await addXP.mutateAsync(LOG_TYPE_XP_MAP["task"]);
             await play("complete-task");

@@ -1,13 +1,15 @@
 import { useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 
+import { RoutinePicker } from "@/components/RoutinePicker";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { useGetRoutines } from "@/queries/routines";
 import { ProgressLogsView } from "@/views/progress/logs";
 import { ProgressPhotoView } from "@/views/progress/photos";
 import { ProgressStatsView } from "@/views/progress/stats";
@@ -17,7 +19,26 @@ const TABS = ["Photos", "Stats", "Logs"] as const;
 export default function ProgressScreen() {
   const SCREEN_WIDTH = useWindowDimensions().width;
   const params = useLocalSearchParams();
-  const initialTab = params.activeTab === "Stats" ? "Stats" : "Photos";
+  const [selectedRoutine, setSelectedRoutine] = useState<number | undefined>(
+    params.routineId ? Number(params.routineId) : undefined
+  );
+  const routinesQuery = useGetRoutines();
+  const routineOptions = useMemo(
+    () =>
+      routinesQuery.data?.map((routine) => ({
+        label: routine.name,
+        value: routine.id,
+      })) ?? [],
+    [routinesQuery.data]
+  );
+
+  useEffect(() => {
+    if (routineOptions.length > 0 && !selectedRoutine) {
+      setSelectedRoutine(routineOptions[0].value);
+    }
+  }, [routineOptions, selectedRoutine]);
+
+  const initialTab = params.activeTab === "Photos" ? "Photos" : "Stats";
   const [activeTab, setActiveTab] = useState<(typeof TABS)[number]>(initialTab);
 
   const tabBorder = useThemeColor({ light: Colors.light.border, dark: Colors.dark.border }, "border");
@@ -56,12 +77,17 @@ export default function ProgressScreen() {
         <Animated.View style={[styles.underline, { width: tabWidth, backgroundColor: underline }, underlineStyle]} />
       </View>
 
+      <RoutinePicker value={selectedRoutine} onChange={setSelectedRoutine} />
       {activeTab === "Stats" ? (
-        <ProgressStatsView />
+        <ScrollView>
+          <ProgressStatsView selectedRoutine={selectedRoutine} />
+        </ScrollView>
       ) : activeTab === "Logs" ? (
-        <ProgressLogsView />
+        <ProgressLogsView selectedRoutine={selectedRoutine} />
       ) : (
-        <ProgressPhotoView />
+        <ScrollView>
+          <ProgressPhotoView />
+        </ScrollView>
       )}
     </ThemedView>
   );
@@ -70,6 +96,7 @@ export default function ProgressScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingBottom: 96,
   },
   tabBar: {
     flexDirection: "row",

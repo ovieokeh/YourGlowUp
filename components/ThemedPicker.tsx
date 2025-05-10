@@ -39,7 +39,7 @@ export function ThemedPicker<T extends unknown>({
   const accent = useThemeColor({}, "accent");
 
   const selectedItem = items.find((i) => i.value === selectedValue);
-  const displayLabel = selectedItem?.label ?? placeholder;
+  const displayLabel = selectedItem?.label ? (!!selectedItem.label ? selectedItem.label : "None") : placeholder;
 
   const toggle = useCallback(() => setOpen((v) => !v), []);
   const select = useCallback(
@@ -117,6 +117,7 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 16,
+    textTransform: "capitalize",
   },
   backdrop: {
     flex: 1,
@@ -136,5 +137,6 @@ const styles = StyleSheet.create({
   },
   optionLabel: {
     fontSize: 16,
+    textTransform: "capitalize",
   },
 });

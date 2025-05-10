@@ -4,11 +4,12 @@ import {
   getLogsBySlug,
   getPhotoLogs,
   getTodayLogs,
+  getTodayLogsBySlug,
   PhotoLogCreate,
-  saveExerciseLog,
+  saveLog,
   savePhotoLog,
-  saveTaskLog,
 } from "./logs";
+import { getStats } from "./stats";
 
 export const useGetLogs = () => {
   return useQuery({
@@ -26,19 +27,6 @@ export const useGetLogsByTaskOrExercise = (taskOrExercise: string) => {
   });
 };
 
-export const useSaveExerciseLog = (routineId: number) => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationKey: ["logs"],
-    mutationFn: ({ exercise, duration }: { exercise: string; duration: number }) =>
-      saveExerciseLog(exercise, duration, routineId),
-    onSuccess: () => {
-      // Invalidate the query to refetch the data
-      queryClient.invalidateQueries({ queryKey: ["logs"] });
-    },
-  });
-};
-
 export const useSavePhotoLog = (routineId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -51,12 +39,21 @@ export const useSavePhotoLog = (routineId: string) => {
   });
 };
 
-export const useSaveTaskLog = () => {
+export const useSaveLog = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationKey: ["logs"],
-    mutationFn: ({ task, routineId, note }: { task: string; routineId: number; note?: string }) =>
-      saveTaskLog(task, routineId, note),
+    mutationFn: ({
+      type,
+      slug,
+      routineId,
+      meta,
+    }: {
+      type: "exercise" | "task";
+      slug: string;
+      routineId: number;
+      meta?: any;
+    }) => saveLog(type, slug, routineId, meta),
     onSuccess: () => {
       // Invalidate the query to refetch the data
       queryClient.invalidateQueries({ queryKey: ["logs"] });
@@ -65,10 +62,11 @@ export const useSaveTaskLog = () => {
   });
 };
 
-export const useGetPhotoLogs = (routineId: string) => {
+export const useGetPhotoLogs = (routineId: number | undefined) => {
   return useQuery({
     queryKey: ["logs", routineId],
-    queryFn: () => getPhotoLogs(routineId),
+    queryFn: () => getPhotoLogs(routineId ?? 0),
+    enabled: !!routineId,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };
@@ -77,6 +75,30 @@ export const useGetTodayLogs = () => {
   return useQuery({
     queryKey: ["logs", "today"],
     queryFn: () => getTodayLogs(),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+export const useGetTodayLogsBySlug = (slug: string) => {
+  return useQuery({
+    queryKey: ["logs", "today", slug],
+    queryFn: () => getTodayLogsBySlug(slug),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+export const useGetStats = ({
+  routineId,
+  startDate,
+  endDate,
+}: {
+  routineId?: number;
+  startDate?: number;
+  endDate?: number;
+}) => {
+  return useQuery({
+    queryKey: ["logs", "stats"],
+    queryFn: () => getStats({ routineId, startDate, endDate }),
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };

@@ -1,23 +1,24 @@
-import { formatDistanceToNow } from "date-fns";
-import { useRouter } from "expo-router";
 import React, { useMemo } from "react";
-import { Image, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import { ThemedText } from "@/components/ThemedText";
-import { isExerciseLog, isTaskLog } from "@/queries/logs/logs";
 
 import { BorderRadii, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { getStreak } from "@/queries/gamification/gamification";
-import { useGetLogs } from "@/queries/logs";
-import { ThemedButton } from "./ThemedButton";
+import { useGetStats } from "@/queries/logs";
 import { IconSymbol, IconSymbolName } from "./ui/IconSymbol";
 
-export const TodaysStats: React.FC = () => {
-  const logsQuery = useGetLogs();
-  const logs = useMemo(() => logsQuery.data || [], [logsQuery.data]);
-
-  const router = useRouter();
+export const TodaysStats: React.FC<{
+  routineId?: number;
+}> = ({ routineId }) => {
+  const statsQuery = useGetStats({
+    routineId: Number(routineId),
+    startDate: Date.now() - 1 * 24 * 60 * 60 * 1000,
+    endDate: Date.now(),
+  });
+  const stats = useMemo(() => {
+    return statsQuery.data;
+  }, [statsQuery.data]);
 
   const wrapperBorder = useThemeColor({}, "border");
   const muted = useThemeColor({}, "muted");
@@ -25,43 +26,20 @@ export const TodaysStats: React.FC = () => {
   const accent = useThemeColor({}, "accent");
   const gray10 = useThemeColor({}, "gray10");
 
-  const streak = useMemo(() => {
-    return getStreak(logs);
-  }, [logs]);
+  const last = stats?.timeSeries.at(-1)?.totalDuration ?? 0;
+  const prev = stats?.timeSeries.at(-2)?.totalDuration ?? 0;
+  const trend = last > prev ? "up" : last < prev ? "down" : "flat";
 
-  const todayLogs = useMemo(() => {
-    const now = new Date();
-    const startOfDay = new Date(now);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(now);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    return logs.filter((log) => {
-      const completed = new Date(log.createdAt).getTime();
-      return completed >= startOfDay.getTime() && completed <= endOfDay.getTime();
-    });
-  }, [logs]);
-  const exercisesToday = todayLogs.filter(isExerciseLog);
-  const lastExercise = exercisesToday.sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  )[0];
-
-  const tasksToday = todayLogs.filter((log) => isTaskLog(log));
-  const lastTask = tasksToday.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
-
-  if (!exercisesToday.length && !tasksToday.length) {
-    return (
-      <View style={[styles.wrapper, { backgroundColor: gray10, borderColor: wrapperBorder }]}>
-        <Image
-          source={require("@/assets/images/empty-today-stats.png")}
-          style={{ width: 100, height: 100, marginBottom: Spacings.sm, marginHorizontal: "auto" }}
-        />
-        <ThemedText style={styles.emptyText}>
-          No activity yet today. Ready to crush a complete a task or do an exercise?
-        </ThemedText>
-      </View>
-    );
-  }
+  const mostCompleted = stats?.itemStats.slice().sort((a, b) => b.count - a.count)[0];
+  const mostActiveDay = stats?.timeSeries.slice().sort((a, b) => b.totalDuration - a.totalDuration)[0];
+  const mostActiveDayDate = mostActiveDay
+    ? new Date(mostActiveDay?.date).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      })
+    : "";
+  const mostActiveDayDuration = mostActiveDay?.totalDuration ?? 0;
+  const mostActiveDayDurationFormatted = `${Math.floor(mostActiveDayDuration / 60)}h ${mostActiveDayDuration % 60}m`;
 
   return (
     <View
@@ -82,69 +60,73 @@ export const TodaysStats: React.FC = () => {
           <StatCard
             icon="calendar"
             label="Streak"
-            value={`${streak} days`}
+            value={`${stats?.consistency.currentStreak} 🔥`}
             color={accent}
             muted={muted}
             text={text}
             variant="vertical"
           />
           <StatCard
-            icon="figure.walk.circle"
-            label="Exercises"
-            value={exercisesToday.length.toString()}
-            color={accent}
-            muted={muted}
-            text={text}
-            variant="vertical"
-          />
-          <StatCard
-            icon="figure.walk.circle"
-            label="Tasks"
-            value={tasksToday.length.toString()}
+            icon={
+              trend === "up"
+                ? "chart.line.uptrend.xyaxis"
+                : trend === "down"
+                ? "chart.line.downtrend.xyaxis"
+                : "chart.xyaxis.line"
+            }
+            label="Trend"
+            value={`${trend}`}
             color={accent}
             muted={muted}
             text={text}
             variant="vertical"
           />
         </View>
+        <View style={{ flexDirection: "row", gap: Spacings.sm }}>
+          <StatCard
+            icon="figure.walk.circle"
+            label="Longest Streak"
+            value={stats?.consistency.longestStreak.toString() ?? "0"}
+            color={accent}
+            muted={muted}
+            text={text}
+            variant="vertical"
+          />
+          <StatCard
+            icon="figure.walk.circle"
+            label="Completed"
+            value={stats?.totalCompleted.toString() ?? "0"}
+            color={accent}
+            muted={muted}
+            text={text}
+            variant="vertical"
+          />
+        </View>
+        {mostCompleted && (
+          <StatCard
+            icon="star.circle"
+            label="Top Exercise"
+            value={`${mostCompleted.name} (${mostCompleted.count})`}
+            color={accent}
+            muted={muted}
+            text={text}
+            variant="vertical"
+          />
+        )}
+        {mostActiveDay && (
+          <StatCard
+            icon="calendar"
+            label="Most Active Day"
+            value={`${mostActiveDayDate} (${mostActiveDayDurationFormatted})`}
+            color={accent}
+            muted={muted}
+            text={text}
+            variant="vertical"
+          />
+        )}
 
-        {lastTask && (
-          <StatCard
-            icon="checkmark"
-            label="Last Task"
-            value={lastTask.slug}
-            subValue={formatDistanceToNow(new Date(lastTask.createdAt), {
-              addSuffix: true,
-            })}
-            color={accent}
-            muted={muted}
-            text={text}
-          />
-        )}
-        {lastExercise && (
-          <StatCard
-            icon="clock"
-            label="Last Exercise"
-            value={lastExercise.slug}
-            subValue={formatDistanceToNow(new Date(lastExercise.createdAt), {
-              addSuffix: true,
-            })}
-            color={accent}
-            muted={muted}
-            text={text}
-          />
-        )}
         <View style={{ flexDirection: "row", gap: Spacings.sm }}></View>
       </View>
-
-      <ThemedButton
-        title="View Progress"
-        onPress={() => router.replace("/progress?activeTab=Stats")}
-        variant="ghost"
-        icon="chevron.right"
-        iconPlacement="right"
-        style={styles.button}
-      />
     </View>
   );
 };
@@ -188,10 +170,9 @@ const StatCard = ({
 
 const styles = StyleSheet.create({
   wrapper: {
-    paddingVertical: Spacings.md,
+    paddingVertical: Spacings.xl,
     paddingHorizontal: Spacings.md,
-    borderRadius: BorderRadii.md,
-    borderWidth: 1,
+    gap: Spacings.sm,
   },
   title: {
     marginBottom: Spacings.sm,

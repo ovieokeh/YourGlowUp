@@ -1,89 +1,65 @@
-import React, { useMemo, useState } from "react";
-import { Dimensions, Pressable, ScrollView, StyleSheet, View } from "react-native";
-import { PieChart } from "react-native-chart-kit";
-
+import spaceMono from "@/assets/fonts/SpaceMono-Regular.ttf";
 import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
-import { EXERCISES } from "@/constants/Exercises";
-import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
+import { TodaysStats } from "@/components/TodaysStats";
+import { Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useGetLogs } from "@/queries/logs";
-import { isExerciseLog, isTaskLog } from "@/queries/logs/logs";
-
-const SCREEN_WIDTH = Dimensions.get("window").width;
-// const CHART_WIDTH = SCREEN_WIDTH - 32;
-const CHART_HEIGHT = 200;
+import { useGetStats } from "@/queries/logs";
+import { invertHex } from "@/utils/color";
+import { Group, SkFont, Text, useFont } from "@shopify/react-native-skia";
+import { useFocusEffect } from "expo-router";
+import React, { useMemo, useState } from "react";
+import { Pressable, StyleSheet, View } from "react-native";
+import { Easing } from "react-native-reanimated";
+import { CartesianChart, Line, Pie, PieSliceData, PolarChart } from "victory-native";
 const RANGE_OPTIONS = ["7d", "30d", "3mo", "all"];
 
-export function ProgressStatsView() {
-  const logsQuery = useGetLogs();
-  const logs = useMemo(() => logsQuery.data || [], [logsQuery.data]);
-  const [range, setRange] = useState<"7d" | "30d" | "3mo" | "all">("30d");
-
-  const now = useMemo(() => new Date(), []);
-  const backgroundColor = useThemeColor({}, "background");
+export function ProgressStatsView({ selectedRoutine }: { selectedRoutine: number | undefined }) {
   const textColor = useThemeColor({}, "text");
   const borderColor = useThemeColor({}, "border");
   const accentColor = useThemeColor({}, "accent");
-  const colorScheme = backgroundColor === Colors.dark.background ? "dark" : "light";
+  const font = useFont(spaceMono, 12);
 
-  const rangeStart = useMemo(() => {
-    const d = new Date(now);
-    if (range === "7d") d.setDate(d.getDate() - 7);
-    else if (range === "30d") d.setDate(d.getDate() - 30);
-    else if (range === "3mo") d.setMonth(d.getMonth() - 3);
-    else return null;
-    return d;
-  }, [now, range]);
+  const [range, setRange] = useState<"7d" | "30d" | "3mo" | "all">("30d");
 
-  const filtered = useMemo(
-    () => logs.filter((l) => (rangeStart ? new Date(l.createdAt) >= rangeStart! : true)),
-    [logs, rangeStart]
+  const statsQuery = useGetStats({
+    routineId: Number(selectedRoutine),
+    startDate:
+      range === "all" ? undefined : Date.now() - (range === "7d" ? 7 : range === "30d" ? 30 : 90) * 24 * 60 * 60 * 1000,
+    endDate: Date.now(),
+  });
+  const stats = useMemo(() => {
+    return statsQuery.data;
+  }, [statsQuery.data]);
+
+  useFocusEffect(() => {
+    statsQuery.refetch();
+  });
+
+  const durationOverTime = useMemo(
+    () =>
+      stats?.timeSeries.map((d) => ({
+        date: new Date(d.date).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        }),
+        duration: d.totalDuration,
+      })),
+    [stats]
+  );
+  const areaStats = useMemo(
+    () =>
+      stats?.areaStats
+        .map((d) => ({
+          area: d.area,
+          totalDuration: d.totalDuration,
+          color: COLORS[stats?.areaStats.indexOf(d) % COLORS.length],
+        }))
+        .filter((d) => d.totalDuration > 0),
+    [stats]
   );
 
-  const streak = useMemo(() => {
-    const days = new Set(logs.map((l) => new Date(l.createdAt).toDateString()));
-    let count = 0;
-    let d = new Date();
-    while (days.has(d.toDateString())) {
-      count++;
-      d.setDate(d.getDate() - 1);
-    }
-    return count;
-  }, [logs]);
-
-  const pieData = useMemo(() => {
-    const map = new Map<string, number>();
-    filtered.forEach((l) => {
-      const key = isExerciseLog(l) ? l.slug : isTaskLog(l) ? l.slug : "";
-      map.set(key, (map.get(key) || 0) + 1);
-    });
-    return Array.from(map.entries()).map(([name, count]) => {
-      const exercise = EXERCISES.find((e) => e.name === name);
-      return {
-        name,
-        count,
-        color: exercise?.color || Colors[colorScheme].text,
-        legendFontColor: Colors[colorScheme].text,
-        legendFontSize: 12,
-      };
-    });
-  }, [filtered, colorScheme]);
-
-  const chartConfig = {
-    backgroundGradientFrom: backgroundColor,
-    backgroundGradientTo: backgroundColor,
-    color: (opacity = 1) =>
-      `${textColor}${Math.floor(opacity * 255)
-        .toString(16)
-        .padStart(2, "0")}`,
-    strokeWidth: 2,
-    decimalPlaces: 1,
-    labelColor: () => Colors[colorScheme].icon,
-  };
-
   return (
-    <ThemedView style={{ flex: 1 }}>
+    <View style={styles.container}>
       <View style={styles.selectorRow}>
         {RANGE_OPTIONS.map((r) => (
           <Pressable
@@ -99,105 +75,129 @@ export function ProgressStatsView() {
           </Pressable>
         ))}
       </View>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.cardGrid}>
-          <StatCard label="Current Streak" value={`${streak} days`} />
-          {/* <StatCard label="Avg Symmetry" value={symmetryAvg} /> */}
-          {/* <StatCard label="Total Chewing" value={chewingTime} />
-          <StatCard label="Gum Time" value={gumTime} /> */}
-        </View>
+      {stats && (
+        <>
+          {/* 1. Metric Summary */}
+          <TodaysStats />
 
-        {/* <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Symmetry Trend</ThemedText>
-          {lineData.datasets[0].data.length ? (
-            <LineChart
-              data={lineData}
-              width={CHART_WIDTH}
-              height={CHART_HEIGHT}
-              chartConfig={chartConfig}
-              bezier
-              style={styles.chart}
-            />
-          ) : (
-            <ThemedText style={styles.emptyText}>No data available</ThemedText>
-          )}
-        </View> */}
-
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Routine Breakdown</ThemedText>
-          {pieData.length ? (
-            <View style={styles.pieWrapper}>
-              <PieChart
-                data={pieData.map(({ name, count, color, legendFontColor, legendFontSize }) => ({
-                  name,
-                  population: count,
-                  color,
-                  legendFontColor,
-                  legendFontSize,
+          {/* 2. Pie Chart: Area Distribution */}
+          <ThemedText style={styles.chartTitle}>Focus Areas</ThemedText>
+          <View style={{ height: 280 }}>
+            {areaStats && areaStats.length > 0 ? (
+              <PolarChart
+                data={areaStats.map((d) => ({
+                  x: d.area,
+                  y: d.totalDuration,
+                  color: d.color,
                 }))}
-                width={SCREEN_WIDTH / 2}
-                height={CHART_HEIGHT}
-                chartConfig={chartConfig}
-                accessor="population"
-                backgroundColor="transparent"
-                paddingLeft={`48`}
-                hasLegend={false}
-                absolute
-              />
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.legendScroll}>
-                <View style={styles.legendContainer}>
-                  {pieData.map((item) => (
-                    <View key={item.name} style={styles.legendItem}>
-                      <View style={[styles.legendMarker, { backgroundColor: item.color }]} />
-                      <ThemedText style={styles.legendText}>
-                        {item.name} ({item.count})
-                      </ThemedText>
-                    </View>
-                  ))}
-                </View>
-              </ScrollView>
-            </View>
-          ) : (
-            <ThemedText style={styles.emptyText}>No data available</ThemedText>
-          )}
-        </View>
-      </ScrollView>
-    </ThemedView>
+                labelKey="x"
+                valueKey="y"
+                colorKey="color"
+              >
+                <Pie.Chart>
+                  {({ slice }) => {
+                    return (
+                      <Pie.Slice key={slice.label}>
+                        <Pie.Label radiusOffset={0.6}>
+                          {(position) => <PieChartCustomLabel position={position} slice={slice} font={font} />}
+                        </Pie.Label>
+                      </Pie.Slice>
+                    );
+                  }}
+                </Pie.Chart>
+              </PolarChart>
+            ) : (
+              <ThemedText style={{ textAlign: "center", color: textColor }}>No data available</ThemedText>
+            )}
+          </View>
+
+          {/* 3. Line Chart: Total Duration Over Time */}
+          <ThemedText style={styles.chartTitle}>Activity Over Time</ThemedText>
+          <View style={{ height: 280 }}>
+            {durationOverTime && durationOverTime.length > 0 ? (
+              <CartesianChart
+                data={durationOverTime}
+                xKey="date"
+                yKeys={["duration"]}
+                axisOptions={{
+                  font,
+                  lineColor: borderColor,
+                  labelColor: textColor,
+                  formatXLabel(label) {
+                    return label ?? "";
+                  },
+                }}
+              >
+                {({ points }) => {
+                  return (
+                    <Line
+                      points={points.duration}
+                      color={"#fafafa"}
+                      strokeWidth={3}
+                      animate={{
+                        type: "timing",
+                        duration: 500,
+                        easing: Easing.inOut(Easing.ease),
+                      }}
+                      connectMissingData
+                    />
+                  );
+                }}
+              </CartesianChart>
+            ) : (
+              <ThemedText style={{ textAlign: "center", color: textColor }}>No data available</ThemedText>
+            )}
+          </View>
+        </>
+      )}
+    </View>
   );
 }
 
-const StatCard = ({ label, value }: { label: string; value: string }) => {
-  const backgroundColor = useThemeColor({}, "background");
-  const borderColor = useThemeColor({}, "border");
-  const textColor = useThemeColor({}, "text");
-  const muted = useThemeColor({}, "muted");
+const COLORS = ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF", "#FF9F40"];
+
+export const PieChartCustomLabel = ({
+  slice,
+  font,
+  position,
+}: {
+  slice: PieSliceData;
+  font: SkFont | null;
+  position: { x: number; y: number };
+}) => {
+  const { x, y } = position;
+  const fontSize = font?.getSize() ?? 0;
+  const getLabelWidth = (text: string) =>
+    font?.getGlyphWidths(font.getGlyphIDs(text)).reduce((sum, value) => sum + value, 0) ?? 0;
+
+  const label = slice.label;
+  const value = `${slice.value} UNITS`;
+  const centerLabel = (font?.getSize() ?? 0) / 2;
 
   return (
-    <View
-      style={[
-        styles.card,
-        {
-          backgroundColor,
-          borderColor,
-        },
-      ]}
-    >
-      <ThemedText style={[styles.cardLabel, { color: muted }]}>{label}</ThemedText>
-      <ThemedText style={[styles.cardValue, { color: textColor }]}>{value}</ThemedText>
-    </View>
+    <Group transform={[{ translateY: -centerLabel }]}>
+      <Text x={x - getLabelWidth(label) / 2} y={y} text={label} font={font} color={"white"} />
+      <Group>
+        <Text
+          x={x - getLabelWidth(value) / 2}
+          y={y + fontSize}
+          text={value}
+          font={font}
+          color={invertHex(slice.color.toString())}
+          strokeWidth={3}
+        />
+      </Group>
+    </Group>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     padding: Spacings.md,
-    paddingBottom: Spacings.xl * 2,
   },
   selectorRow: {
     flexDirection: "row",
     gap: Spacings.md,
-
-    padding: Spacings.md,
   },
   rangeBtn: {
     paddingVertical: Spacings.xs,
@@ -205,71 +205,22 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1,
   },
-  cardGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    gap: Spacings.md,
-    marginBottom: Spacings.lg,
-  },
-  card: {
-    minWidth: "38%",
-    flex: 1,
-    padding: Spacings.md,
-    borderRadius: BorderRadii.md,
-    borderWidth: 1,
-  },
-  cardLabel: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
-  cardValue: {
-    fontSize: 17,
-    fontWeight: "700",
-    marginTop: 2,
-  },
-  section: {
-    marginTop: Spacings.xl,
-  },
-  sectionTitle: {
+  chartTitle: {
     fontSize: 16,
     fontWeight: "600",
-    marginBottom: Spacings.sm,
+    marginBottom: 8,
+    marginTop: 24,
   },
-  chart: {
-    marginVertical: Spacings.sm,
-    borderRadius: BorderRadii.sm,
-  },
-  emptyText: {
-    textAlign: "center",
-    marginVertical: Spacings.xl,
-  },
-  pieWrapper: {
-    width: "100%",
-    alignItems: "center",
-    marginTop: Spacings.md,
-    paddingBottom: Spacings.md,
-  },
-  legendScroll: {
-    marginTop: Spacings.md,
-    maxHeight: 50,
-  },
-  legendContainer: {
+  metricRow: {
     flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: Spacings.lg,
+  },
+  metricCard: {
+    flex: 1,
     alignItems: "center",
-  },
-  legendItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginRight: Spacings.md,
-  },
-  legendMarker: {
-    width: 12,
-    height: 12,
-    borderRadius: BorderRadii.sm / 2,
-    marginRight: Spacings.xs,
-  },
-  legendText: {
-    fontSize: 12,
+    paddingVertical: Spacings.sm,
+    borderRadius: 12,
+    marginHorizontal: Spacings.xs,
   },
 });

@@ -13,7 +13,7 @@ import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useBadges } from "@/providers/BadgeContext";
 import { LOG_TYPE_XP_MAP } from "@/queries/gamification/gamification";
-import { useSaveExerciseLog } from "@/queries/logs";
+import { useSaveLog } from "@/queries/logs";
 import { useSound } from "@/utils/sounds";
 import { useSearchParams } from "expo-router/build/hooks";
 
@@ -40,7 +40,7 @@ export default function ExerciseSession() {
 
   const progress = useSharedValue(0);
 
-  const saveExerciseLogMutation = useSaveExerciseLog(routineIdNum);
+  const saveLogMutation = useSaveLog();
   const { play } = useSound();
 
   const textColor = useThemeColor({}, "text");
@@ -109,7 +109,12 @@ export default function ExerciseSession() {
 
   const handleComplete = useCallback(async () => {
     if (!exercise) return;
-    await saveExerciseLogMutation.mutateAsync({ exercise: exercise.name, duration: duration });
+    await saveLogMutation.mutateAsync({
+      routineId: routineIdNum,
+      type: "exercise",
+      slug: exercise.slug,
+      meta: { duration },
+    });
     play("complete-exercise");
     addXP
       .mutateAsync(LOG_TYPE_XP_MAP["exercise"] + duration)
@@ -119,7 +124,7 @@ export default function ExerciseSession() {
       .finally(() => {
         router.replace(`/exercise-complete?exercise=${exercise.name}`);
       });
-  }, [addXP, duration, exercise, play, router, saveExerciseLogMutation]);
+  }, [addXP, duration, exercise, play, router, saveLogMutation, routineIdNum]);
 
   useEffect(() => {
     if (timeLeft === 0 && started) {
