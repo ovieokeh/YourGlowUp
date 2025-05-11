@@ -1,48 +1,57 @@
 import { router, Stack } from "expo-router";
 import { ScrollView, StyleSheet, View } from "react-native";
 
-import { RoutineItemCard } from "@/components/RoutineItemCard";
-import { RoutineItemsModal } from "@/components/RoutineItemsModal";
+import { useGetPendingActivitiesToday } from "@/backend/queries/activities";
+import { useGetGoalById, useUpdateGoalActivities } from "@/backend/queries/goals";
+import { useGetTodayLogs } from "@/backend/queries/logs";
+import { GoalActivity, isActivityLog, isGuidedActivity, isTaskActivity } from "@/backend/shared";
+import { ActivityHorizontalCard } from "@/components/ActivityHorizontalCard";
+import { ActivityStepsModal } from "@/components/ActivityStepsModal";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedFabButton } from "@/components/ThemedFabButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Spacings } from "@/constants/Theme";
-import {
-  useGetPendingItemsToday,
-  useGetRoutineById,
-  useGetRoutineItems,
-  useUpdateRoutineItems,
-} from "@/queries/routines";
-import { isRoutineExerciseItem, isRoutineTaskItem } from "@/queries/routines/shared";
+import { useAppContext } from "@/hooks/app/context";
 import { useLocalSearchParams } from "expo-router/build/hooks";
 import { useMemo, useState } from "react";
 
-const getEarliestTime = (item: { notificationTimes?: string[] | null }) => {
-  if (!item.notificationTimes || item.notificationTimes.length === 0) return "99:99";
-  return item.notificationTimes.slice().sort()[0];
-};
-
-export default function RoutinesSingleScreen() {
+export default function GoalsSingleScreen() {
+  const { user } = useAppContext();
+  const currentUserId = useMemo(() => user?.id, [user?.id]);
   const { id = "1" } = useLocalSearchParams<{ id: string }>();
-  const updateRoutineItemsMutation = useUpdateRoutineItems(id);
   const [showSelector, setShowSelector] = useState(false);
 
-  const routineQuery = useGetRoutineById(id);
-  const { data: routine, isLoading } = routineQuery;
+  const updateGoalActivities = useUpdateGoalActivities(currentUserId);
 
-  const routineItemsQuery = useGetRoutineItems(id);
-  const routineItems = useMemo(() => {
-    return routineItemsQuery.data;
-  }, [routineItemsQuery.data]);
+  const goalQuery = useGetGoalById(id);
 
-  const pendingItemsQuery = useGetPendingItemsToday();
+  const goal = useMemo(() => {
+    return goalQuery.data;
+  }, [goalQuery.data]);
+
+  const tasks = useMemo(() => {
+    return goal?.activities?.filter(isTaskActivity) || [];
+  }, [goal]);
+  const guided = useMemo(() => {
+    return goal?.activities?.filter(isGuidedActivity) || [];
+  }, [goal]);
+  const activitySlugs = useMemo(() => {
+    return goal?.activities?.map((activity) => activity.slug) || [];
+  }, [goal]);
+
+  const todayLogsQuery = useGetTodayLogs(currentUserId);
+  const completedActivityIds = useMemo(() => {
+    return todayLogsQuery.data?.filter(isActivityLog).map((log) => log.activityId) || [];
+  }, [todayLogsQuery.data]);
+
+  const pendingItemsQuery = useGetPendingActivitiesToday(id, completedActivityIds);
   const pendingItems = useMemo(() => {
     return pendingItemsQuery.data;
   }, [pendingItemsQuery.data]);
 
-  if (isLoading) {
-    // Show a loading state while fetching the routine
+  if (goalQuery.isLoading) {
+    // Show a loading state while fetching the goal
     return (
       <ThemedView style={{ ...styles.container, ...styles.flex }}>
         <ThemedText type="title">Loading...</ThemedText>
@@ -50,31 +59,23 @@ export default function RoutinesSingleScreen() {
     );
   }
 
-  if (!routine) {
-    // Handle the case where the routine is not found
+  if (!goal) {
+    // Handle the case where the goal is not found
     return (
       <ThemedView style={{ ...styles.container, ...styles.flex }}>
-        <ThemedText type="title">Routine not found</ThemedText>
+        <ThemedText type="title">Goal not found</ThemedText>
       </ThemedView>
     );
   }
 
-  const exercises = routineItems?.filter(isRoutineExerciseItem) || [];
-  const tasks = routineItems?.filter(isRoutineTaskItem) || [];
-
   const hasPendingItems = (pendingItems?.length ?? 0) > 0;
-
-  exercises.sort((a, b) => getEarliestTime(a).localeCompare(getEarliestTime(b)));
-  tasks.sort((a, b) => getEarliestTime(a).localeCompare(getEarliestTime(b)));
 
   return (
     <>
       <ThemedView style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.container}>
-          <Stack.Screen options={{ title: routine.name, headerShown: true }} />
-          <ThemedText>
-            Customise your routine by clicking on an item to edit it or generate a routine from an AI face analysis.
-          </ThemedText>
+          <Stack.Screen options={{ title: goal.name, headerShown: true }} />
+          <ThemedText>Customise your goal by clicking on an activity to edit it.</ThemedText>
 
           <View style={{ gap: Spacings.sm, marginBottom: Spacings.md }}>
             <ThemedButton
@@ -83,8 +84,8 @@ export default function RoutinesSingleScreen() {
               onPress={() => {
                 if (hasPendingItems) {
                   router.push({
-                    pathname: "/exercise/[slug]",
-                    params: { slug: encodeURIComponent(pendingItems![0].name), routineId: routine?.id },
+                    pathname: "/",
+                    params: { slug: encodeURIComponent(pendingItems![0].name), goalId: goal?.id },
                   });
                 } else router.push("/(tabs)/progress");
               }}
@@ -96,14 +97,14 @@ export default function RoutinesSingleScreen() {
               Tasks
             </ThemedText>
 
-            {tasks.map((item) => (
-              <RoutineItemCard
-                key={item.id + item.slug}
-                item={item}
+            {tasks.map((activity) => (
+              <ActivityHorizontalCard
+                key={activity.id + activity.slug}
+                item={activity}
                 handlePress={() =>
                   router.push({
-                    pathname: `/edit-routine-item`,
-                    params: { id: item.id, routineId: routine?.id },
+                    pathname: `/edit-goal-activity`,
+                    params: { activityId: activity.id, goalId: goal?.id },
                   })
                 }
               />
@@ -120,28 +121,28 @@ export default function RoutinesSingleScreen() {
               Exercises
             </ThemedText>
 
-            {exercises.map((item) => (
-              <RoutineItemCard
-                key={item.id + item.slug}
-                item={item}
+            {guided.map((activity) => (
+              <ActivityHorizontalCard
+                key={activity.id + activity.slug}
+                item={activity}
                 handlePress={() =>
                   router.push({
-                    pathname: "/edit-routine-item",
-                    params: { id: item.id, routineId: routine?.id },
+                    pathname: "/edit-goal-activity",
+                    params: { activityId: activity.id, goalId: goal?.id },
                   })
                 }
               />
             ))}
-            {exercises.length === 0 && (
+            {guided.length === 0 && (
               <ThemedText type="default" style={{ padding: Spacings.sm }}>
-                No exercises available.
+                No guided activities set up.
               </ThemedText>
             )}
           </View>
         </ScrollView>
         <ThemedFabButton
           variant="solid"
-          title="Update Routine"
+          title="Update Goal"
           onPress={() => {
             setShowSelector(true);
           }}
@@ -149,18 +150,21 @@ export default function RoutinesSingleScreen() {
           iconPlacement="right"
           bottom={96}
         />
-        <RoutineItemsModal
+        <ActivityStepsModal
           visible={showSelector}
-          selectedSlugs={routineItems?.map((item) => item.slug) || []}
+          selectedSlugs={activitySlugs}
           onClose={() => setShowSelector(false)}
-          onSave={(items) => {
-            updateRoutineItemsMutation
-              .mutateAsync(items)
+          onSave={(activities: GoalActivity[]) => {
+            updateGoalActivities
+              .mutateAsync({
+                goalId: goal.id,
+                activities: activities,
+              })
               .then(() => {
                 setShowSelector(false);
               })
               .catch((error) => {
-                console.error("Error updating routine", error);
+                console.error("Error updating goal", error);
               });
           }}
         />

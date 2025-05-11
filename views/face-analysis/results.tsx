@@ -5,7 +5,7 @@ import { ActivityIndicator, Dimensions, FlatList, Image, ScrollView, StyleSheet,
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { EXERCISES, TASKS } from "@/constants/Exercises";
+import { DEFAULT_ACTIVITIES } from "@/constants/Goals";
 import { Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { supabase } from "@/supabase";
@@ -106,8 +106,7 @@ export default function FaceAnalysisResultsView({
 Available Exercises and Tasks:
 \`\`\`
   ${JSON.stringify({
-    EXERCISES,
-    TASKS,
+    DEFAULT_ACTIVITIES,
   })}
 \`\`\`
 

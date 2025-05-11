@@ -1,39 +1,42 @@
+import { GetGoalsOptions } from "@/backend/goals";
+import { useGetGoals } from "@/backend/queries/goals";
 import { Spacings } from "@/constants/Theme";
-import { useGetRoutines } from "@/queries/routines";
 import { useEffect, useMemo } from "react";
 import { View } from "react-native";
 import { ThemedPicker } from "./ThemedPicker";
 
-interface RoutinePickerProps {
-  value: number | undefined;
-  onChange: (value: number) => void;
+interface GoalPickerProps {
+  userId: string | undefined;
+  opts: GetGoalsOptions;
+  value: string | undefined;
+  onChange: (value: string) => void;
 }
-export const RoutinePicker = ({ value, onChange }: RoutinePickerProps) => {
-  const routinesQuery = useGetRoutines();
-  const routineOptions = useMemo(
+export const GoalPicker = ({ userId, opts, value, onChange }: GoalPickerProps) => {
+  const goalsQuery = useGetGoals(userId, opts);
+  const goalOptions = useMemo(
     () =>
-      routinesQuery.data?.map((routine) => ({
-        label: routine.name,
-        value: routine.id,
+      goalsQuery.data?.map((goal) => ({
+        label: goal.name,
+        value: goal.id,
       })) ?? [],
-    [routinesQuery.data]
+    [goalsQuery.data]
   );
 
   useEffect(() => {
-    if (routineOptions.length > 0 && !value) {
-      onChange(routineOptions[0].value);
+    if (goalOptions.length > 0 && !value) {
+      onChange(goalOptions[0].value);
     }
-  }, [routineOptions, value, onChange]);
+  }, [goalOptions, value, onChange]);
 
   return (
     <View style={{ padding: Spacings.md, paddingBottom: 0 }}>
       <ThemedPicker
-        items={routineOptions}
+        items={goalOptions}
         selectedValue={value}
-        onValueChange={(value) => onChange(value ?? 0)}
+        onValueChange={(value) => onChange(value ?? "")}
         style={{ marginBottom: Spacings.md }}
-        placeholder="Select a routine"
-        disabled={routineOptions.length === 0}
+        placeholder="Select a goal"
+        disabled={goalOptions.length === 0}
       />
     </View>
   );

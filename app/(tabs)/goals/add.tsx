@@ -1,30 +1,40 @@
 import { router, Stack } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ScrollView, StyleSheet } from "react-native";
 
+import { useAddGoal } from "@/backend/queries/goals";
+import { GoalCategory, GoalCompletionType, GoalCreateInput } from "@/backend/shared";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedTextInput } from "@/components/ThemedTextInput";
 import { ThemedView } from "@/components/ThemedView";
 import { Spacings } from "@/constants/Theme";
-import { useAddRoutine } from "@/queries/routines";
-import { Routine } from "@/queries/routines/shared";
+import { useAppContext } from "@/hooks/app/context";
 import Toast from "react-native-toast-message";
 
-export default function CreateRoutineScreen() {
-  const [itemState, setItemState] = useState<Omit<Routine, "id">>({
+export default function AddGoalScreen() {
+  const { user } = useAppContext();
+  const currentUserId = useMemo(() => user?.id, [user?.id]);
+  const [itemState, setItemState] = useState<Omit<GoalCreateInput, "id">>({
     name: "",
     slug: "",
     description: "",
-    itemsSlugs: [],
+    category: GoalCategory.SELF_CARE,
+    tags: [],
+    isPublic: false,
+    completionType: GoalCompletionType.ACTIVITY,
+    author: {
+      id: user?.id ?? "anonymous",
+      name: user?.user_metadata?.display_name ?? "Anonymous",
+      avatarUrl: user?.user_metadata?.avatar_url,
+    },
   });
 
-  const createRoutineMutation = useAddRoutine();
+  const addGoalMutation = useAddGoal(currentUserId);
 
   return (
     <ThemedView style={{ flex: 1 }}>
       <Stack.Screen
         options={{
-          title: `Create Routine`,
           headerRight: () => {
             return (
               <ThemedButton
@@ -36,7 +46,7 @@ export default function CreateRoutineScreen() {
                     ...itemState,
                     slug: itemState.name.toLowerCase().replace(/\s+/g, "-"),
                   };
-                  createRoutineMutation
+                  addGoalMutation
                     .mutateAsync(finalState)
                     .then((id) => {
                       Toast.show({
@@ -45,15 +55,15 @@ export default function CreateRoutineScreen() {
                         position: "bottom",
                       });
                       router.navigate({
-                        pathname: "/(tabs)/routines/[id]",
+                        pathname: "/(tabs)/goals/[id]",
                         params: { id },
                       });
                     })
                     .catch((error) => {
-                      console.error("Error creating routine", error);
+                      console.error("Error creating goal", error);
                       Toast.show({
                         type: "error",
-                        text1: `Error creating routine`,
+                        text1: `Error creating goal`,
                         position: "bottom",
                       });
                     });

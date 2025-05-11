@@ -86,9 +86,9 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="routines"
+        name="goals"
         options={{
-          title: "My Routines",
+          title: "My Goals",
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="clock" color={color} />,
           headerShown: false,
         }}

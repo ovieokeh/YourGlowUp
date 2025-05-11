@@ -2,102 +2,47 @@ import { invariant } from "es-toolkit";
 import { Link, router, Stack } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import "react-native-get-random-values";
+import { v4 as uuidv4 } from "uuid";
 
+import { useGetActivityById, useUpdateActivity } from "@/backend/queries/activities";
+import { GoalActivity, NotificationRecurrence } from "@/backend/shared";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedPicker } from "@/components/ThemedPicker";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedTextInput } from "@/components/ThemedTextInput";
 import { ThemedView } from "@/components/ThemedView";
-import { NotificationType } from "@/constants/Exercises";
 import { BorderRadii, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useGetRoutineItem, useUpdateRoutineItem } from "@/queries/routines";
-import { RoutineItem } from "@/queries/routines/shared";
 import { Ionicons } from "@expo/vector-icons";
 import { useSearchParams } from "expo-router/build/hooks";
 import Toast from "react-native-toast-message";
 
-export default function EditRoutineItemScreen() {
+export default function EditGoalActivityScreen() {
   const searchParams = useSearchParams();
-  const id = searchParams.get("id") || "";
-  const routineId = searchParams.get("routineId") || "";
+  const id = searchParams.get("activityId") || "";
+  const goalId = searchParams.get("goalId") || "";
   invariant(id, "id is required");
-  invariant(routineId, "routineId is required");
+  invariant(goalId, "goalId is required");
 
   const gray10 = useThemeColor({}, "gray10");
 
-  const [itemState, setItemState] = useState<Partial<RoutineItem>>({
-    name: "",
-    area: "",
-    description: "",
-    instructions: [],
-    notificationType: NotificationType.DAILY,
-    notificationTimes: [],
-  });
+  const [activityForm, setActivityForm] = useState<Omit<GoalActivity, "id">>();
 
-  const itemQuery = useGetRoutineItem(id);
-  const item = useMemo(() => {
-    return itemQuery.data;
-  }, [itemQuery.data]);
+  const activityQuery = useGetActivityById(id);
+  const activity = useMemo(() => {
+    return activityQuery.data;
+  }, [activityQuery.data]);
 
-  const updateItemMutation = useUpdateRoutineItem(id);
+  const updateItemMutation = useUpdateActivity(id);
 
   useEffect(() => {
-    const item = itemQuery.data;
-    if (item) {
-      setItemState({
-        name: item.name,
-        area: item.area,
-        description: item.description,
-        instructions: item.instructions || [],
-        notificationType: item.notificationType || NotificationType.DAILY,
-        notificationTimes: item.notificationTimes || [],
-      });
+    if (activity) {
+      setActivityForm(activity);
     }
-  }, [itemQuery.data]);
+  }, [activity]);
 
-  const updateInstruction = (index: number, text: string) => {
-    const updated = [...(itemState.instructions || [])];
-    updated[index] = text;
-    setItemState({ ...itemState, instructions: updated });
-  };
-
-  const removeInstruction = (index: number) => {
-    const updated = [...(itemState.instructions || [])];
-    updated.splice(index, 1);
-    setItemState({ ...itemState, instructions: updated });
-  };
-
-  const addInstruction = () => {
-    setItemState({
-      ...itemState,
-      instructions: [...(itemState.instructions || []), ""],
-    });
-  };
-
-  const updateTime = (index: number, value: string) => {
-    const updated = [...(itemState.notificationTimes || [])];
-    updated[index] = value;
-    setItemState({ ...itemState, notificationTimes: updated });
-  };
-
-  const removeTime = (index: number) => {
-    const updated = [...(itemState.notificationTimes || [])];
-    updated.splice(index, 1);
-    setItemState({ ...itemState, notificationTimes: updated });
-  };
-
-  const addTime = () => {
-    setItemState({
-      ...itemState,
-      notificationTimes: [
-        ...(itemState.notificationTimes || []),
-        itemState.notificationType === NotificationType.CUSTOM ? "monday-10:00" : "10:00",
-      ],
-    });
-  };
-
-  if (itemQuery.isLoading) {
+  if (activityQuery.isLoading) {
     return (
       <ThemedView style={styles.container}>
         <ThemedText type="title">Loading...</ThemedText>
@@ -105,7 +50,7 @@ export default function EditRoutineItemScreen() {
     );
   }
 
-  if (!item) {
+  if (!activity) {
     return (
       <>
         <Stack.Screen options={{ title: "Oops!" }} />
@@ -119,6 +64,55 @@ export default function EditRoutineItemScreen() {
     );
   }
 
+  const onChange = (key: keyof GoalActivity, value: any) => {
+    setActivityForm((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        [key]: value,
+      };
+    });
+  };
+
+  const updateStep = (index: number, text: string) => {
+    const steps = activityForm?.steps || [];
+    steps[index] = { ...steps[index], id: text };
+    onChange("steps", steps);
+  };
+  const removeStep = (index: number) => {
+    const steps = activityForm?.steps || [];
+    steps.splice(index, 1);
+    onChange("steps", steps);
+  };
+  const addStep = () => {
+    const steps = activityForm?.steps || [];
+    steps.push({
+      id: uuidv4(),
+      slug: "random-slug",
+      content: "",
+      instructionMedia: {
+        type: "image",
+        url: "",
+      },
+    });
+    onChange("steps", steps);
+  };
+  const updateTime = (index: number, time: string) => {
+    const scheduledTimes = activityForm?.scheduledTimes || [];
+    scheduledTimes[index] = time;
+    onChange("scheduledTimes", scheduledTimes);
+  };
+  const removeTime = (index: number) => {
+    const scheduledTimes = activityForm?.scheduledTimes || [];
+    scheduledTimes.splice(index, 1);
+    onChange("scheduledTimes", scheduledTimes);
+  };
+  const addTime = () => {
+    const scheduledTimes = activityForm?.scheduledTimes || [];
+    scheduledTimes.push("10:00");
+    onChange("scheduledTimes", scheduledTimes);
+  };
+
   return (
     <ThemedView style={{ flex: 1 }}>
       <Stack.Screen
@@ -129,8 +123,9 @@ export default function EditRoutineItemScreen() {
               <ThemedButton
                 title="Save"
                 onPress={() => {
-                  if (itemState.notificationType === NotificationType.CUSTOM) {
-                    const day = itemState.notificationTimes?.[0]?.split("-")[0];
+                  if (!activityForm) return;
+                  if (activityForm.recurrence === NotificationRecurrence.WEEKLY) {
+                    const day = activityForm.scheduledTimes?.[0]?.split("-")[0];
                     if (!day || day === "") {
                       Toast.show({
                         type: "error",
@@ -142,13 +137,13 @@ export default function EditRoutineItemScreen() {
                   }
                   updateItemMutation
                     .mutateAsync({
-                      ...itemState,
-                      id: item.id,
-                    })
+                      ...activityForm,
+                      id: activity.id,
+                    } as GoalActivity)
                     .then(() => {
                       Toast.show({
                         type: "success",
-                        text1: `${itemState.name} updated`,
+                        text1: `${activityForm.name} updated`,
                         position: "bottom",
                       });
                       router.back();
@@ -163,42 +158,35 @@ export default function EditRoutineItemScreen() {
       <ScrollView contentContainerStyle={styles.container}>
         <ThemedTextInput
           label="Name"
-          value={itemState.name}
-          onChangeText={(text) => setItemState({ ...itemState, name: text })}
+          value={activityForm?.name ?? ""}
+          onChangeText={(text) => onChange("name", text)}
           placeholder="Enter name"
         />
 
         <ThemedTextInput
-          label="Area"
-          value={itemState.area}
-          onChangeText={(text) => setItemState({ ...itemState, area: text })}
-          placeholder="Enter area"
-        />
-
-        <ThemedTextInput
           label="Description"
-          value={itemState.description}
-          onChangeText={(text) => setItemState({ ...itemState, description: text })}
+          value={activityForm?.description ?? ""}
+          onChangeText={(text) => onChange("description", text)}
           placeholder="Enter description"
         />
 
         <View style={{ gap: Spacings.sm }}>
           <ThemedText type="subtitle">Instructions</ThemedText>
           <View style={{ gap: Spacings.xs }}>
-            {(itemState.instructions || []).map((instruction, index) => (
-              <View key={`instruction-${index}`} style={styles.row}>
+            {(activityForm?.steps || []).map((step, index) => (
+              <View key={`step-${index}`} style={styles.row}>
                 <ThemedTextInput
-                  value={instruction}
-                  onChangeText={(text) => updateInstruction(index, text)}
+                  value={step.id}
+                  onChangeText={(text) => updateStep(index, text)}
                   containerStyle={{ flex: 1, maxWidth: "90%" }}
                 />
-                <TouchableOpacity onPress={() => removeInstruction(index)}>
+                <TouchableOpacity onPress={() => removeStep(index)}>
                   <Ionicons name="remove" size={24} color="red" />
                 </TouchableOpacity>
               </View>
             ))}
           </View>
-          <ThemedButton title="Add Instruction" onPress={addInstruction} variant="outline" icon="plus" />
+          <ThemedButton title="Add Step" onPress={addStep} variant="outline" icon="plus" />
         </View>
 
         <View style={{ gap: Spacings.xs }}>
@@ -206,16 +194,16 @@ export default function EditRoutineItemScreen() {
           <View style={{ gap: Spacings.xs }}>
             <ThemedPicker
               placeholder="Select Notification Type"
-              items={Object.values(NotificationType).map((type) => ({
+              items={Object.values(NotificationRecurrence).map((type) => ({
                 label: type,
                 value: type,
               }))}
-              selectedValue={itemState.notificationType}
+              selectedValue={activityForm?.recurrence}
               onValueChange={(val) => {
-                setItemState({ ...itemState, notificationType: val });
+                onChange("recurrence", val);
               }}
             />
-            {(itemState.notificationTimes || []).map((time, index) => (
+            {(activityForm?.scheduledTimes || []).map((time, index) => (
               <View
                 key={`time-${index}`}
                 style={{
@@ -226,7 +214,7 @@ export default function EditRoutineItemScreen() {
               >
                 <NotificationTimePicker
                   value={time ?? "10:00"}
-                  type={itemState.notificationType}
+                  type={activityForm?.recurrence ?? NotificationRecurrence.DAILY}
                   onChange={(val) => updateTime(index, val)}
                 />
                 <ThemedButton
@@ -258,18 +246,18 @@ export const NotificationTimePicker = ({
   onChange,
 }: {
   value: string;
-  type: NotificationType | undefined;
+  type: NotificationRecurrence | undefined;
   onChange: (value: string) => void;
 }) => {
   const borderColor = useThemeColor({}, "border");
   const [selectedTime, setSelectedTime] = useState(() => {
-    if (type === NotificationType.CUSTOM) {
+    if (type === NotificationRecurrence.WEEKLY) {
       return value.split("-")[1];
     }
     return value;
   }); // either time like "10:00" or "monday-10:00"
   const [selectedDay, setSelectedDay] = useState<string>(() => {
-    if (type === NotificationType.CUSTOM) {
+    if (type === NotificationRecurrence.WEEKLY) {
       return value.split("-")[0];
     }
     return "monday";
@@ -280,7 +268,7 @@ export const NotificationTimePicker = ({
   const minuteOptions = new Array(12).fill(0).map((_, i) => String(i * 5).padStart(2, "0"));
   const dayOptions = days.map((day) => ({ label: day, value: day }));
   const time = useMemo(() => {
-    if (type === NotificationType.DAILY) {
+    if (type === NotificationRecurrence.DAILY) {
       return selectedTime;
     }
     return selectedTime ? `${selectedDay}-${selectedTime}` : null;
@@ -302,7 +290,7 @@ export const NotificationTimePicker = ({
         borderColor: borderColor,
       }}
     >
-      {type === NotificationType.CUSTOM && (
+      {type === NotificationRecurrence.WEEKLY && (
         <ThemedPicker
           items={dayOptions}
           selectedValue={selectedDay}

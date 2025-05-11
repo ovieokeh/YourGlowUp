@@ -4,11 +4,12 @@ import Fuse from "fuse.js";
 import React, { useMemo, useState } from "react";
 import { FlatList, Modal, StyleSheet, TouchableOpacity, View } from "react-native";
 
+import { ActivityType, GoalActivity } from "@/backend/shared";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedPicker } from "@/components/ThemedPicker";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedTextInput } from "@/components/ThemedTextInput";
-import { Exercise, EXERCISES, Task, TASKS } from "@/constants/Exercises";
+import { DEFAULT_ACTIVITIES } from "@/constants/Goals";
 import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { ThemedView } from "./ThemedView";
@@ -17,31 +18,30 @@ interface Props {
   visible: boolean;
   selectedSlugs: string[];
   onClose: () => void;
-  onSave: (selected: (Exercise | Task)[]) => void;
+  onSave: (selected: GoalActivity[]) => void;
 }
 
-const allItems = [...EXERCISES, ...TASKS];
-export const RoutineItemsModal = ({ visible, selectedSlugs, onClose, onSave }: Props) => {
+export const ActivityStepsModal = ({ visible, selectedSlugs, onClose, onSave }: Props) => {
   const [query, setQuery] = useState("");
-  const [typeFilter, setTypeFilter] = useState<"all" | "exercise" | "task">("all");
-  const [areaFilter, setAreaFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<"all" | ActivityType>("all");
+  const [categoryFilter, setAreaFilter] = useState<string>("all");
   const [selected, setSelected] = useState<Set<string>>(new Set(selectedSlugs.map((id) => id.toString())));
 
   const textColor = useThemeColor({}, "text");
   const borderColor = useThemeColor({}, "border");
-  const areas = useMemo(() => Array.from(new Set(allItems.map((i) => i.area))), []);
-  const fuse = useMemo(() => new Fuse(allItems, { keys: ["name", "area"] }), []);
+  const areas = useMemo(() => Array.from(new Set(DEFAULT_ACTIVITIES.map((i) => i.category))), []);
+  const fuse = useMemo(() => new Fuse(DEFAULT_ACTIVITIES, { keys: ["name", "category"] }), []);
 
   const matches = useMemo(() => {
-    let list = query ? fuse.search(query).map((r) => r.item) : [...allItems];
+    let list = query ? fuse.search(query).map((r) => r.item) : [...DEFAULT_ACTIVITIES];
     if (typeFilter !== "all") {
-      list = list.filter((item) => item.type === typeFilter);
+      list = list.filter((activity) => activity.type === typeFilter);
     }
-    if (areaFilter !== "all") {
-      list = list.filter((item) => item.area === areaFilter);
+    if (categoryFilter !== "all") {
+      list = list.filter((activity) => activity.category === categoryFilter);
     }
     return list;
-  }, [query, fuse, typeFilter, areaFilter]);
+  }, [query, fuse, typeFilter, categoryFilter]);
 
   const toggleSelect = (id: string) => {
     const next = new Set(selected);
@@ -54,7 +54,7 @@ export const RoutineItemsModal = ({ visible, selectedSlugs, onClose, onSave }: P
   };
 
   const handleSave = () => {
-    const selectedItems = allItems.filter((i) => selected.has(i.slug));
+    const selectedItems = DEFAULT_ACTIVITIES.filter((i) => selected.has(i.slug));
     onSave(selectedItems);
     setSelected(new Set());
     setQuery("");
@@ -69,7 +69,7 @@ export const RoutineItemsModal = ({ visible, selectedSlugs, onClose, onSave }: P
         <ThemedView style={{ gap: Spacings.sm }}>
           <View style={styles.header}>
             <ThemedText type="subtitle" style={{ flex: 1 }}>
-              Update Routine
+              Update Goal
             </ThemedText>
             <TouchableOpacity onPress={onClose} style={{ alignSelf: "flex-end", marginLeft: "auto" }}>
               <Ionicons name="close" size={24} color={textColor} />
@@ -92,8 +92,7 @@ export const RoutineItemsModal = ({ visible, selectedSlugs, onClose, onSave }: P
             <ThemedPicker
               items={[
                 { label: "All Types", value: "all" as const },
-                { label: "Exercises", value: "exercise" as const },
-                { label: "Tasks", value: "task" as const },
+                ...Object.values(ActivityType).map((type) => ({ label: type, value: type })),
               ]}
               selectedValue={typeFilter}
               onValueChange={(v) => setTypeFilter(v)}
@@ -101,7 +100,7 @@ export const RoutineItemsModal = ({ visible, selectedSlugs, onClose, onSave }: P
             />
             <ThemedPicker
               items={[{ label: "All Areas", value: "all" }, ...areas.map((area) => ({ label: area, value: area }))]}
-              selectedValue={areaFilter}
+              selectedValue={categoryFilter}
               onValueChange={(v) => setAreaFilter(v)}
               style={styles.picker}
             />
@@ -110,17 +109,17 @@ export const RoutineItemsModal = ({ visible, selectedSlugs, onClose, onSave }: P
 
         <FlatList
           data={matches}
-          keyExtractor={(item) => item.slug}
+          keyExtractor={(activity) => activity.slug}
           numColumns={2}
           columnWrapperStyle={{ gap: Spacings.sm }}
           contentContainerStyle={{ padding: Spacings.md, paddingBottom: 96 }}
           renderItem={({ item }) => {
             const isSelected = selected.has(item.slug);
             return (
-              <View style={[styles.item, { borderColor }]}>
-                {item.featureImage && (
+              <View style={[styles.activity, { borderColor }]}>
+                {item.featuredImage && (
                   <Image
-                    source={item.featureImage}
+                    source={item.featuredImage}
                     style={{ width: "100%", height: 120, borderRadius: BorderRadii.sm }}
                     contentFit="cover"
                   />
@@ -128,7 +127,7 @@ export const RoutineItemsModal = ({ visible, selectedSlugs, onClose, onSave }: P
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
                   <ThemedText type="defaultSemiBold">{item.name}</ThemedText>
                 </View>
-                <ThemedText style={{ opacity: 0.6 }}>{item.area}</ThemedText>
+                <ThemedText style={{ opacity: 0.6 }}>{item.category}</ThemedText>
 
                 <View style={{ marginTop: Spacings.sm }}>
                   <ThemedButton
@@ -145,7 +144,7 @@ export const RoutineItemsModal = ({ visible, selectedSlugs, onClose, onSave }: P
         />
 
         <ThemedButton
-          title={`Update Routine (${selected.size} items)`}
+          title={`Update Goal (${selected.size} activitys)`}
           onPress={handleSave}
           style={styles.saveButton}
           disabled={selected.size === 0}
@@ -193,7 +192,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 44,
   },
-  item: {
+  activity: {
     padding: Spacings.sm,
     marginBottom: Spacings.sm,
     borderWidth: 1,

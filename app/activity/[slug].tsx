@@ -3,44 +3,45 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, Image, ScrollView, StyleSheet, View } from "react-native";
 import { useSharedValue, withTiming } from "react-native-reanimated";
 
+import { useGetActivityBySlug } from "@/backend/queries/activities";
+import { useAddActivityLog } from "@/backend/queries/logs";
+import { LogType } from "@/backend/shared";
 import { ProgressBar } from "@/components/ProgressBar";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { Exercise, EXERCISES, TASKS } from "@/constants/Exercises";
 import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
+import { useAppContext } from "@/hooks/app/context";
+import { useActivityDuration } from "@/hooks/useActivityDuration";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useBadges } from "@/providers/BadgeContext";
-import { LOG_TYPE_XP_MAP } from "@/queries/gamification/gamification";
-import { useSaveLog } from "@/queries/logs";
 import { useSound } from "@/utils/sounds";
 import { useSearchParams } from "expo-router/build/hooks";
 
-export default function ExerciseSession() {
+export default function ActivitySession() {
+  const { user } = useAppContext();
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const searchParams = useSearchParams();
-  const routineId = searchParams.get("routineId") || "";
-  const routineIdNum = parseInt(routineId, 10);
+  const goalId = searchParams.get("goalId") || "";
   const router = useRouter();
-  const { addXP } = useBadges();
 
-  const exercise = useMemo(
-    () =>
-      EXERCISES.find((e) => e.slug === slug || e.name === decodeURIComponent(slug)) ||
-      TASKS.find((e) => e.slug === slug || e.name === decodeURIComponent(slug)),
-    [slug]
-  );
+  const activityQuery = useGetActivityBySlug(goalId, slug as string);
+  const activity = useMemo(() => {
+    if (activityQuery.data) {
+      return activityQuery.data;
+    }
+    return null;
+  }, [activityQuery.data]);
 
-  const [timeLeft, setTimeLeft] = useState((exercise as Exercise)?.duration || 0);
+  const cumulativeActivityDuration = useActivityDuration(activity);
+
+  const [timeLeft, setTimeLeft] = useState(cumulativeActivityDuration);
   const [started, setStarted] = useState(false);
   const [completed, setCompleted] = useState(false);
 
-  const duration = useMemo(() => (exercise as Exercise)?.duration || 0, [exercise]);
-
   const progress = useSharedValue(0);
 
-  const saveLogMutation = useSaveLog();
+  const saveLogMutation = useAddActivityLog(user?.id);
   const { play } = useSound();
 
   const textColor = useThemeColor({}, "text");
@@ -51,12 +52,12 @@ export default function ExerciseSession() {
   const danger = useThemeColor({}, "danger");
 
   useEffect(() => {
-    if (started && timeLeft > 0 && duration > 0) {
-      progress.value = withTiming((duration - timeLeft) / duration);
-    } else if (started && timeLeft === 0 && duration > 0) {
+    if (started && timeLeft > 0 && cumulativeActivityDuration > 0) {
+      progress.value = withTiming((cumulativeActivityDuration - timeLeft) / cumulativeActivityDuration);
+    } else if (started && timeLeft === 0 && cumulativeActivityDuration > 0) {
       progress.value = withTiming(1);
     }
-  }, [duration, progress, started, timeLeft]);
+  }, [cumulativeActivityDuration, progress, started, timeLeft]);
 
   useEffect(() => {
     let timer: number | undefined;
@@ -77,19 +78,21 @@ export default function ExerciseSession() {
       clearInterval(timer);
       clearInterval(soundTimer);
     };
-  }, [completed, started, timeLeft, exercise?.name, duration, play]);
+  }, [completed, started, timeLeft, activity?.name, cumulativeActivityDuration, play]);
 
   const handleStart = () => setStarted(true);
 
   const handleQuit = () => {
-    if (!exercise) return;
-    const timeElapsed = duration - timeLeft;
-    const threshold = Math.floor(duration / 3);
+    if (!activity) return;
+    const timeElapsed = cumulativeActivityDuration - timeLeft;
+    const threshold = Math.floor(cumulativeActivityDuration / 3);
 
     if (timeElapsed >= threshold) {
       Alert.alert(
         "Quit Early?",
-        `You've completed ${Math.round((timeElapsed / duration) * 100)}% of the session.\nThis will still be saved.`,
+        `You've completed ${Math.round(
+          (timeElapsed / cumulativeActivityDuration) * 100
+        )}% of the session.\nThis will still be saved.`,
         [
           { text: "Cancel", style: "cancel" },
           {
@@ -108,51 +111,48 @@ export default function ExerciseSession() {
   };
 
   const handleComplete = useCallback(async () => {
-    if (!exercise) return;
+    if (!activity || !user?.id) return;
+    const finalDuration = cumulativeActivityDuration - timeLeft;
     await saveLogMutation.mutateAsync({
-      routineId: routineIdNum,
-      type: "exercise",
-      slug: exercise.slug,
-      meta: { duration },
+      type: LogType.ACTIVITY,
+      userId: user.id,
+      goalId,
+      activityId: activity.id,
+      activityType: activity.type,
+      meta: { duration: finalDuration },
     });
     play("complete-exercise");
-    addXP
-      .mutateAsync(LOG_TYPE_XP_MAP["exercise"] + duration)
-      .catch((err) => {
-        console.error("Error adding XP:", err);
-      })
-      .finally(() => {
-        router.replace(`/exercise-complete?exercise=${exercise.name}`);
-      });
-  }, [addXP, duration, exercise, play, router, saveLogMutation, routineIdNum]);
+
+    router.replace("/");
+  }, [cumulativeActivityDuration, activity, play, router, saveLogMutation, goalId, user?.id, timeLeft]);
 
   useEffect(() => {
     if (timeLeft === 0 && started) {
       setCompleted(true);
       setStarted(false);
-      setTimeLeft(duration);
+      setTimeLeft(cumulativeActivityDuration);
       progress.value = withTiming(0);
       handleComplete();
     }
-  }, [timeLeft, started, duration, progress, handleComplete]);
+  }, [timeLeft, started, cumulativeActivityDuration, progress, handleComplete]);
 
-  if (!exercise) {
+  if (!activity) {
     return (
       <ThemedView style={[styles.container, { backgroundColor: background }]}>
         <Stack.Screen options={{ title: "Oops!" }} />
 
-        <ThemedText style={styles.title}>Exercise not found.</ThemedText>
+        <ThemedText style={styles.title}>Activity not found.</ThemedText>
       </ThemedView>
     );
   }
 
-  const hasDuration = (exercise as Exercise)?.duration > 0;
+  const hasDuration = cumulativeActivityDuration > 0;
 
   return (
     <>
       <Stack.Screen
         options={{
-          title: exercise.name,
+          title: activity.name,
           headerRight: () => (
             <ThemedButton
               title={started ? (completed ? "" : "") : ""}
@@ -182,7 +182,9 @@ export default function ExerciseSession() {
           ),
         }}
       />
-      {exercise.animation && <Image source={{ uri: exercise.animation }} style={styles.image} resizeMode="cover" />}
+      {activity.featuredImage && (
+        <Image source={{ uri: activity.featuredImage }} style={styles.image} resizeMode="cover" />
+      )}
       <View style={{ gap: Spacings.md, marginTop: Spacings.md, width: "100%" }}>
         {started && (
           <View style={styles.progressContainer}>
@@ -197,16 +199,16 @@ export default function ExerciseSession() {
           <View style={[styles.descriptionContainer, { backgroundColor: border }]}>
             <View style={styles.infoRow}>
               <IconSymbol name="target" size={18} color={textColor} />
-              <ThemedText style={styles.infoText}>Target Area: {exercise.area}</ThemedText>
+              <ThemedText style={styles.infoText}>Target Area: {activity.category}</ThemedText>
             </View>
-            <ThemedText style={styles.description}>{exercise.description}</ThemedText>
+            <ThemedText style={styles.description}>{activity.description}</ThemedText>
           </View>
-          {!!exercise.instructions?.length && (
+          {!!activity.steps?.length && (
             <View style={styles.instructions}>
-              <ThemedText style={styles.instructionsTitle}>Instructions:</ThemedText>
-              {exercise.instructions?.map((step, idx) => (
+              <ThemedText style={styles.instructionsTitle}>Steps:</ThemedText>
+              {activity.steps?.map((step, idx) => (
                 <ThemedText key={idx} style={styles.step}>
-                  {idx + 1}. {step}
+                  {idx + 1}. {step.content}
                 </ThemedText>
               ))}
             </View>

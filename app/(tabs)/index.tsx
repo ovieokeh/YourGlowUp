@@ -3,37 +3,46 @@ import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useMemo } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
-import { RoutineItemCard } from "@/components/RoutineItemCard";
+import { useGetAllPendingActivitiesToday } from "@/backend/queries/activities";
+import { useGetTodayLogs } from "@/backend/queries/logs";
+import { GoalActivity, isActivityLog, isTaskActivity } from "@/backend/shared";
+import { ActivityHorizontalCard } from "@/components/ActivityHorizontalCard";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { TodaysStats } from "@/components/TodaysStats";
 import { BorderRadii, Spacings } from "@/constants/Theme";
-import { useGetTodayLogs } from "@/queries/logs";
-import { useGetAllRoutineItems } from "@/queries/routines";
-import { isRoutineTaskItem, RoutineItem } from "@/queries/routines/shared";
+import { useAppContext, useSelectedGoalId } from "@/hooks/app/context";
 
 export default function HomeScreen() {
+  const { user } = useAppContext();
+  const currentUserId = useMemo(() => user?.id, [user?.id]);
   const router = useRouter();
+  const goalId = useSelectedGoalId();
 
-  const routineQuery = useGetAllRoutineItems();
-
-  const logsQuery = useGetTodayLogs();
+  const logsQuery = useGetTodayLogs(currentUserId);
   const logs = useMemo(() => logsQuery.data || [], [logsQuery.data]);
 
-  const items = useMemo(() => routineQuery.data || [], [routineQuery?.data]);
+  const activityLogs = useMemo(() => {
+    return logs?.filter(isActivityLog) || [];
+  }, [logs]);
+
+  const goalQuery = useGetAllPendingActivitiesToday();
+
+  const items = useMemo(() => goalQuery.data || [], [goalQuery?.data]);
+  console.log("items", items);
 
   useFocusEffect(() => {
-    routineQuery.refetch();
+    goalQuery.refetch();
     logsQuery.refetch();
   });
 
-  const isRoutineItemCompleted = useCallback(
-    (item: RoutineItem) => {
-      // completed if there's any log for this routineId + itemId with createdAt today
-      return logs.some((log) => log.routineId === item.routineId && log.slug === item.slug);
+  const isActivityCompleted = useCallback(
+    (item: GoalActivity) => {
+      // completed if there's any log for this goalId + itemId with createdAt today
+      return activityLogs.some((log) => log.activityId === item.id);
     },
-    [logs]
+    [activityLogs]
   );
 
   const groupedByTime = useMemo(() => {
@@ -41,8 +50,8 @@ export default function HomeScreen() {
     const now = new Date();
 
     for (const item of items) {
-      const times = item.notificationTimes || ["Unscheduled"];
-      const hasLog = isRoutineItemCompleted(item);
+      const times = item.scheduledTimes || ["Unscheduled"];
+      const hasLog = isActivityCompleted(item);
       for (const time of times) {
         // filter out past occurrences when the item has any log
         if (time !== "Unscheduled") {
@@ -63,7 +72,7 @@ export default function HomeScreen() {
         acc.push({ time, items: group });
         return acc;
       }, [] as { time: string; items: typeof items }[]);
-  }, [items, isRoutineItemCompleted]);
+  }, [items, isActivityCompleted]);
 
   return (
     <ThemedView style={styles.container}>
@@ -92,19 +101,19 @@ export default function HomeScreen() {
                 <View key={time} style={styles.cards}>
                   <ThemedText style={styles.title}>{formatted}</ThemedText>
                   {items.map((item) => (
-                    <RoutineItemCard
+                    <ActivityHorizontalCard
                       key={item.id + item.slug}
                       item={item}
                       handlePress={() => {
                         router.push({
-                          pathname: "/exercise/[slug]",
+                          pathname: "/activity/[slug]",
                           params: {
                             slug: encodeURIComponent(item.slug || item.name),
-                            routineId: item.routineId,
+                            goalId,
                           },
                         });
                       }}
-                      allowCompletion={isRoutineTaskItem(item)}
+                      allowCompletion={isTaskActivity(item)}
                       mode="action"
                     />
                   ))}
@@ -117,14 +126,14 @@ export default function HomeScreen() {
         {items.length === 0 ? (
           <View style={{ gap: Spacings.md }}>
             <ThemedButton
-              title="Create a routine"
-              onPress={() => router.push(`/(tabs)/routines/create`)}
+              title="Create a goal"
+              onPress={() => router.push(`/(tabs)/goals/add`)}
               variant="outline"
               icon="plus.circle"
               iconPlacement="right"
             />
             <ThemedButton
-              title="Generate an AI routine"
+              title="Generate an AI goal"
               onPress={() => router.push(`/face-analysis`)}
               variant="solid"
               icon="wand.and.stars"
@@ -133,8 +142,8 @@ export default function HomeScreen() {
           </View>
         ) : (
           <ThemedButton
-            title="View Routines"
-            onPress={() => router.push(`/(tabs)/routines`)}
+            title="View Goals"
+            onPress={() => router.push(`/(tabs)/goals`)}
             variant="outline"
             icon="chevron.right"
             iconPlacement="right"

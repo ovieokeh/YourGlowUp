@@ -5,13 +5,13 @@ import { Dimensions, FlatList, Pressable, StyleSheet, View } from "react-native"
 
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { EXERCISES } from "@/constants/Exercises";
+import { DEFAULT_ACTIVITIES } from "@/constants/Goals";
 import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 
 const CARD_WIDTH = Dimensions.get("window").width - Spacings.xl * 2;
 
-export default function ExercisesScreen() {
+export default function ActivitiesScreen() {
   const router = useRouter();
 
   const cardBg = useThemeColor({ light: Colors.light.background, dark: Colors.dark.background }, "background");
@@ -20,14 +20,14 @@ export default function ExercisesScreen() {
   return (
     <ThemedView style={styles.container}>
       <FlatList
-        data={EXERCISES}
+        data={DEFAULT_ACTIVITIES}
         keyExtractor={(item) => item.name}
         contentContainerStyle={{ paddingBottom: Spacings.xl * 6 }}
         renderItem={({ item }) => (
           <Pressable
             onPress={() =>
               router.push({
-                pathname: "/exercise/[slug]",
+                pathname: "/",
                 params: { slug: encodeURIComponent(item.name) },
               })
             }
@@ -37,10 +37,10 @@ export default function ExercisesScreen() {
               pressed && { opacity: 0.85 },
             ]}
           >
-            <Image source={{ uri: item.featureImage }} style={styles.image} contentFit="cover" />
+            <Image source={{ uri: item.featuredImage }} style={styles.image} contentFit="cover" />
             <View style={styles.cardContent}>
               <ThemedText style={styles.exerciseName}>{item.name}</ThemedText>
-              <ThemedText style={styles.exerciseArea}>{item.area}</ThemedText>
+              <ThemedText style={styles.exerciseArea}>{item.category}</ThemedText>
               <ThemedText numberOfLines={2} style={styles.description}>
                 {item.description}
               </ThemedText>

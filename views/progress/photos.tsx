@@ -2,26 +2,23 @@ import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
+import { useGetLogs } from "@/backend/queries/logs";
+import { isMediaUploadLog } from "@/backend/shared";
 import { ProgressReview } from "@/components/ProgressReview";
 import { ThemedFabButton } from "@/components/ThemedFabButton";
 import { ThemedText } from "@/components/ThemedText";
 import { Spacings } from "@/constants/Theme";
+import { useAppContext } from "@/hooks/app/context";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useGetPhotoLogs } from "@/queries/logs";
-import { PhotoLog } from "@/queries/logs/logs";
 
 const RANGE_OPTIONS = ["7d", "30d", "3mo", "all"];
 
 export function ProgressPhotoView({ selectedRoutine }: { selectedRoutine?: number | undefined }) {
+  const { user } = useAppContext();
   const router = useRouter();
-  const logsQuery = useGetPhotoLogs(selectedRoutine);
-  const logs = useMemo(() => logsQuery.data || [], [logsQuery.data]);
-  const [range, setRange] = useState<"7d" | "30d" | "3mo" | "all">("30d");
 
+  const [range, setRange] = useState<"7d" | "30d" | "3mo" | "all">("30d");
   const now = useMemo(() => new Date(), []);
-  const textColor = useThemeColor({}, "text");
-  const borderColor = useThemeColor({}, "border");
-  const accentColor = useThemeColor({}, "accent");
 
   const rangeStart = useMemo(() => {
     const d = new Date(now);
@@ -31,9 +28,15 @@ export function ProgressPhotoView({ selectedRoutine }: { selectedRoutine?: numbe
     else return null;
     return d;
   }, [now, range]);
+  const logsQuery = useGetLogs(user?.id);
+  const logs = useMemo(() => logsQuery.data || [], [logsQuery.data]);
+
+  const textColor = useThemeColor({}, "text");
+  const borderColor = useThemeColor({}, "border");
+  const accentColor = useThemeColor({}, "accent");
 
   const filtered = useMemo(
-    () => logs.filter((l) => (rangeStart ? new Date(l.createdAt) >= rangeStart! : true)) as PhotoLog[],
+    () => logs.filter(isMediaUploadLog).filter((l) => (rangeStart ? new Date(l.createdAt) >= rangeStart! : true)),
     [logs, rangeStart]
   );
 
@@ -59,7 +62,7 @@ export function ProgressPhotoView({ selectedRoutine }: { selectedRoutine?: numbe
 
       <ScrollView>
         <View style={{ paddingBottom: 96 }}>
-          <ProgressReview photoLogs={filtered} />
+          <ProgressReview mediaLogs={filtered} />
         </View>
       </ScrollView>
 
@@ -68,9 +71,9 @@ export function ProgressPhotoView({ selectedRoutine }: { selectedRoutine?: numbe
         title="Log photo"
         onPress={() => {
           router.push({
-            pathname: "/routines/add-photo-log",
+            pathname: "/goals/add-photo-log",
             params: {
-              routineId: selectedRoutine,
+              goalId: selectedRoutine,
             },
           });
         }}

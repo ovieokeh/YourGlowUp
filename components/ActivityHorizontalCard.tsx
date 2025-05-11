@@ -1,16 +1,21 @@
 import React, { useMemo, useState } from "react";
 import { Alert, Modal, Pressable, SafeAreaView, StyleSheet, useWindowDimensions, View } from "react-native";
 
+import { useAddActivityLog, useGetTodayLogsByActivityId } from "@/backend/queries/logs";
+import {
+  GoalActivity,
+  hasCompletionPrompts,
+  isGuidedActivity,
+  LogType,
+  NotificationRecurrence,
+} from "@/backend/shared";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { BorderRadii, Spacings } from "@/constants/Theme";
+import { useActivityDuration } from "@/hooks/useActivityDuration";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useBadges } from "@/providers/BadgeContext";
-import { LOG_TYPE_XP_MAP } from "@/queries/gamification/gamification";
-import { useGetTodayLogsBySlug, useSaveLog } from "@/queries/logs";
-import { isRoutineExerciseItem, isRoutineTaskItem, RoutineItem, RoutineTaskItem } from "@/queries/routines/shared";
 import { useSound } from "@/utils/sounds";
 import { Image } from "expo-image";
 import Toast from "react-native-toast-message";
@@ -18,13 +23,17 @@ import { RedoBadge } from "./RedoBadge";
 import { ThemedPicker } from "./ThemedPicker";
 import { ThemedTextInput } from "./ThemedTextInput";
 
-export const RoutineItemCard = ({
+export const ActivityHorizontalCard = ({
+  userId,
+  goalId,
   item,
   handlePress,
   mode = "display",
   allowCompletion = false,
 }: {
-  item: RoutineItem;
+  userId?: string;
+  goalId?: string;
+  item: GoalActivity;
   handlePress: () => void;
   mode?: "display" | "action";
   allowCompletion?: boolean;
@@ -38,25 +47,41 @@ export const RoutineItemCard = ({
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<{ [key: string]: string }>({});
 
-  const getLogsQuery = useGetTodayLogsBySlug(item.slug);
+  const getLogsQuery = useGetTodayLogsByActivityId(userId, item?.id);
+
+  const duration = useActivityDuration(item);
 
   const logs = useMemo(() => {
     return getLogsQuery.data || [];
   }, [getLogsQuery.data]);
 
   const hasTodayLogs = logs.length > 0;
-  const { addXP } = useBadges();
   const { play } = useSound();
-  const saveTaskLogMutation = useSaveLog();
+  const addActivityLog = useAddActivityLog(userId);
 
   const handleTaskCompletion = async () => {
-    if (isRoutineTaskItem(item) && item.questions?.length) {
+    if (!goalId) {
+      Toast.show({ type: "error", text1: "Error", text2: "Goal ID is not available" });
+      return;
+    }
+    if (!userId) {
+      Toast.show({ type: "error", text1: "Error", text2: "User ID is not available" });
+      return;
+    }
+
+    if (hasCompletionPrompts(item) && item.completionPrompts?.length) {
       setQuestionModalVisible(true);
       return;
     }
-    await saveTaskLogMutation.mutateAsync({ slug: item.slug, type: "task", routineId: item.routineId, meta: {} });
+    await addActivityLog.mutateAsync({
+      userId,
+      goalId,
+      activityId: item.id,
+      activityType: item.type,
+      type: LogType.ACTIVITY,
+      meta: {},
+    });
     await play("complete-task");
-    await addXP.mutateAsync(LOG_TYPE_XP_MAP["task"]);
     Toast.show({ type: "success", text1: "Task completed", text2: `You completed ${item.name}` });
   };
 
@@ -81,34 +106,34 @@ export const RoutineItemCard = ({
           : {},
       ]}
     >
-      <Image source={item.featureImage} style={{ width: 40, height: 40, borderRadius: BorderRadii.sm }} />
+      <Image source={item.featuredImage} style={{ width: 40, height: 40, borderRadius: BorderRadii.sm }} />
       <View style={{ padding: Spacings.sm, width: "70%", flexWrap: "wrap" }}>
         <ThemedText style={styles.exerciseName}>{item.name}</ThemedText>
 
         <View style={styles.row}>
-          <ThemedText style={styles.exerciseArea}>{item.area}</ThemedText>
-          {isRoutineExerciseItem(item) && (
+          <ThemedText style={styles.exerciseArea}>{item.category}</ThemedText>
+          {isGuidedActivity(item) && (
             <>
               <IconSymbol name="clock" size={14} color={textColor} />
-              <ThemedText style={styles.description}>{readableDuration(item.duration)}</ThemedText>
+              <ThemedText style={styles.description}>{readableDuration(duration)}</ThemedText>
             </>
           )}
 
-          {!allowCompletion && item.notificationTimes?.length ? (
+          {!allowCompletion && item.scheduledTimes?.length ? (
             <View style={styles.row}>
               <IconSymbol name="alarm" size={16} color={textColor} />
-              {item.notificationType === "custom" ? (
-                <ThemedText style={styles.description}>Custom</ThemedText>
+              {item.recurrence === NotificationRecurrence.WEEKLY ? (
+                <ThemedText style={styles.description}>Weekly</ThemedText>
               ) : (
                 <>
-                  {item.notificationTimes.slice(0, 3).map((time, i) => (
+                  {item.scheduledTimes.slice(0, 3).map((time, i) => (
                     <ThemedText key={i} style={styles.description}>
                       {time}
-                      {i < 2 && i < item.notificationTimes!.length - 1 ? ", " : ""}
+                      {i < 2 && i < item.scheduledTimes!.length - 1 ? ", " : ""}
                     </ThemedText>
                   ))}
-                  {item.notificationTimes.length > 3 && (
-                    <ThemedText style={styles.description}>+{item.notificationTimes.length - 3} more</ThemedText>
+                  {item.scheduledTimes.length > 3 && (
+                    <ThemedText style={styles.description}>+{item.scheduledTimes.length - 3} more</ThemedText>
                   )}
                 </>
               )}
@@ -124,7 +149,6 @@ export const RoutineItemCard = ({
       )}
 
       {allowCompletion &&
-        isRoutineTaskItem(item) &&
         (hasTodayLogs ? (
           <Pressable
             style={{ padding: Spacings.sm, paddingRight: 0, marginLeft: "auto" }}
@@ -145,7 +169,7 @@ export const RoutineItemCard = ({
         ))}
 
       {/* Modal for task questions */}
-      {isRoutineTaskItem(item) && item.questions?.length && (
+      {hasCompletionPrompts(item) && item.completionPrompts?.length && (
         <TaskQuestionsModal
           currentQuestionIndex={currentQuestionIndex}
           item={item}
@@ -177,13 +201,22 @@ export const RoutineItemCard = ({
             );
           }}
           handleSubmitAnswers={async () => {
-            await saveTaskLogMutation.mutateAsync({
-              slug: item.slug,
-              type: "task",
-              routineId: item.routineId,
+            if (!goalId) {
+              Toast.show({ type: "error", text1: "Error", text2: "Goal ID is not available" });
+              return;
+            }
+            if (!userId) {
+              Toast.show({ type: "error", text1: "Error", text2: "User ID is not available" });
+              return;
+            }
+            await addActivityLog.mutateAsync({
+              userId,
+              goalId,
+              activityId: item.id,
+              activityType: item.type,
+              type: LogType.ACTIVITY,
               meta: answers,
             });
-            await addXP.mutateAsync(LOG_TYPE_XP_MAP["task"]);
             await play("complete-task");
             Toast.show({
               type: "success",
@@ -212,7 +245,7 @@ const TaskQuestionsModal = ({
   setAnswers,
 }: {
   currentQuestionIndex: number;
-  item: RoutineTaskItem;
+  item: GoalActivity;
   isVisible: boolean;
   handleSkipQuestions: () => void;
   handleSubmitAnswers: () => void;
@@ -223,16 +256,16 @@ const TaskQuestionsModal = ({
   const screenHeight = useWindowDimensions().height;
 
   const currentQuestion = useMemo(() => {
-    const q = item.questions?.[currentQuestionIndex];
+    const q = item.completionPrompts?.[currentQuestionIndex];
     if (!q) return null;
     if (q.reliesOn && (!answers[q.reliesOn] || answers[q.reliesOn] === "false")) {
       return null;
     }
     return q;
-  }, [currentQuestionIndex, item.questions, answers]);
+  }, [currentQuestionIndex, item.completionPrompts, answers]);
 
   const canSubmit = useMemo(() => {
-    const questions = item.questions;
+    const questions = item.completionPrompts;
     if (!questions) return null;
     for (let i = currentQuestionIndex + 1; i < questions.length; i++) {
       const q = questions[i];
@@ -241,9 +274,9 @@ const TaskQuestionsModal = ({
       }
     }
     return true;
-  }, [currentQuestionIndex, item.questions, answers]);
+  }, [currentQuestionIndex, item.completionPrompts, answers]);
 
-  if (!item.questions || !currentQuestion) return null;
+  if (!item.completionPrompts || !currentQuestion) return null;
 
   return (
     <Modal visible={isVisible} animationType="slide" presentationStyle="pageSheet">
@@ -257,44 +290,45 @@ const TaskQuestionsModal = ({
         <SafeAreaView>
           <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 16 }}>
             <ThemedText type="subtitle">
-              Question {currentQuestionIndex + 1} of {canSubmit ? currentQuestionIndex + 1 : item.questions.length}
+              Question {currentQuestionIndex + 1} of{" "}
+              {canSubmit ? currentQuestionIndex + 1 : item.completionPrompts.length}
             </ThemedText>
             <ThemedButton title="Exit" variant="ghost" onPress={handleSkipQuestions} />
           </View>
-          <ThemedText style={{ marginBottom: 12 }}>{currentQuestion.question}</ThemedText>
+          <ThemedText style={{ marginBottom: 12 }}>{currentQuestion.prompt}</ThemedText>
 
-          {currentQuestion.answerType === "text" ? (
+          {currentQuestion.type === "text" ? (
             <ThemedTextInput
               placeholder="Your answer"
-              value={answers[currentQuestion.questionId] || ""}
-              onChangeText={(text) => setAnswers({ ...answers, [currentQuestion.questionId]: text })}
+              value={answers[currentQuestion.id] || ""}
+              onChangeText={(text) => setAnswers({ ...answers, [currentQuestion.id]: text })}
             />
-          ) : currentQuestion.answerType === "boolean" ? (
+          ) : currentQuestion.type === "boolean" ? (
             <View style={{ flexDirection: "row", gap: Spacings.sm }}>
               <ThemedButton
                 title="Yes"
-                onPress={() => setAnswers({ ...answers, [currentQuestion.questionId]: "true" })}
-                variant={answers[currentQuestion.questionId] === "true" ? "solid" : "ghost"}
+                onPress={() => setAnswers({ ...answers, [currentQuestion.id]: "true" })}
+                variant={answers[currentQuestion.id] === "true" ? "solid" : "ghost"}
               />
               <ThemedButton
                 title="No"
-                onPress={() => setAnswers({ ...answers, [currentQuestion.questionId]: "false" })}
-                variant={answers[currentQuestion.questionId] === "false" ? "solid" : "ghost"}
+                onPress={() => setAnswers({ ...answers, [currentQuestion.id]: "false" })}
+                variant={answers[currentQuestion.id] === "false" ? "solid" : "ghost"}
               />
             </View>
-          ) : currentQuestion.answerType === "select" && currentQuestion.options ? (
+          ) : currentQuestion.type === "select" && currentQuestion.options ? (
             <ThemedPicker
-              selectedValue={answers[currentQuestion.questionId] || ""}
-              onValueChange={(val) => setAnswers({ ...answers, [currentQuestion.questionId]: val })}
-              items={currentQuestion.options.map((opt) => ({ label: opt, value: opt }))}
+              selectedValue={answers[currentQuestion.id] || ""}
+              onValueChange={(val) => setAnswers({ ...answers, [currentQuestion.id]: val })}
+              items={currentQuestion.options.map((opt) => ({ label: opt.label, value: opt.value }))}
               placeholder="Select an option"
               style={{ width: "100%" }}
             />
-          ) : currentQuestion.answerType === "number" ? (
+          ) : currentQuestion.type === "number" ? (
             <ThemedTextInput
               placeholder="Your answer"
-              value={answers[currentQuestion.questionId] || ""}
-              onChangeText={(text) => setAnswers({ ...answers, [currentQuestion.questionId]: text })}
+              value={answers[currentQuestion.id] || ""}
+              onChangeText={(text) => setAnswers({ ...answers, [currentQuestion.id]: text })}
               keyboardType="numeric"
             />
           ) : null}
@@ -303,8 +337,8 @@ const TaskQuestionsModal = ({
             title={canSubmit ? "Submit" : "Next"}
             onPress={() => {
               const nextIndex = (() => {
-                for (let i = currentQuestionIndex + 1; i < item.questions!.length; i++) {
-                  const q = item.questions![i];
+                for (let i = currentQuestionIndex + 1; i < item.completionPrompts!.length; i++) {
+                  const q = item.completionPrompts![i];
                   if (!q.reliesOn || (q.reliesOn && answers[q.reliesOn] && answers[q.reliesOn] !== "false")) {
                     return i;
                   }

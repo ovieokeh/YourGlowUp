@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { IconSymbolName } from "@/components/ui/IconSymbol";
-import { Log, PhotoLog } from "../logs/logs";
+import { Log, LogType } from "./shared";
 
 export enum BadgeStatus {
   NOT_EARNED = "NOT_EARNED",
@@ -258,14 +258,22 @@ export const resetXP = async () => {
     console.error("Error resetting XP:", error);
   }
 };
-export const LOG_TYPE_XP_MAP: Record<Log["type"] | "photo", number> = {
-  exercise: 10,
-  photo: 5,
-  task: 2,
+export const LOG_TYPE_XP_MAP: Record<Log["type"], number> = {
+  activity: 10,
+  media_upload: 5,
+  step: 1,
+  prompt: 2,
+  feedback: 3,
 };
 export const getStreak = (logs: Log[]) => {
   const MS_IN_DAY = 86_400_000;
-  const daySet = new Set(logs.map((log) => Math.floor(log.createdAt / MS_IN_DAY)));
+  const daySet = new Set(
+    logs.map((log) => {
+      const createdAtDate = new Date(log.createdAt);
+      const createdAt = createdAtDate.getTime();
+      return Math.floor(createdAt / MS_IN_DAY);
+    })
+  );
 
   let streak = 0;
   let currentDay = Math.floor(Date.now() / MS_IN_DAY);
@@ -277,26 +285,26 @@ export const getStreak = (logs: Log[]) => {
 
   return streak;
 };
-type BadgeConditionFn = (params: { logs: Log[]; photoLogs: PhotoLog[]; streak: number }) => boolean;
+type BadgeConditionFn = (params: { logs: Log[]; streak: number }) => boolean;
 
 export const badgeConditions: Record<BadgeKey, BadgeConditionFn> = {
-  "testing-waters": ({ logs }) => countLogs(logs, "exercise") >= 1,
-  "face-gym-rat": ({ logs }) => countLogs(logs, "exercise") >= 10,
-  "face-gym-enthusiast": ({ logs }) => countLogs(logs, "exercise") >= 30,
-  "face-gym-sweat": ({ logs }) => countLogs(logs, "exercise") >= 50,
-  "face-gym-obsessed": ({ logs }) => countLogs(logs, "exercise") >= 100,
+  "testing-waters": ({ logs }) => countLogs(logs, LogType.ACTIVITY) >= 1,
+  "face-gym-rat": ({ logs }) => countLogs(logs, LogType.ACTIVITY) >= 10,
+  "face-gym-enthusiast": ({ logs }) => countLogs(logs, LogType.ACTIVITY) >= 30,
+  "face-gym-sweat": ({ logs }) => countLogs(logs, LogType.ACTIVITY) >= 50,
+  "face-gym-obsessed": ({ logs }) => countLogs(logs, LogType.ACTIVITY) >= 100,
 
-  "say-cheese": ({ photoLogs }) => countPhotoLogs(photoLogs) >= 1,
-  "junior-reporter": ({ photoLogs }) => countPhotoLogs(photoLogs) >= 10,
-  "medior-reporter": ({ photoLogs }) => countPhotoLogs(photoLogs) >= 30,
-  "senior-reporter": ({ photoLogs }) => countPhotoLogs(photoLogs) >= 50,
-  "established-reporter": ({ photoLogs }) => countPhotoLogs(photoLogs) >= 100,
-  narcissus: ({ photoLogs }) => countPhotoLogs(photoLogs) >= 200,
+  "say-cheese": ({ logs }) => countLogs(logs, LogType.MEDIA_UPLOAD) >= 1,
+  "junior-reporter": ({ logs }) => countLogs(logs, LogType.MEDIA_UPLOAD) >= 10,
+  "medior-reporter": ({ logs }) => countLogs(logs, LogType.MEDIA_UPLOAD) >= 30,
+  "senior-reporter": ({ logs }) => countLogs(logs, LogType.MEDIA_UPLOAD) >= 50,
+  "established-reporter": ({ logs }) => countLogs(logs, LogType.MEDIA_UPLOAD) >= 100,
+  narcissus: ({ logs }) => countLogs(logs, LogType.MEDIA_UPLOAD) >= 200,
 
-  "beginner-task-master": ({ logs }) => countLogs(logs, "task") >= 10,
-  "dilligent-task-master": ({ logs }) => countLogs(logs, "task") >= 30,
-  "pro-task-master": ({ logs }) => countLogs(logs, "task") >= 50,
-  "established-task-master": ({ logs }) => countLogs(logs, "task") >= 100,
+  "beginner-task-master": ({ logs }) => countLogs(logs, LogType.FEEDBACK) >= 10,
+  "dilligent-task-master": ({ logs }) => countLogs(logs, LogType.FEEDBACK) >= 30,
+  "pro-task-master": ({ logs }) => countLogs(logs, LogType.FEEDBACK) >= 50,
+  "established-task-master": ({ logs }) => countLogs(logs, LogType.FEEDBACK) >= 100,
 
   // non-log based (example, you can check account creation, selfie taken, etc.)
   "new-beginnings": () => false,
@@ -304,7 +312,6 @@ export const badgeConditions: Record<BadgeKey, BadgeConditionFn> = {
 };
 
 const countLogs = (logs: Log[], type: Log["type"]) => logs.filter((l) => l.type === type).length;
-const countPhotoLogs = (logs: PhotoLog[]) => logs.length;
 
 const SHOWN_TOASTS_KEY = "shown_toasts";
 export const getShownToasts = async (): Promise<Set<BadgeKey>> => {

@@ -1,16 +1,25 @@
 import React, { useMemo, useState } from "react";
 import { Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, View } from "react-native";
 
+import { BadgeLevel, BadgeStatus } from "@/backend/gamification";
+import { useGetStats } from "@/backend/queries/stats";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
+import { useAppContext } from "@/hooks/app/context";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useBadges } from "@/providers/BadgeContext";
-import { BadgeLevel, BadgeStatus } from "@/queries/gamification/gamification";
 
 export const XPCounter = () => {
+  const { selectedGoalId } = useAppContext();
   const [modalVisible, setModalVisible] = useState(false);
-  const { badges, xp } = useBadges();
+  const { badges } = useBadges();
+  const stats = useGetStats({
+    goalId: selectedGoalId,
+    startDate: new Date(0).getTime(),
+    endDate: new Date().getTime(),
+  });
+  const streak = useMemo(() => stats.data?.consistency.currentStreak || 0, [stats.data]);
 
   const textColor = useThemeColor({}, "text");
   const accent = useThemeColor({}, "accent");
@@ -21,10 +30,10 @@ export const XPCounter = () => {
     () => (
       <>
         <IconSymbol name="star.circle" size={18} color={accent} />
-        <ThemedText style={[styles.xpText, { color: accent }]}>{xp} XP</ThemedText>
+        <ThemedText style={[styles.xpText, { color: accent }]}>{streak + 10} XP</ThemedText>
       </>
     ),
-    [xp, accent]
+    [streak, accent]
   );
 
   const sortedBadges = useMemo(() => {

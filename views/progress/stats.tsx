@@ -1,9 +1,9 @@
 import spaceMono from "@/assets/fonts/SpaceMono-Regular.ttf";
+import { useGetStats } from "@/backend/queries/stats";
 import { ThemedText } from "@/components/ThemedText";
 import { TodaysStats } from "@/components/TodaysStats";
 import { Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useGetStats } from "@/queries/logs";
 import { invertHex } from "@/utils/color";
 import { Group, SkFont, Text, useFont } from "@shopify/react-native-skia";
 import { useFocusEffect } from "expo-router";
@@ -13,7 +13,7 @@ import { Easing } from "react-native-reanimated";
 import { CartesianChart, Line, Pie, PieSliceData, PolarChart } from "victory-native";
 const RANGE_OPTIONS = ["7d", "30d", "3mo", "all"];
 
-export function ProgressStatsView({ selectedRoutine }: { selectedRoutine: number | undefined }) {
+export function ProgressStatsView({ selectedGoalId }: { selectedGoalId: string | undefined }) {
   const textColor = useThemeColor({}, "text");
   const borderColor = useThemeColor({}, "border");
   const accentColor = useThemeColor({}, "accent");
@@ -22,7 +22,7 @@ export function ProgressStatsView({ selectedRoutine }: { selectedRoutine: number
   const [range, setRange] = useState<"7d" | "30d" | "3mo" | "all">("30d");
 
   const statsQuery = useGetStats({
-    routineId: Number(selectedRoutine),
+    goalId: selectedGoalId,
     startDate:
       range === "all" ? undefined : Date.now() - (range === "7d" ? 7 : range === "30d" ? 30 : 90) * 24 * 60 * 60 * 1000,
     endDate: Date.now(),
@@ -46,13 +46,13 @@ export function ProgressStatsView({ selectedRoutine }: { selectedRoutine: number
       })),
     [stats]
   );
-  const areaStats = useMemo(
+  const categoryStats = useMemo(
     () =>
-      stats?.areaStats
+      stats?.categoryStats
         .map((d) => ({
-          area: d.area,
+          category: d.category,
           totalDuration: d.totalDuration,
-          color: COLORS[stats?.areaStats.indexOf(d) % COLORS.length],
+          color: COLORS[stats?.categoryStats.indexOf(d) % COLORS.length],
         }))
         .filter((d) => d.totalDuration > 0),
     [stats]
@@ -83,10 +83,10 @@ export function ProgressStatsView({ selectedRoutine }: { selectedRoutine: number
           {/* 2. Pie Chart: Area Distribution */}
           <ThemedText style={styles.chartTitle}>Focus Areas</ThemedText>
           <View style={{ height: 280 }}>
-            {areaStats && areaStats.length > 0 ? (
+            {categoryStats && categoryStats.length > 0 ? (
               <PolarChart
-                data={areaStats.map((d) => ({
-                  x: d.area,
+                data={categoryStats.map((d) => ({
+                  x: d.category,
                   y: d.totalDuration,
                   color: d.color,
                 }))}

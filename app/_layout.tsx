@@ -1,11 +1,11 @@
+import { queryClient } from "@/backend";
+import { resetBadges, resetShownToasts, resetXP } from "@/backend/gamification";
+import { initDatabase } from "@/backend/localDb";
+import { getOnboardingStatus, OnboardingStatus, setOnboardingStatus } from "@/backend/queries/onboarding";
 import { BackButton } from "@/components/BackButton";
+import { AppProvider } from "@/hooks/app/context";
 import { ThemeProviderCustom, useAppTheme } from "@/hooks/theme/context";
 import { BadgeProvider } from "@/providers/BadgeContext";
-import { queryClient } from "@/queries";
-import { resetBadges, resetShownToasts, resetXP } from "@/queries/gamification/gamification";
-import { initLogsTable } from "@/queries/logs/logs";
-import { getOnboardingStatus, OnboardingStatus, setOnboardingStatus } from "@/queries/onboarding/onboarding";
-import { initRoutinesTables } from "@/queries/routines/routines";
 import { supabase } from "@/supabase";
 import { useNotificationRedirect } from "@/utils/notifications";
 import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
@@ -38,7 +38,9 @@ Notifications.setNotificationHandler({
 export default function RootLayout() {
   return (
     <ThemeProviderCustom>
-      <App />
+      <AppProvider>
+        <App />
+      </AppProvider>
     </ThemeProviderCustom>
   );
 }
@@ -79,8 +81,9 @@ function App() {
 
   useEffect(() => {
     const nuke = async () => {
-      initLogsTable(true);
-      initRoutinesTables(true);
+      // initLogsTable(true);
+      // initGoalsTables(true);
+      await initDatabase(false);
       await resetBadges();
       await resetXP();
       await resetShownToasts();
@@ -89,7 +92,7 @@ function App() {
         status: OnboardingStatus.NOT_STARTED,
       });
     };
-    // nuke();
+    nuke();
   }, []);
 
   if (!loaded) {
@@ -112,7 +115,7 @@ function App() {
               }}
             />
             <Stack.Screen
-              name="edit-routine-item"
+              name="edit-goal-activity"
               options={{
                 headerShown: true,
                 title: "Edit Routine Item",
@@ -120,18 +123,18 @@ function App() {
               }}
             />
             <Stack.Screen
-              name="exercises"
+              name="activities"
               options={{
                 headerShown: true,
-                title: "Exercises",
+                title: "Activities",
                 headerTitleAlign: "center",
               }}
             />
             <Stack.Screen
-              name="exercise/[slug]"
+              name="activity/[slug]"
               options={{
                 headerShown: true,
-                title: "Exercises",
+                title: "Activity",
                 headerTitleAlign: "center",
                 headerLeft: () => <BackButton />,
               }}

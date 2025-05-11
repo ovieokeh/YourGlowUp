@@ -1,30 +1,29 @@
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useMemo } from "react";
 import { Image, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { useGetStats } from "@/backend/queries/stats";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useGetUserXP } from "@/queries/gamification";
-import { getStreak } from "@/queries/gamification/gamification";
-import { useGetLogs } from "@/queries/logs";
 
-export default function ExerciseCompleteScreen() {
+export default function ActivityCompleteScreen() {
   const router = useRouter();
-  const allLogsQuery = useGetLogs();
-  const allLogs = useMemo(() => allLogsQuery.data || [], [allLogsQuery.data]);
+  const params = useLocalSearchParams();
+  const goalId = params.goalId as string;
 
-  const userXPQuery = useGetUserXP();
-  const xp = userXPQuery.data || 0;
+  const statsQuery = useGetStats({
+    goalId,
+  });
+  const stats = useMemo(() => statsQuery.data, [statsQuery.data]);
 
   const border = useThemeColor({}, "border");
   const successBg = useThemeColor({}, "successBg");
 
-  const streak = useMemo(() => {
-    return getStreak(allLogs);
-  }, [allLogs]);
+  const streak = stats?.consistency.currentStreak ?? 0;
+  const activeDays = stats?.consistency.activeDays ?? 0;
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -46,9 +45,9 @@ export default function ExerciseCompleteScreen() {
         </View>
 
         <View style={[styles.card, { borderColor: border }]}>
-          <ThemedText style={styles.label}>Total XP</ThemedText>
+          <ThemedText style={styles.label}>Active Days</ThemedText>
           <ThemedText type="title" style={styles.value}>
-            {xp}
+            {activeDays}
           </ThemedText>
         </View>
 

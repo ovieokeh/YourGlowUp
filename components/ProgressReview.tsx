@@ -2,9 +2,9 @@ import Slider from "@react-native-community/slider";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Dimensions, Image, StyleSheet, View } from "react-native";
 
+import { MediaUploadLog } from "@/backend/shared";
 import { Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { PhotoLog } from "@/queries/logs/logs";
 import { ThemedButton } from "./ThemedButton";
 import { ThemedPicker } from "./ThemedPicker";
 import { ThemedText } from "./ThemedText";
@@ -18,7 +18,7 @@ const FRAME_RATE_OPTIONS = [
 ];
 
 type Props = {
-  photoLogs: PhotoLog[];
+  mediaLogs: MediaUploadLog[];
 };
 
 const PhotoProgressScroll = ({
@@ -122,70 +122,58 @@ const PhotoProgressScroll = ({
   );
 };
 
-export const ProgressReview: React.FC<Props> = ({ photoLogs }) => {
+export const ProgressReview: React.FC<Props> = ({ mediaLogs }) => {
   const background = useThemeColor({}, "background");
-  const [currentTab, setCurrentTab] = useState<"left" | "right" | "front">("front");
-
-  const leftPhotos = photoLogs
-    .map((log) => {
-      const left = log.photos.left;
-      return left;
-    })
-    .filter((photo) => !!photo);
-  const rightPhotos = photoLogs
-    .map((log) => {
-      const right = log.photos.right;
-      return right;
-    })
-    .filter((photo) => !!photo);
-  const frontPhotos = photoLogs
-    .map((log) => {
-      const front = log.photos.front;
-      return front;
-    })
-    .filter((photo) => !!photo);
-
-  const label = currentTab === "left" ? "Left View" : currentTab === "right" ? "Right View" : "Front View";
-  const photos = useMemo(
-    () => (currentTab === "left" ? leftPhotos : currentTab === "right" ? rightPhotos : frontPhotos),
-    [currentTab, leftPhotos, rightPhotos, frontPhotos]
+  const groupedMediaLogsByAltText = useMemo(() => {
+    const grouped = mediaLogs.reduce((acc, log) => {
+      const altText = log.media.altText || "No Alt Text";
+      if (!acc[altText]) {
+        acc[altText] = [];
+      }
+      acc[altText].push(log);
+      return acc;
+    }, {} as Record<string, MediaUploadLog[]>);
+    return Object.entries(grouped).map(([key, value]) => ({
+      label: key,
+      photos: value,
+    }));
+  }, [mediaLogs]);
+  const groupOptions = useMemo(
+    () =>
+      groupedMediaLogsByAltText.map((group) => ({
+        label: group.label,
+        value: group.label,
+      })),
+    [groupedMediaLogsByAltText]
+  );
+  const [selectedGroup, setSelectedGroup] = useState(groupOptions[0]?.value);
+  const filteredGroups = useMemo(
+    () => groupedMediaLogsByAltText.filter((group) => group.label === selectedGroup),
+    [groupedMediaLogsByAltText, selectedGroup]
   );
 
   return (
     <View style={{ backgroundColor: background, width: "100%", gap: Spacings.md }}>
       <View style={{ flexDirection: "row", gap: Spacings.md }}>
-        <ThemedButton
-          title="Left"
-          onPress={() => setCurrentTab("left")}
-          variant={currentTab === "left" ? "solid" : "outline"}
-          active={currentTab === "left"}
-        />
-        <ThemedButton
-          title="Front"
-          onPress={() => setCurrentTab("front")}
-          variant={currentTab === "front" ? "solid" : "outline"}
-          active={currentTab === "front"}
-        />
-        <ThemedButton
-          title="Right"
-          onPress={() => setCurrentTab("right")}
-          variant={currentTab === "right" ? "solid" : "outline"}
-          active={currentTab === "right"}
+        <ThemedPicker
+          items={groupOptions}
+          selectedValue={selectedGroup}
+          onValueChange={(v) => setSelectedGroup(v)}
+          style={styles.picker}
         />
       </View>
       <View style={{ gap: Spacings.md }}>
-        <ThemedText type="subtitle">{label}</ThemedText>
-        {photos.length > 0 ? (
-          <PhotoProgressScroll photos={photos} />
-        ) : (
-          <View style={{ gap: Spacings.md, width: "100%" }}>
-            <ThemedText type="subtitle">No photos available</ThemedText>
-            <ThemedText type="default">
-              Please take some photos to review your progress. You can do this by adding a self-report log and including
-              a progress photo.
-            </ThemedText>
+        {filteredGroups.map((group) => (
+          <View key={group.label} style={{ gap: Spacings.sm }}>
+            <ThemedText type="subtitle">{group.label}</ThemedText>
+            <PhotoProgressScroll
+              photos={group.photos.map((p) => ({
+                uri: p.media.url,
+                transform: p.meta?.transform,
+              }))}
+            />
           </View>
-        )}
+        ))}
       </View>
     </View>
   );

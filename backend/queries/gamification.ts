@@ -5,11 +5,11 @@ import {
   BadgeStatus,
   fetchUserBadges,
   fetchUserXP,
+  getShownToasts,
   resetBadges,
   setBadgeStatus,
-  getShownToasts,
   setShownToasts,
-} from "./gamification";
+} from "../gamification";
 
 export const useGetUserXP = () => {
   return useQuery({

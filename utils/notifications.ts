@@ -1,30 +1,28 @@
-import { NotificationType } from "@/constants/Exercises";
-import { withRoutine } from "@/queries/routines/helper";
+import { withGoalActivities } from "@/backend/queries/activities";
+import { ActivityType, NotificationRecurrence } from "@/backend/shared";
 import * as Notifications from "expo-notifications";
 import { useFocusEffect, useRouter } from "expo-router";
 
-export const scheduleNotificationWithStats = async (routineId = "1") => {
-  withRoutine(routineId, async (routine) => {
-    const routineItems = routine?.items || [];
-
+export const scheduleNotificationWithStats = async (goalId = "1") => {
+  withGoalActivities(goalId, async (activities) => {
     await Notifications.cancelAllScheduledNotificationsAsync();
-    for (const item of routineItems) {
-      const notificationType = item.notificationType;
-      const hasNotificationsSet = item.notificationTimes && item.notificationTimes?.length > 0;
+    for (const item of activities) {
+      const notificationType = item.recurrence;
+      const hasNotificationsSet = item.scheduledTimes && item.scheduledTimes?.length > 0;
       if (!hasNotificationsSet) {
         continue;
       }
 
-      const timeNotifications = item.notificationTimes?.filter((t) => t !== "random");
+      const timeNotifications = item.scheduledTimes?.filter((t) => t !== "random");
       if (timeNotifications && timeNotifications.length > 0) {
         for (const timeNotification of timeNotifications) {
           let timeString = timeNotification;
           const body =
-            item.type === "exercise"
+            item.type === ActivityType.GUIDED_ACTIVITY
               ? `Don't forget to log your progress for ${item.name}!`
               : `Don't forget to complete your task: ${item.name}!`;
 
-          if (notificationType === NotificationType.CUSTOM) {
+          if (notificationType === NotificationRecurrence.WEEKLY) {
             const currentDay = new Date().getDay();
             const dayOfWeek = timeNotification.split("-")[0];
             const time = timeNotification.split("-")[1];
@@ -54,7 +52,7 @@ export const scheduleNotificationWithStats = async (routineId = "1") => {
               title: "Your Glow Up",
               body,
               data: {
-                routineId: routineId,
+                goalId: goalId,
                 itemId: item.slug,
               },
             },
@@ -75,14 +73,14 @@ export function useNotificationRedirect() {
   useFocusEffect(() => {
     const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
       const data = response.notification.request.content.data as {
-        routineId: string;
+        goalId: string;
         itemId: string;
       };
 
       if (data) {
         router.push({
-          pathname: "/exercise/[slug]",
-          params: { slug: data.itemId, routineId: data.routineId },
+          pathname: "/activity/[slug]",
+          params: { slug: data.itemId, goalId: data.goalId },
         });
       }
     });

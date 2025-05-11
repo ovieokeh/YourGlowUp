@@ -15,11 +15,12 @@ import {
   View,
 } from "react-native";
 
+import { addLog, getAllLogs } from "@/backend/logs";
+import { isMediaUploadLog, Log } from "@/backend/shared";
 import { AccountBenefits } from "@/components/AccountBenefits";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { getLogs, getPhotoLogs, Log, saveLog } from "@/queries/logs/logs";
 import { supabase } from "@/supabase";
 import Toast from "react-native-toast-message";
 
@@ -100,16 +101,18 @@ export default function AccountView() {
   }
 
   const exportData = async () => {
+    const currentUser = await supabase.auth.getUser();
+    if (!currentUser.data.user) {
+      Alert.alert("Error", "No user found");
+      return;
+    }
     // @todo rewrite this to support new structure
 
-    const logs = await getLogs();
-    const photoLogs = await getPhotoLogs(1);
+    const logs = await getAllLogs(currentUser.data.user.id);
 
     const IMAGE_URI_BLOB_MAP: Record<string, string> = {};
-    const imagesBase64Blobs = photoLogs.map(async (log) => {
-      const uris = [log.photos.front?.uri, log.photos.left?.uri, log.photos.right?.uri].filter(
-        (uri) => typeof uri === "string"
-      );
+    const imagesBase64Blobs = logs.filter(isMediaUploadLog).map(async (log) => {
+      const uris = [log.media?.url].filter((uri) => typeof uri === "string");
       return uris.map((uri) => {
         const base64 = FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
         return base64.then((base64String) => {
@@ -190,7 +193,7 @@ export default function AccountView() {
             }
 
             for (const log of logs) {
-              await saveLog(log.type, log.slug, log.routineId, log.meta);
+              await addLog(log);
             }
 
             Alert.alert("Import Successful", "Your data has been imported.");

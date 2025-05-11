@@ -3,13 +3,14 @@ import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 
-import { RoutinePicker } from "@/components/RoutinePicker";
+import { useGetGoals } from "@/backend/queries/goals";
+import { GoalPicker } from "@/components/RoutinePicker";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { Colors, Spacings } from "@/constants/Theme";
+import { useAppContext } from "@/hooks/app/context";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useGetRoutines } from "@/queries/routines";
 import { ProgressLogsView } from "@/views/progress/logs";
 import { ProgressPhotoView } from "@/views/progress/photos";
 import { ProgressStatsView } from "@/views/progress/stats";
@@ -17,26 +18,31 @@ import { ProgressStatsView } from "@/views/progress/stats";
 const TABS = ["Photos", "Stats", "Logs"] as const;
 
 export default function ProgressScreen() {
+  const { user } = useAppContext();
+  const currentUserId = useMemo(() => user?.id, [user?.id]);
+
   const SCREEN_WIDTH = useWindowDimensions().width;
   const params = useLocalSearchParams();
-  const [selectedRoutine, setSelectedRoutine] = useState<number | undefined>(
-    params.routineId ? Number(params.routineId) : undefined
-  );
-  const routinesQuery = useGetRoutines();
-  const routineOptions = useMemo(
+  const [selectedGoal, setSelectedGoal] = useState<string | undefined>(params.goalId as string | undefined);
+  const goalsQuery = useGetGoals(currentUserId, {
+    mine: true,
+    copied: true,
+    public: false,
+  });
+  const goalOptions = useMemo(
     () =>
-      routinesQuery.data?.map((routine) => ({
-        label: routine.name,
-        value: routine.id,
+      goalsQuery.data?.map((goal) => ({
+        label: goal.name,
+        value: goal.id,
       })) ?? [],
-    [routinesQuery.data]
+    [goalsQuery.data]
   );
 
   useEffect(() => {
-    if (routineOptions.length > 0 && !selectedRoutine) {
-      setSelectedRoutine(routineOptions[0].value);
+    if (goalOptions.length > 0 && !selectedGoal) {
+      setSelectedGoal(goalOptions[0].value);
     }
-  }, [routineOptions, selectedRoutine]);
+  }, [goalOptions, selectedGoal]);
 
   const initialTab = params.activeTab === "Photos" ? "Photos" : "Stats";
   const [activeTab, setActiveTab] = useState<(typeof TABS)[number]>(initialTab);
@@ -77,13 +83,18 @@ export default function ProgressScreen() {
         <Animated.View style={[styles.underline, { width: tabWidth, backgroundColor: underline }, underlineStyle]} />
       </View>
 
-      <RoutinePicker value={selectedRoutine} onChange={setSelectedRoutine} />
+      <GoalPicker
+        userId={currentUserId}
+        opts={{ mine: true, copied: true, public: false }}
+        value={selectedGoal}
+        onChange={setSelectedGoal}
+      />
       {activeTab === "Stats" ? (
         <ScrollView>
-          <ProgressStatsView selectedRoutine={selectedRoutine} />
+          <ProgressStatsView selectedGoalId={selectedGoal} />
         </ScrollView>
       ) : activeTab === "Logs" ? (
-        <ProgressLogsView selectedRoutine={selectedRoutine} />
+        <ProgressLogsView userId={currentUserId} selectedGoalId={selectedGoal} />
       ) : (
         <ScrollView>
           <ProgressPhotoView />

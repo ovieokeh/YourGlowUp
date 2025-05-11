@@ -5,13 +5,13 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useSharedValue, withTiming } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { useGetOnboardingStatus, useSetOnboardingStatus } from "@/backend/onboarding";
+import { OnboardingStatus } from "@/backend/queries/onboarding";
 import { Swiper } from "@/components/Swiper";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { BorderRadii, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useGetOnboardingStatus, useSetOnboardingStatus } from "@/queries/onboarding";
-import { OnboardingStatus } from "@/queries/onboarding/onboarding";
 
 const { width } = Dimensions.get("window");
 
@@ -30,10 +30,10 @@ const slides = [
   {
     title: "Experience Instant Results",
     description: "Try a 15-second exercise right now and feel the immediate benefits—no commitments required.",
-    image: require("@/assets/images/exercise-preview.png"),
+    image: require("@/assets/images/activity-preview.png"),
     cta: {
       title: "Try it Now",
-      link: `/auth?redirectTo=/exercise/tongue-posture`,
+      link: `/auth?redirectTo=/activity/tongue-posture`,
     },
   },
   {

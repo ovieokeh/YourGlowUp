@@ -1,27 +1,36 @@
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import React, { useMemo } from "react";
 import { FlatList, Image, Pressable, StyleSheet, View } from "react-native";
 
+import { useGetGoals } from "@/backend/queries/goals";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { IconSymbol } from "@/components/ui/IconSymbol";
+import { useAppContext } from "@/hooks/app/context";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useGetRoutines } from "@/queries/routines";
 
-export default function RoutinesScreen() {
+export default function GoalsScreen() {
+  const { user } = useAppContext();
+  const currentUserId = useMemo(() => user?.id, [user?.id]);
   const router = useRouter();
 
-  const routinesQuery = useGetRoutines();
+  const goalsQuery = useGetGoals(currentUserId, {
+    mine: false,
+    copied: false,
+    public: false,
+  });
 
-  const isLoading = routinesQuery.isLoading;
-  const routines = useMemo(() => routinesQuery.data || [], [routinesQuery.data]);
+  const isLoading = goalsQuery.isLoading;
+  const goals = useMemo(() => goalsQuery.data || [], [goalsQuery.data]);
 
   const background = useThemeColor({}, "background");
   const border = useThemeColor({}, "border");
   const text = useThemeColor({}, "text");
 
-  const sorted = routines;
+  useFocusEffect(() => {
+    goalsQuery.refetch();
+  });
 
   if (isLoading) {
     return (
@@ -34,12 +43,12 @@ export default function RoutinesScreen() {
   return (
     <ThemedView style={styles.container}>
       <FlatList
-        data={sorted}
+        data={goals}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={{ paddingBottom: 96 }}
         renderItem={({ item }) => (
           <Pressable
-            onPress={() => router.push(`/routines/${item.id}`)}
+            onPress={() => router.push(`/goals/${item.id}`)}
             style={({ pressed }) => [
               styles.card,
               { backgroundColor: background, borderColor: border },
@@ -64,12 +73,21 @@ export default function RoutinesScreen() {
             ]}
           >
             <Image
-              source={require("@/assets/images/empty-routines.png")}
+              source={require("@/assets/images/empty-goals.png")}
               style={{ width: 200, height: 200, marginBottom: 16 }}
               resizeMode="contain"
             />
-            <ThemedText style={styles.name}>No routines found</ThemedText>
-            <ThemedText style={styles.description}>You can create a new routine.</ThemedText>
+            <ThemedText style={styles.name}>No goals found</ThemedText>
+            <ThemedText style={styles.description}>You can add a new goal.</ThemedText>
+            <ThemedText style={styles.description}>Or</ThemedText>
+            <ThemedText style={styles.description}>Explore public goals.</ThemedText>
+            <ThemedButton
+              variant="solid"
+              title="Explore"
+              onPress={() => router.push("/goals/explore")}
+              icon="magnifyingglass"
+              iconSize={20}
+            />
           </View>
         }
       />
@@ -77,7 +95,7 @@ export default function RoutinesScreen() {
       <View style={styles.actions}>
         <ThemedButton
           variant="solid"
-          title="Generate AI Routine"
+          title="Generate AI Goal"
           onPress={() => {
             router.push("/face-analysis");
           }}

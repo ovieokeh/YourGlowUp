@@ -5,7 +5,7 @@ import {
   OnboardingKey,
   OnboardingStatusType,
   setOnboardingStatus,
-} from "./onboarding";
+} from "./queries/onboarding";
 
 export const useGetOnboardingStatuses = () => {
   return useQuery({

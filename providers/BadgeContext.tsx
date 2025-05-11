@@ -1,21 +1,16 @@
+import { Badge, BadgeKey, BADGES, BadgeStatus } from "@/backend/gamification";
 import {
-  useAddXP,
   useGetShownToasts,
   useGetUserBadges,
-  useGetUserXP,
   useSetBadgeStatus,
   useSetShownToasts,
-} from "@/queries/gamification";
-import { Badge, BadgeKey, BADGES, BadgeStatus } from "@/queries/gamification/gamification";
+} from "@/backend/queries/gamification";
 import { useSound } from "@/utils/sounds";
-import { UseMutationResult } from "@tanstack/react-query";
 import React, { createContext, useCallback, useContext, useMemo } from "react";
 import Toast from "react-native-toast-message";
 
 type BadgeContextType = {
   badges: Record<BadgeKey, Badge>;
-  xp: number;
-  addXP: UseMutationResult<void, Error, number, unknown>;
   awardBadge: (key: BadgeKey) => Promise<void>;
   hasBadge: (key: BadgeKey) => boolean;
 };
@@ -30,10 +25,6 @@ export const BadgeProvider = ({ children }: { children: React.ReactNode }) => {
 
   const { mutateAsync: setBadges } = useSetBadgeStatus();
   const { mutateAsync: setShownToasts } = useSetShownToasts();
-
-  const currentXPMutation = useGetUserXP();
-  const xp = currentXPMutation.data || 0;
-  const addXP = useAddXP();
 
   const { play } = useSound();
 
@@ -92,7 +83,7 @@ export const BadgeProvider = ({ children }: { children: React.ReactNode }) => {
 
   const hasBadge = (key: BadgeKey) => badges[key]?.status === BadgeStatus.EARNED;
 
-  return <BadgeContext.Provider value={{ badges, xp, addXP, awardBadge, hasBadge }}>{children}</BadgeContext.Provider>;
+  return <BadgeContext.Provider value={{ badges, awardBadge, hasBadge }}>{children}</BadgeContext.Provider>;
 };
 
 export const useBadges = () => {

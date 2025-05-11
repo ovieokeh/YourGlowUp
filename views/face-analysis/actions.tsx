@@ -1,13 +1,15 @@
 import React, { useState } from "react";
 import { Image, Pressable, ScrollView, StyleSheet, View } from "react-native";
 
+import { useAddGoal, useUpdateGoalActivities } from "@/backend/queries/goals";
+import { GoalCategory, GoalCompletionType } from "@/backend/shared";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { EXERCISES, TASKS } from "@/constants/Exercises";
+import { DEFAULT_ACTIVITIES } from "@/constants/Goals";
 import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
+import { useAppContext } from "@/hooks/app/context";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useUpdateRoutine } from "@/queries/routines";
 import { router } from "expo-router";
 import Toast from "react-native-toast-message";
 
@@ -47,9 +49,7 @@ const RecomendationsRenderer = ({
   return (
     <View style={{ gap: Spacings.sm }}>
       {analysisResults.recommendations.map((rec) => {
-        const exercise = EXERCISES.find((e) => e.slug === rec);
-        const task = TASKS.find((t) => t.slug === rec);
-        const item = exercise || task;
+        const item = DEFAULT_ACTIVITIES.find((activity) => activity.slug === rec);
 
         if (!item) return null;
 
@@ -65,7 +65,7 @@ const RecomendationsRenderer = ({
               },
             ]}
           >
-            <Image source={{ uri: item.featureImage }} style={styles.image} />
+            <Image source={{ uri: item.featuredImage }} style={styles.image} />
             <View style={{ flex: 1 }}>
               <ThemedText type="defaultSemiBold" style={{ marginBottom: 2 }}>
                 {item.name}
@@ -93,28 +93,64 @@ const RecomendationsRenderer = ({
 };
 
 export default function FaceAnalysisActionsView({ analysisResults }: FaceAnalysisActionsViewProps) {
+  const { user } = useAppContext();
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const updateRoutineMutation = useUpdateRoutine("1");
+  const addGoalMutation = useAddGoal(user?.id);
+  const updateGoalActivitiesMutation = useUpdateGoalActivities(user?.id);
 
-  const handleSaveRoutine = () => {
-    updateRoutineMutation
+  const handleSaveRoutine = async () => {
+    if (!user?.id) {
+      Toast.show({
+        type: "error",
+        text1: "Error saving goal",
+        text2: "User not found",
+      });
+      return;
+    }
+
+    const goalId = await addGoalMutation
       .mutateAsync({
-        replace: true,
         name: "My Routine",
         slug: "1",
         description: "Routine based on facial analysis on " + new Date().toLocaleDateString(),
-        itemsSlugs: [...Array.from(selected)],
-      })
-      .then(() => {
-        router.replace("/(tabs)/routines/1");
+        category: GoalCategory.CUSTOM,
+        tags: ["Routine", "Face Analysis"],
+        isPublic: false,
+        completionType: GoalCompletionType.ACTIVITY,
+        author: {
+          id: user?.id,
+          name: "User",
+        },
       })
       .catch((error) => {
         Toast.show({
           type: "error",
-          text1: "Error saving routine",
+          text1: "Error saving goal",
           text2: error.message,
         });
       });
+
+    if (!goalId) return;
+
+    const activities = Array.from(selected).map((slug) => {
+      const activity = DEFAULT_ACTIVITIES.find((activity) => activity.slug === slug);
+      if (!activity) return null;
+      return {
+        ...activity,
+        goalId,
+      };
+    });
+
+    await updateGoalActivitiesMutation.mutateAsync({
+      goalId,
+      activities: activities.filter((activity) => activity !== null) as any,
+    });
+    Toast.show({
+      type: "success",
+      text1: "Routine saved successfully",
+      text2: "Your goal has been saved.",
+    });
+    router.push(`/(tabs)/goals/${goalId}`);
   };
 
   return (

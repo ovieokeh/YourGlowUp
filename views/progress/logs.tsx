@@ -1,37 +1,41 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
 
+import { useGetLogs } from "@/backend/queries/logs";
+import { isActivityLog, isPromptLog } from "@/backend/shared";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedFabButton } from "@/components/ThemedFabButton";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useGetLogs } from "@/queries/logs";
-import { isExerciseLog, isTaskLog } from "@/queries/logs/logs";
 
-const TABS = ["Tasks", "Exercises"] as const;
+const TABS = ["Activities", "Prompts"] as const;
 
-const renderTaskNote = (note: string) => {
+const renderMeta = (meta: Record<string, unknown> | string) => {
   try {
-    const parsedNote = JSON.parse(note);
-    return JSON.stringify(parsedNote, null, 2);
-  } catch {
-    try {
-      return JSON.stringify(note, null, 2);
-    } catch {
-      return note.toString();
+    let finalNote = "";
+    const metaEntries = Object.entries(meta);
+    for (const [key, value] of metaEntries) {
+      if (typeof value === "string") {
+        finalNote += `${key}: ${value}\n`;
+      } else if (typeof value === "object") {
+        finalNote += `${key}: ${JSON.stringify(value, null, 2)}\n`;
+      }
     }
+    return finalNote.trim();
+  } catch {
+    return "Error parsing meta.";
   }
 };
 
-export function ProgressLogsView({ selectedRoutine }: { selectedRoutine?: number }) {
+export function ProgressLogsView({ userId, selectedGoalId }: { userId?: string; selectedGoalId?: string }) {
   const router = useRouter();
-  const logsQuery = useGetLogs();
-  const logs = logsQuery.data || [];
+  const logsQuery = useGetLogs(userId);
+  const logs = useMemo(() => logsQuery.data || [], [logsQuery.data]);
   const params = useLocalSearchParams();
-  const initialTab = params.logsTab === "Exercises" ? "Exercises" : "Tasks";
+  const initialTab = params.logsTab === "Activities" ? "Activities" : "Prompts";
 
   const [activeTab, setActiveTab] = useState<(typeof TABS)[number]>(initialTab);
 
@@ -40,10 +44,10 @@ export function ProgressLogsView({ selectedRoutine }: { selectedRoutine?: number
   const underline = useThemeColor({}, "tint");
   const iconColor = useThemeColor({}, "text");
 
-  const filteredLogs = selectedRoutine ? logs.filter((log) => log.routineId === selectedRoutine) : logs;
+  const filteredLogs = selectedGoalId ? logs.filter((log) => log.goalId === selectedGoalId) : logs;
 
-  const exerciseLogs = filteredLogs.filter(isExerciseLog);
-  const taskLogs = filteredLogs.filter(isTaskLog);
+  const activityLogs = filteredLogs.filter(isActivityLog);
+  const promptLogs = filteredLogs.filter(isPromptLog);
 
   const handleTabPress = (tab: (typeof TABS)[number], index: number) => {
     setActiveTab(tab);
@@ -63,10 +67,10 @@ export function ProgressLogsView({ selectedRoutine }: { selectedRoutine?: number
         ))}
       </View>
 
-      {activeTab === "Tasks" ? (
+      {activeTab === "Activities" ? (
         <FlatList
           contentContainerStyle={styles.list}
-          data={taskLogs}
+          data={activityLogs}
           keyExtractor={(item) => item.id.toString()}
           ListEmptyComponent={() => (
             <View style={styles.emptyState}>
@@ -75,7 +79,7 @@ export function ProgressLogsView({ selectedRoutine }: { selectedRoutine?: number
           )}
           renderItem={({ item }) => (
             <View style={[styles.log, { backgroundColor: cardBg, borderColor: cardBorder }]}>
-              <ThemedText style={styles.rowText}>{item.slug}</ThemedText>
+              <ThemedText style={styles.rowText}>{item.type}</ThemedText>
               {item.meta && (
                 <View
                   style={{
@@ -85,7 +89,7 @@ export function ProgressLogsView({ selectedRoutine }: { selectedRoutine?: number
                   }}
                 >
                   <IconSymbol name="pencil.and.scribble" size={18} color={iconColor} />
-                  <ThemedText style={styles.rowText}>{renderTaskNote(item.meta)}</ThemedText>
+                  <ThemedText style={styles.rowText}>{renderMeta(item.meta)}</ThemedText>
                 </View>
               )}
               <ThemedText style={styles.timestamp}>{new Date(item.createdAt).toLocaleString()}</ThemedText>
@@ -95,7 +99,7 @@ export function ProgressLogsView({ selectedRoutine }: { selectedRoutine?: number
       ) : (
         <FlatList
           contentContainerStyle={styles.list}
-          data={exerciseLogs}
+          data={promptLogs}
           keyExtractor={(item) => item.id.toString()}
           ListEmptyComponent={() => (
             <View style={styles.emptyState}>
@@ -104,7 +108,7 @@ export function ProgressLogsView({ selectedRoutine }: { selectedRoutine?: number
           )}
           renderItem={({ item }) => (
             <View style={[styles.log, { backgroundColor: cardBg, borderColor: cardBorder }]}>
-              <ThemedText style={styles.exercise}>{item.slug}</ThemedText>
+              <ThemedText style={styles.exercise}>{item.type}</ThemedText>
               <View
                 style={{
                   marginTop: Spacings.sm,
@@ -113,7 +117,7 @@ export function ProgressLogsView({ selectedRoutine }: { selectedRoutine?: number
                   alignItems: "center",
                 }}
               >
-                {item.meta.duration && (
+                {item.meta?.duration && (
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
                     <IconSymbol name="clock" size={18} color={iconColor} />
                     <ThemedText style={styles.rowText}>
@@ -128,10 +132,10 @@ export function ProgressLogsView({ selectedRoutine }: { selectedRoutine?: number
         />
       )}
       <ThemedFabButton
-        onPress={() => router.push("/exercises")}
+        onPress={() => router.push("/activities")}
         icon="plus"
         iconPlacement="right"
-        title="Start an Exercise"
+        title="Start an Activity"
         variant="solid"
         bottom={96}
       />
