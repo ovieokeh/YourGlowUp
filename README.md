@@ -262,3 +262,12 @@ Every flow will be in one of these states:
 
   - Prompt users to post #MyYourGlowUp weekly.
   - Gamify with monthly competitions.
+
+TODO
+
+- [ ] Add all the different onboarding flows
+- [ ] Update the Goals display design - GoalCard, featured image or animation, minimal title, activities, and description, cta
+- [ ] Update the Activities display design - ActivityCard, featured image or animation, minimal title, steps, and description, cta
+- [ ] Update home tab, today's activities grouped by time and goal, personalised tip, community updates, badges & achievements, explore new goals
+- [ ] Add Explore Goals screen
+- [ ] Update Marketplace screen -> Explore (Goals, Resources)

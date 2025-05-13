@@ -1,6 +1,6 @@
 import { getAllActivities } from "./activities";
 import { getLogs } from "./logs";
-import { ActivityLog, ActivityType, LogType, PromptLog, StepLog } from "./shared";
+import { ActivityLog, ActivityType, isStepLog, LogType, PromptLog, StepLog } from "./shared";
 
 export interface StatsInput {
   goalId?: string;
@@ -115,22 +115,22 @@ export async function getStats(input: StatsInput): Promise<StatsOutput> {
 
   const dateKey = (ts: string) => ts.split("T")[0];
 
-  for (const log of stepLogs) {
+  for (const log of [...stepLogs, ...activityLogs]) {
     const date = dateKey(log.createdAt);
     timeSeriesMap[date] = timeSeriesMap[date] || { date, count: 0, totalDuration: 0 };
     timeSeriesMap[date].count++;
-    timeSeriesMap[date].totalDuration += log.durationInSeconds || 0;
+    if (isStepLog(log)) timeSeriesMap[date].totalDuration += log.durationInSeconds || 0;
 
     sessionStats.push({
       sessionId: undefined,
       activityId: log.activityId,
       start: log.createdAt,
       end: log.createdAt,
-      duration: log.durationInSeconds || 0,
+      duration: isStepLog(log) ? log.durationInSeconds || 0 : 0,
     });
 
     const act = activities.find((a) => a.id === log.activityId);
-    if (act) {
+    if (act && isStepLog(log)) {
       itemMap[act.slug].totalDuration = (itemMap[act.slug].totalDuration ?? 0) + (log.durationInSeconds || 0);
       categoryMap[act.category].totalDuration += log.durationInSeconds || 0;
     }

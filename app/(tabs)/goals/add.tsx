@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet } from "react-native";
 
 import { useAddGoal } from "@/backend/queries/goals";
 import { GoalCategory, GoalCompletionType, GoalCreateInput } from "@/backend/shared";
+import { PhotoUpload } from "@/components/PhotoUpload";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedTextInput } from "@/components/ThemedTextInput";
 import { ThemedView } from "@/components/ThemedView";
@@ -18,6 +19,7 @@ export default function AddGoalScreen() {
     name: "",
     slug: "",
     description: "",
+    featuredImage: "",
     category: GoalCategory.SELF_CARE,
     tags: [],
     isPublic: false,
@@ -54,7 +56,7 @@ export default function AddGoalScreen() {
                         text1: `${itemState.name} updated`,
                         position: "bottom",
                       });
-                      router.navigate({
+                      router.replace({
                         pathname: "/(tabs)/goals/[id]",
                         params: { id },
                       });
@@ -75,6 +77,12 @@ export default function AddGoalScreen() {
       />
 
       <ScrollView contentContainerStyle={styles.container}>
+        <PhotoUpload
+          photoUri={itemState.featuredImage ?? ""}
+          onPickPhoto={(uri) => {
+            setItemState({ ...itemState, featuredImage: uri?.uri ?? "" });
+          }}
+        />
         <ThemedTextInput
           label="Name"
           value={itemState.name}

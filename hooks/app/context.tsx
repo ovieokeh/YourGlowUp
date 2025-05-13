@@ -1,23 +1,56 @@
+import { useGetGoals } from "@/backend/queries/goals";
+import { Goal } from "@/backend/shared";
 import { supabase } from "@/supabase";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { User } from "@supabase/supabase-js";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 type AppContextType = {
   user: User | null;
-  logout: () => void;
+  goals: Goal[];
   selectedGoalId: string;
+  isLoadingGoals: boolean;
   setSelectedGoalId: (goalId: string) => void;
+  logout: () => void;
 };
 const AppContext = createContext<AppContextType>({
   user: null,
-  logout: () => {},
+  goals: [],
   selectedGoalId: "",
+  isLoadingGoals: false,
   setSelectedGoalId: () => {},
+  logout: () => {},
 });
+const SELECTED_GOAL_ID_KEY = "selectedGoalId";
 export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [selectedGoalId, setSelectedGoalId] = useState<string>("");
   const [user, setUser] = useState<User | null>(null);
+
+  const goalsQuery = useGetGoals(user?.id);
+  const goalsData = useMemo(() => {
+    return goalsQuery.data || [];
+  }, [goalsQuery.data]);
+
+  useEffect(() => {
+    const sync = async () => {
+      if (goalsData.length > 0) {
+        const storedGoalId = await AsyncStorage.getItem(SELECTED_GOAL_ID_KEY);
+        if (storedGoalId && goalsData.some((goal) => goal.id === storedGoalId)) {
+          setSelectedGoalId(storedGoalId);
+        } else {
+          setSelectedGoalId(goalsData[0].id);
+        }
+      }
+    };
+    sync();
+  }, [goalsData]);
+  useEffect(() => {
+    const saveSelectedGoalId = async () => {
+      await AsyncStorage.setItem(SELECTED_GOAL_ID_KEY, selectedGoalId);
+    };
+    saveSelectedGoalId();
+  }, [selectedGoalId]);
+
   const logout = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
@@ -78,8 +111,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     <AppContext.Provider
       value={{
         user,
-        logout,
+        goals: goalsData,
+        isLoadingGoals: goalsQuery.isLoading,
         selectedGoalId,
+        logout,
         setSelectedGoalId,
       }}
     >

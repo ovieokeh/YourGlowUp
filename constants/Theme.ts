@@ -1,6 +1,6 @@
 const accent = "#00b89f";
-const glowDark = "#121212";
-const glowLight = "#F6FBFF";
+const glowDark = "#060307";
+const glowLight = "#fbf8fc";
 
 export const Colors = {
   light: {
@@ -14,9 +14,9 @@ export const Colors = {
     accent: accent,
     success: "#2DD881",
     danger: "#FF2E63",
-    muted: "#9A9A9A",
+    muted: "#9a989b",
     tabBar: glowLight,
-    gray10: "#fafafa",
+    gray10: "#f0eef1",
     successBg: "#F5FFF4",
   },
   dark: {
@@ -43,6 +43,8 @@ export const Spacings = {
   md: 16,
   lg: 24,
   xl: 32,
+  xxl: 40,
+  xxxl: 48,
 };
 
 export const BorderRadii = {

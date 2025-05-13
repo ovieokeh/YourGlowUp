@@ -37,11 +37,13 @@ Notifications.setNotificationHandler({
 
 export default function RootLayout() {
   return (
-    <ThemeProviderCustom>
-      <AppProvider>
-        <App />
-      </AppProvider>
-    </ThemeProviderCustom>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProviderCustom>
+        <AppProvider>
+          <App />
+        </AppProvider>
+      </ThemeProviderCustom>
+    </QueryClientProvider>
   );
 }
 
@@ -100,63 +102,53 @@ function App() {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <BadgeProvider>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="onboarding" />
-            <Stack.Screen name="auth" />
-            <Stack.Screen
-              name="settings"
-              options={{
-                headerShown: true,
-                title: "Controls",
-                headerTitleAlign: "center",
-              }}
-            />
-            <Stack.Screen
-              name="edit-goal-activity"
-              options={{
-                headerShown: true,
-                title: "Edit Routine Item",
-                headerTitleAlign: "center",
-              }}
-            />
-            <Stack.Screen
-              name="activities"
-              options={{
-                headerShown: true,
-                title: "Activities",
-                headerTitleAlign: "center",
-              }}
-            />
-            <Stack.Screen
-              name="activity/[slug]"
-              options={{
-                headerShown: true,
-                title: "Activity",
-                headerTitleAlign: "center",
-                headerLeft: () => <BackButton />,
-              }}
-            />
-            <Stack.Screen
-              name="(tabs)"
-              options={{
-                title: "Home",
-              }}
-            />
-            <Stack.Screen
-              name="face-analysis"
-              options={{
-                headerTitle: "Face Analysis",
-              }}
-            />
-            <Stack.Screen name="+not-found" />
-          </Stack>
-          <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-          <Toast />
-        </BadgeProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+      <BadgeProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="onboarding" />
+          <Stack.Screen name="auth" />
+          <Stack.Screen
+            name="edit-goal-activity"
+            options={{
+              headerShown: false,
+              title: "Edit Routine Item",
+              headerTitleAlign: "center",
+            }}
+          />
+          <Stack.Screen
+            name="activities"
+            options={{
+              headerShown: true,
+              title: "Activities",
+              headerTitleAlign: "center",
+            }}
+          />
+          <Stack.Screen
+            name="activity/[slug]"
+            options={{
+              headerShown: true,
+              title: "Activity",
+              headerTitleAlign: "center",
+              headerLeft: () => <BackButton />,
+            }}
+          />
+          <Stack.Screen
+            name="(tabs)"
+            options={{
+              title: "Home",
+            }}
+          />
+          <Stack.Screen
+            name="face-analysis"
+            options={{
+              headerTitle: "Face Analysis",
+            }}
+          />
+          <Stack.Screen name="+not-found" />
+        </Stack>
+        <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+        <Toast />
+      </BadgeProvider>
+    </ThemeProvider>
   );
 }

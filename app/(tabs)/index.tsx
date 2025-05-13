@@ -1,213 +1,134 @@
-import { format, parse } from "date-fns"; // added isToday
-import { useFocusEffect, useRouter } from "expo-router";
+import { parse } from "date-fns";
+import { useFocusEffect } from "expo-router";
 import React, { useCallback, useMemo } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { StyleSheet } from "react-native";
 
-import { useGetAllPendingActivitiesToday } from "@/backend/queries/activities";
+import { useGetPendingActivities } from "@/backend/queries/activities";
 import { useGetTodayLogs } from "@/backend/queries/logs";
-import { GoalActivity, isActivityLog, isTaskActivity } from "@/backend/shared";
-import { ActivityHorizontalCard } from "@/components/ActivityHorizontalCard";
-import { ThemedButton } from "@/components/ThemedButton";
+import { GoalActivity, isActivityLog } from "@/backend/shared";
+import { useAppContext } from "@/hooks/app/context";
+
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { TodaysStats } from "@/components/TodaysStats";
-import { BorderRadii, Spacings } from "@/constants/Theme";
-import { useAppContext, useSelectedGoalId } from "@/hooks/app/context";
+import { HomeScreenContent } from "@/views/home/content";
+import { HomeScreenEmptyNoGoals } from "@/views/home/empty-no-goals";
+import { HomeScreenEmptyNoPending } from "@/views/home/empty-no-pending";
 
 export default function HomeScreen() {
-  const { user } = useAppContext();
+  const { user, goals, selectedGoalId, isLoadingGoals } = useAppContext();
   const currentUserId = useMemo(() => user?.id, [user?.id]);
-  const router = useRouter();
-  const goalId = useSelectedGoalId();
 
   const logsQuery = useGetTodayLogs(currentUserId);
   const logs = useMemo(() => logsQuery.data || [], [logsQuery.data]);
 
-  const activityLogs = useMemo(() => {
-    return logs?.filter(isActivityLog) || [];
-  }, [logs]);
+  const activityLogs = useMemo(() => logs.filter(isActivityLog), [logs]);
+  const completedActivityIds = useMemo(() => activityLogs.map((log) => log.activityId), [activityLogs]);
 
-  const goalQuery = useGetAllPendingActivitiesToday();
+  const pendingActivitiesQuery = useGetPendingActivities(completedActivityIds /*, selectedGoalId */);
+  const items = useMemo(() => pendingActivitiesQuery.data || [], [pendingActivitiesQuery.data]);
 
-  const items = useMemo(() => goalQuery.data || [], [goalQuery?.data]);
-  console.log("items", items);
-
-  useFocusEffect(() => {
-    goalQuery.refetch();
-    logsQuery.refetch();
-  });
+  useFocusEffect(
+    useCallback(() => {
+      if (currentUserId) {
+        logsQuery.refetch();
+      }
+      pendingActivitiesQuery.refetch();
+    }, [currentUserId, logsQuery, pendingActivitiesQuery])
+  );
 
   const isActivityCompleted = useCallback(
-    (item: GoalActivity) => {
-      // completed if there's any log for this goalId + itemId with createdAt today
-      return activityLogs.some((log) => log.activityId === item.id);
-    },
+    (item: GoalActivity) => activityLogs.some((log) => log.activityId === item.id),
     [activityLogs]
   );
 
   const groupedByTime = useMemo(() => {
-    const map: Record<string, typeof items> = {};
+    const map: Record<string, GoalActivity[]> = {};
     const now = new Date();
 
     for (const item of items) {
-      const times = item.scheduledTimes || ["Unscheduled"];
       const hasLog = isActivityCompleted(item);
-      for (const time of times) {
-        // filter out past occurrences when the item has any log
-        if (time !== "Unscheduled") {
-          const parsedTime = parse(time, "HH:mm", new Date());
+      let addedToGroup = false;
+
+      if (item.schedules && item.schedules.length > 0) {
+        for (const schedule of item.schedules) {
+          const timeKey = schedule.timeOfDay;
+
+          const parsedTime = parse(timeKey, "HH:mm", now);
+
           if (hasLog && now > parsedTime) {
             continue;
           }
+
+          if (!map[timeKey]) {
+            map[timeKey] = [];
+          }
+
+          if (!map[timeKey].some((existingItem) => existingItem.id === item.id)) {
+            map[timeKey].push(item);
+          }
+          addedToGroup = true;
+        }
+      }
+
+      if (!addedToGroup) {
+        if (!map["Unscheduled"]) {
+          map["Unscheduled"] = [];
         }
 
-        if (!map[time]) map[time] = [];
-        map[time].push(item);
+        if (!map["Unscheduled"].some((existingItem) => existingItem.id === item.id)) {
+          map["Unscheduled"].push(item);
+        }
       }
     }
 
     return Object.entries(map)
-      .sort(([a], [b]) => a.localeCompare(b))
+      .sort(([timeA], [timeB]) => {
+        if (timeA === "Unscheduled") return 1;
+        if (timeB === "Unscheduled") return -1;
+
+        return timeA.localeCompare(timeB);
+      })
       .reduce((acc, [time, group]) => {
-        acc.push({ time, items: group });
+        if (group.length > 0) {
+          acc.push({ time, items: group });
+        }
         return acc;
-      }, [] as { time: string; items: typeof items }[]);
+      }, [] as { time: string; items: GoalActivity[] }[]);
   }, [items, isActivityCompleted]);
 
-  return (
-    <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.content}>
-          {items.length > 0 && (
-            <>
-              <TodaysStats />
-              <ThemedText style={styles.title} type="subtitle">
-                Today&apos;s tasks
-              </ThemedText>
-            </>
-          )}
+  const isLoading = isLoadingGoals || pendingActivitiesQuery.isLoading || (!!currentUserId && logsQuery.isLoading);
+  if (isLoading) {
+    return (
+      <ThemedView style={styles.loadingContainer}>
+        <ThemedText type="title" style={{ textAlign: "center" }}>
+          Loading...
+        </ThemedText>
+      </ThemedView>
+    );
+  }
 
-          <View style={{ gap: Spacings.xl }}>
-            {groupedByTime.map(({ time, items }) => {
-              const isWeeklyTime = time.includes("-");
-              let timeString = time;
-              if (isWeeklyTime) {
-                timeString = time.split("-")[1];
-              }
-              const formatted =
-                time === "Unscheduled" ? "Unscheduled" : format(parse(timeString, "HH:mm", new Date()), "h:mm a");
+  const renderContent = () => {
+    if (goals.length === 0) {
+      return <HomeScreenEmptyNoGoals />;
+    }
+    if (items.length === 0) {
+      return <HomeScreenEmptyNoPending selectedGoalId={selectedGoalId} />;
+    }
+    return (
+      <HomeScreenContent groupedData={groupedByTime} selectedGoalId={selectedGoalId} currentUserId={currentUserId} />
+    );
+  };
 
-              return (
-                <View key={time} style={styles.cards}>
-                  <ThemedText style={styles.title}>{formatted}</ThemedText>
-                  {items.map((item) => (
-                    <ActivityHorizontalCard
-                      key={item.id + item.slug}
-                      item={item}
-                      handlePress={() => {
-                        router.push({
-                          pathname: "/activity/[slug]",
-                          params: {
-                            slug: encodeURIComponent(item.slug || item.name),
-                            goalId,
-                          },
-                        });
-                      }}
-                      allowCompletion={isTaskActivity(item)}
-                      mode="action"
-                    />
-                  ))}
-                </View>
-              );
-            })}
-          </View>
-        </View>
-
-        {items.length === 0 ? (
-          <View style={{ gap: Spacings.md }}>
-            <ThemedButton
-              title="Create a goal"
-              onPress={() => router.push(`/(tabs)/goals/add`)}
-              variant="outline"
-              icon="plus.circle"
-              iconPlacement="right"
-            />
-            <ThemedButton
-              title="Generate an AI goal"
-              onPress={() => router.push(`/face-analysis`)}
-              variant="solid"
-              icon="wand.and.stars"
-              iconPlacement="right"
-            />
-          </View>
-        ) : (
-          <ThemedButton
-            title="View Goals"
-            onPress={() => router.push(`/(tabs)/goals`)}
-            variant="outline"
-            icon="chevron.right"
-            iconPlacement="right"
-          />
-        )}
-      </ScrollView>
-    </ThemedView>
-  );
+  return <ThemedView style={styles.flexContainer}>{renderContent()}</ThemedView>;
 }
 
 const styles = StyleSheet.create({
-  container: {
+  flexContainer: {
     flex: 1,
-    padding: Spacings.md,
   },
-  scrollContainer: {
-    paddingBottom: 96,
-    gap: Spacings.xl,
-  },
-  content: {
+  loadingContainer: {
     flex: 1,
-    gap: Spacings.xl,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "600",
-    marginBottom: Spacings.sm,
-  },
-  cards: {
-    gap: Spacings.sm,
-  },
-  horizontalCard: {
-    padding: Spacings.sm,
-  },
-  card: {
-    flexDirection: "row",
-    borderWidth: 1,
-    borderRadius: BorderRadii.md,
-    overflow: "hidden",
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
-    width: "100%",
-    alignSelf: "center",
-  },
-  image: {
-    width: 80,
-    height: "auto",
-    objectFit: "contain",
-  },
-  row: {
-    flexDirection: "row",
+    justifyContent: "center",
     alignItems: "center",
-    gap: Spacings.xs,
-  },
-  exerciseName: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  exerciseArea: {
-    fontSize: 13,
-  },
-  description: {
-    fontSize: 13,
   },
 });

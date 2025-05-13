@@ -123,7 +123,7 @@ export default function ActivitySession() {
     });
     play("complete-exercise");
 
-    router.replace("/");
+    router.replace("/activity-complete");
   }, [cumulativeActivityDuration, activity, play, router, saveLogMutation, goalId, user?.id, timeLeft]);
 
   useEffect(() => {
@@ -135,6 +135,15 @@ export default function ActivitySession() {
       handleComplete();
     }
   }, [timeLeft, started, cumulativeActivityDuration, progress, handleComplete]);
+
+  if (activityQuery.isLoading) {
+    return (
+      <ThemedView style={[styles.container, { backgroundColor: background }]}>
+        <Stack.Screen options={{ title: "Loading..." }} />
+        <ThemedText style={styles.title}>Loading...</ThemedText>
+      </ThemedView>
+    );
+  }
 
   if (!activity) {
     return (

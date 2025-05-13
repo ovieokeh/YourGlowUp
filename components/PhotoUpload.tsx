@@ -20,6 +20,7 @@ export interface PhotoUploadViewProps {
   overlayImage?: number;
   loading?: boolean;
   showPreview?: boolean;
+  previewType?: "horizontal" | "vertical";
   allowTransform?: boolean;
   setLoading?: React.Dispatch<React.SetStateAction<boolean>>;
   onPickPhoto: (photo: { uri: string; transform: { scale: number; x: number; y: number } } | null) => void;
@@ -32,6 +33,7 @@ export function PhotoUpload({
   photoUri,
   overlayImage,
   initialTransform,
+  previewType = "horizontal",
   showPreview = true,
   allowTransform = false,
   loading,
@@ -41,9 +43,9 @@ export function PhotoUpload({
 }: PhotoUploadViewProps) {
   const dimensions = useWindowDimensions();
   const { height: windowHeight, width: windowWidth } = dimensions;
-  const inputTextColor = useThemeColor({}, "text");
   const borderColor = useThemeColor({}, "border");
   const background = useThemeColor({}, "background");
+  const gray10 = useThemeColor({}, "gray10");
 
   const [modalVisible, setModalVisible] = useState(false);
   const [internalLoading, setInternalLoading] = useState(false);
@@ -163,12 +165,17 @@ export function PhotoUpload({
         if (type === "camera") {
           const { status } = await ImagePicker.requestCameraPermissionsAsync();
           if (status !== "granted") throw new Error("Camera access denied. Please grant permission in settings.");
-          result = await ImagePicker.launchCameraAsync({ quality: 0.7, base64: true, allowsEditing: false });
+          result = await ImagePicker.launchCameraAsync({
+            mediaTypes: ["images", "videos"],
+            quality: 0.8,
+            base64: true,
+            allowsEditing: false,
+          });
         } else {
           const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
           if (status !== "granted") throw new Error("Gallery access denied. Please grant permission in settings.");
           result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            mediaTypes: ["images", "videos"],
             quality: 0.7,
             base64: true,
             allowsEditing: false,
@@ -256,43 +263,75 @@ export function PhotoUpload({
 
   const actions = useMemo(
     () => (
-      <View style={styles.row}>
+      <View
+        style={[
+          styles.row,
+          {
+            flexDirection: previewType === "horizontal" ? "row" : "column",
+          },
+        ]}
+      >
         {photoUri && showPreview && (
           <Pressable onPress={() => allowTransform && setModalVisible(true)}>
-            <View style={styles.thumbnailCrop}>
+            <View
+              style={[
+                styles.thumbnailCrop,
+                {
+                  width: previewType === "horizontal" ? 58 : windowWidth,
+                  height: previewType === "horizontal" ? 58 : windowHeight * 0.25,
+                  marginRight: previewType === "horizontal" ? Spacings.sm : 0,
+                  borderRadius: previewType === "horizontal" ? BorderRadii.sm : 0,
+                  borderColor,
+                  backgroundColor: gray10,
+                },
+              ]}
+            >
               <Animated.Image
                 source={{ uri: photoUri }}
-                style={allowTransform ? [styles.thumbnailImageBase, thumbnailAnimatedStyle] : styles.thumbnailImageBase}
+                style={[
+                  allowTransform ? [styles.thumbnailImageBase, thumbnailAnimatedStyle] : styles.thumbnailImageBase,
+                ]}
                 resizeMode="cover"
               />
             </View>
           </Pressable>
         )}
-        <Pressable
-          onPress={() => handlePickPhoto("camera")}
-          style={[styles.photoButton, { borderColor }]}
-          disabled={isLoading}
+
+        <View
+          style={{
+            flexDirection: "row",
+            gap: Spacings.sm,
+          }}
         >
-          <ThemedText style={{ color: inputTextColor }}>Camera</ThemedText>
-        </Pressable>
-        <Pressable
-          onPress={() => handlePickPhoto("gallery")}
-          style={[styles.photoButton, { borderColor }]}
-          disabled={isLoading}
-        >
-          <ThemedText style={{ color: inputTextColor }}>Gallery</ThemedText>
-        </Pressable>
+          <ThemedButton
+            title="Camera"
+            variant="outline"
+            onPress={() => handlePickPhoto("camera")}
+            icon="camera"
+            disabled={isLoading}
+          />
+          <ThemedButton
+            title="Gallery"
+            variant="outline"
+            onPress={() => handlePickPhoto("gallery")}
+            icon="photo"
+            disabled={isLoading}
+          />
+        </View>
       </View>
     ),
     [
       borderColor,
-      inputTextColor,
       isLoading,
       photoUri,
       showPreview,
       allowTransform,
       handlePickPhoto,
       thumbnailAnimatedStyle,
+      previewType,
+      windowHeight,
+      windowWidth,
+      gray10,
     ]
   );
 
@@ -393,7 +432,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: Spacings.sm,
-    marginVertical: Spacings.sm,
   },
 
   photoContainer: {
@@ -410,14 +448,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#e0e0e0",
   },
   photo: {},
-  photoButton: {
-    borderWidth: 1,
-    borderRadius: BorderRadii.sm,
-    paddingVertical: Spacings.md,
-    paddingHorizontal: Spacings.sm,
-    alignItems: "center",
-    flex: 1,
-  },
   overlay: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 1,
@@ -426,14 +456,8 @@ const styles = StyleSheet.create({
     pointerEvents: "none",
   },
   thumbnailCrop: {
-    width: 58,
-    height: 58,
     overflow: "hidden",
-    borderRadius: BorderRadii.sm,
     borderWidth: 1,
-    borderColor: "#ccc",
-    marginRight: Spacings.sm,
-    backgroundColor: "#e0e0e0",
     position: "relative",
   },
   thumbnailImageBase: {

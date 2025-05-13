@@ -3,15 +3,14 @@ import React from "react";
 import { StyleSheet } from "react-native";
 import { ThemedButton, ThemedButtonProps } from "./ThemedButton";
 
-export function ThemedFabButton(
-  props: ThemedButtonProps & {
-    bottom?: number;
-    right?: number;
-    left?: number;
-    top?: number;
-    borderRadius?: number;
-  }
-) {
+export type ThemedFabButtonProps = ThemedButtonProps & {
+  bottom?: number;
+  right?: number;
+  left?: number;
+  top?: number;
+  borderRadius?: number;
+};
+export function ThemedFabButton(props: ThemedFabButtonProps) {
   return (
     <ThemedButton
       {...props}

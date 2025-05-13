@@ -1,8 +1,8 @@
 // --- ENUMS ---
 
 export enum GoalCompletionType {
-  INDEFINITE = "INFINITE",
-  ACTIVITY = "ACTACTIVITY",
+  INDEFINITE = "INDEFINITE", // Corrected value
+  ACTIVITY = "ACTIVITY", // Corrected value
   DATETIME = "DATETIME",
 }
 
@@ -35,7 +35,23 @@ export enum UnlockConditionType {
   AFTER_DATE = "AFTER_DATE",
 }
 
+export enum NotificationRecurrence {
+  DAILY = "daily",
+  WEEKLY = "weekly",
+}
+
+export enum LogType {
+  ACTIVITY = "activity", // general log: completed activity
+  PROMPT = "prompt", // logs for user-entered answers
+  STEP = "step", // logs for guided step progression
+  MEDIA_UPLOAD = "media_upload", // photos, audio, etc.
+  FEEDBACK = "feedback", // optional: GPT coach feedback log
+}
+
 // --- SUPPORT TYPES ---
+
+export type ISO8601Timestamp = string; // Represents YYYY-MM-DDTHH:mm:ssZ or similar
+export type ISO8601Date = string; // Represents YYYY-MM-DD
 
 export interface LocalizedString {
   // @TODO: use this in all string fields
@@ -50,7 +66,7 @@ export interface Author {
 }
 
 export interface MediaAsset {
-  type: "image" | "video" | "audio";
+  type: "image" | "video" | "audio" | "document";
   url: string;
   altText?: string;
   size?: number;
@@ -72,17 +88,17 @@ export interface PromptConditionGroup {
 export interface GoalActivityCompletionPromptBase {
   id: string;
   slug: string;
-  prompt: string;
+  prompt: string; // Consider LocalizedString
   reliesOn?: string;
   dependsOn?: PromptDependency | PromptDependency[] | PromptConditionGroup;
-  validationRules?: Record<string, any>;
+  validationRules?: Record<string, any>; // Could be more specific
 }
 
 export interface GoalActivityCompletionPromptText extends GoalActivityCompletionPromptBase {
   type: GoalActivityCompletionPromptAnswerType.TEXT;
   minLength: number;
   maxLength: number;
-  placeholder?: string;
+  placeholder?: string; // Consider LocalizedString
 }
 
 export interface GoalActivityCompletionPromptNumber extends GoalActivityCompletionPromptBase {
@@ -97,7 +113,7 @@ export interface GoalActivityCompletionPromptBoolean extends GoalActivityComplet
 
 export interface GoalActivityCompletionPromptSelect extends GoalActivityCompletionPromptBase {
   type: GoalActivityCompletionPromptAnswerType.SELECT;
-  options: { label: string; value: string }[];
+  options: { label: string; value: string }[]; // Consider label as LocalizedString
 }
 
 export interface GoalActivityCompletionPromptMedia extends GoalActivityCompletionPromptBase {
@@ -107,7 +123,7 @@ export interface GoalActivityCompletionPromptMedia extends GoalActivityCompletio
 
 export interface GoalActivityCompletionPromptDocument extends GoalActivityCompletionPromptBase {
   type: GoalActivityCompletionPromptAnswerType.DOCUMENT;
-  documentType: "pdf" | "doc";
+  documentType: "pdf" | "doc"; // Add more if needed
 }
 
 export type GoalActivityCompletionPrompt =
@@ -121,7 +137,7 @@ export type GoalActivityCompletionPrompt =
 export interface PromptAnswer {
   promptId: string;
   type: GoalActivityCompletionPromptAnswerType;
-  value: string | number | boolean | string[] | MediaAsset | null;
+  value: string | number | boolean | string[] | MediaAsset | null; // string[] likely for multi-select
 }
 
 // --- ACTIVITIES ---
@@ -130,13 +146,17 @@ export interface ActivityDependency {
   slug: string;
 }
 
-export enum NotificationRecurrence {
-  DAILY = "daily",
-  WEEKLY = "weekly",
+// --- ADD this interface ---
+export interface ActivityScheduleEntry {
+  id: string; // The schedule entry's own unique ID from activity_schedules table
+  activityId: string; // The parent activity ID
+  timeOfDay: string; // Format "HH:MM"
+  dayOfWeek?: number; // ISO 8601 day number (1=Mon, 7=Sun), present if weekly
 }
 
 export interface ActivityBase {
   id: string;
+  goalId: string;
   slug: string;
   name: string;
   description: string;
@@ -144,25 +164,49 @@ export interface ActivityBase {
   type: ActivityType;
   category: GoalCategory;
   notificationsEnabled: boolean;
-  scheduledTimes?: string[]; // e.g., ['08:00', 'monday-08:00']
   recurrence?: NotificationRecurrence;
   completionPrompts?: GoalActivityCompletionPrompt[];
   reliesOn?: ActivityDependency[];
   unlockCondition?: UnlockConditionType;
-  unlockParams?: { days?: number; date?: string };
+  unlockParams?: { days?: number; date?: ISO8601Date };
   meta?: Record<string, any>;
+  schedules?: ActivityScheduleEntry[];
 }
+
+export interface ActivityScheduleCreateInput {
+  timeOfDay: string; // Format "HH:MM"
+  dayOfWeek?: number; // ISO 8601 day number (1=Mon, 7=Sun). Provide if recurrence is WEEKLY.
+}
+
+export interface ActivityCreateInput {
+  slug: string;
+  name: string;
+  description: string;
+  featuredImage?: string;
+  category: GoalCategory;
+  type: ActivityType;
+  steps: ActivityStep[];
+  notificationsEnabled: boolean;
+  recurrence?: NotificationRecurrence; // Keep this field
+  completionPrompts?: GoalActivityCompletionPrompt[];
+  reliesOn?: ActivityDependency[];
+  unlockCondition?: UnlockConditionType;
+  unlockParams?: { days?: number; date?: ISO8601Date };
+  meta?: Record<string, any>;
+  schedules?: ActivityScheduleCreateInput[];
+}
+
 export const hasCompletionPrompts = (activity: ActivityBase): boolean =>
   !!activity.completionPrompts && activity.completionPrompts.length > 0;
 
 export interface GuidedActivityStep {
   id: string;
   slug: string;
-  content: string;
-  instructionMedia: MediaAsset;
+  content: string; // Consider LocalizedString
+  instructionMedia?: MediaAsset;
   duration: number;
   durationType: "seconds" | "minutes" | "hours";
-  visibleIf?: PromptDependency[];
+  visibleIf?: ActivityDependency[];
 }
 
 export interface GuidedActivity extends ActivityBase {
@@ -173,9 +217,16 @@ export interface GuidedActivity extends ActivityBase {
 export interface TaskActivityStep {
   id: string;
   slug: string;
-  content: string;
+  content: string; // Consider LocalizedString
   instructionMedia: MediaAsset;
 }
+
+export type ActivityStep = GuidedActivityStep | TaskActivityStep;
+
+export const isGuidedActivityStep = (step: ActivityStep): step is GuidedActivityStep =>
+  (step as GuidedActivityStep).duration !== undefined;
+export const isTaskActivityStep = (step: ActivityStep): step is TaskActivityStep =>
+  (step as TaskActivityStep).instructionMedia !== undefined;
 
 export interface TaskActivity extends ActivityBase {
   type: ActivityType.TASK_ACTIVITY;
@@ -193,22 +244,22 @@ export const isGuidedActivity = (activity: GoalActivity): activity is GuidedActi
 export interface GoalBase {
   id: string;
   slug: string;
-  name: string;
-  description: string;
-  featuredImage?: string;
+  name: string; // Consider LocalizedString
+  description: string; // Consider LocalizedString
+  featuredImage?: string; // URL or asset reference?
   category: GoalCategory;
   tags: string[];
-  activities: GoalActivity[];
+  activities: GoalActivity[]; // Note: In DB likely represented by relation, not embedded array
   author: Author;
-  createdAt: number;
-  updatedAt: number;
+  createdAt: ISO8601Timestamp; // Changed from number
+  updatedAt: ISO8601Timestamp; // Changed from number
   isPublic: boolean;
   version: number;
   status: "draft" | "published";
   completionType: GoalCompletionType;
-  completionDate?: string;
-  defaultRecurrence?: "daily" | "weekly";
-  defaultScheduledTimes?: string[];
+  completionDate?: ISO8601Date; // Use ISO8601Date
+  defaultRecurrence?: NotificationRecurrence; // Use Enum
+  defaultScheduledTimes?: string[]; // ** FIELD TO BE REFINED **
   progress?: {
     completedActivities: number;
     totalActivities: number;
@@ -219,32 +270,17 @@ export interface GoalBase {
 
 export interface GoalCreateInput {
   slug: string;
-  name: string;
-  description: string;
+  name: string; // Consider LocalizedString
+  description: string; // Consider LocalizedString
   featuredImage?: string;
   category: GoalCategory;
   tags: string[];
-  author: Author;
+  author: Author; // Might just need authorId depending on context
   isPublic: boolean;
-  defaultRecurrence?: "daily" | "weekly";
-  defaultScheduledTimes?: string[];
+  defaultRecurrence?: NotificationRecurrence; // Changed from string literal
+  defaultScheduledTimes?: string[]; // ** FIELD TO BE REFINED **
   completionType: GoalCompletionType;
-  completionDate?: string;
-}
-
-export interface ActivityCreateInput {
-  slug: string;
-  name: string;
-  description: string;
-  featuredImage?: string;
-  category: GoalCategory;
-  notificationsEnabled: boolean;
-  scheduledTimes?: string[]; // e.g., ['08:00', 'monday-08:00']
-  recurrence?: "daily" | "weekly";
-  completionPrompts?: GoalActivityCompletionPrompt[];
-  reliesOn?: ActivityDependency[];
-  unlockCondition?: UnlockConditionType;
-  unlockParams?: { days?: number; date?: string };
+  completionDate?: ISO8601Date; // Use ISO8601Date
 }
 
 export interface IndefiniteGoal extends GoalBase {
@@ -257,26 +293,18 @@ export interface ActivityGoal extends GoalBase {
 
 export interface DatetimeGoal extends GoalBase {
   completionType: GoalCompletionType.DATETIME;
-  completionDate: string;
+  completionDate: ISO8601Date; // Make mandatory for this type
 }
 
 export type Goal = IndefiniteGoal | ActivityGoal | DatetimeGoal;
 
-export enum LogType {
-  ACTIVITY = "activity", // general log: completed activity
-  PROMPT = "prompt", // logs for user-entered answers
-  STEP = "step", // logs for guided step progression
-  MEDIA_UPLOAD = "media_upload", // photos, audio, etc.
-  FEEDBACK = "feedback", // optional: GPT coach feedback log
-}
-
-export type ISO8601Timestamp = string;
+// --- LOGS ---
 
 export interface LogBase {
   id: string;
   userId: string;
   goalId: string;
-  createdAt: ISO8601Timestamp;
+  createdAt: ISO8601Timestamp; // Standardized
   meta?: Record<string, any>;
 }
 
@@ -284,13 +312,13 @@ export interface ActivityLog extends LogBase {
   type: LogType.ACTIVITY;
   activityId: string;
   activityType: ActivityType;
-  completedAt?: ISO8601Timestamp;
+  completedAt?: ISO8601Timestamp; // Optional completion time
 }
 
 export interface PromptLog extends LogBase {
   type: LogType.PROMPT;
   activityId: string;
-  sessionId?: string;
+  sessionId?: string; // Optional: To group prompts answered together
   promptId: string;
   answerType: GoalActivityCompletionPromptAnswerType;
   answer: string | number | boolean | string[] | MediaAsset | null;
@@ -301,23 +329,24 @@ export interface StepLog extends LogBase {
   activityId: string;
   stepId: string;
   stepIndex: number;
-  durationInSeconds?: number;
+  durationInSeconds?: number; // Optional: Time spent on step
 }
 
 export interface MediaUploadLog extends LogBase {
   type: LogType.MEDIA_UPLOAD;
-  media: MediaAsset;
+  media: MediaAsset; // Details of the uploaded media
 }
 
 export interface FeedbackLog extends LogBase {
   type: LogType.FEEDBACK;
   authorType: "user" | "ai";
-  authorId: string;
-  feedback: string;
+  authorId: string; // User ID or AI identifier
+  feedback: string; // The feedback content
 }
 
 export type Log = ActivityLog | PromptLog | StepLog | MediaUploadLog | FeedbackLog;
 
+// Type guards for logs
 export const isActivityLog = (log: Log): log is ActivityLog => log.type === LogType.ACTIVITY;
 export const isPromptLog = (log: Log): log is PromptLog => log.type === LogType.PROMPT;
 export const isStepLog = (log: Log): log is StepLog => log.type === LogType.STEP;

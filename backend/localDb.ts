@@ -56,6 +56,15 @@ export async function initDatabase(reset: boolean): Promise<void> {
       FOREIGN KEY(goalId) REFERENCES goals(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS activity_schedules (
+        id TEXT PRIMARY KEY, -- Unique ID for the schedule entry itself
+        activityId TEXT NOT NULL, -- Foreign key to the activities table
+        timeOfDay TEXT NOT NULL, -- Format 'HH:MM' (e.g., '09:00', '21:30')
+        dayOfWeek INTEGER, -- ISO 8601 day number (1=Monday, 7=Sunday), NULL for daily recurrence
+
+        FOREIGN KEY (activityId) REFERENCES activities(id) ON DELETE CASCADE
+    );
+
     CREATE TABLE IF NOT EXISTS logs (
       id TEXT PRIMARY KEY,
       userId TEXT NOT NULL,
@@ -93,5 +102,7 @@ export async function initDatabase(reset: boolean): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_activities_type ON activities (type);
     CREATE INDEX IF NOT EXISTS idx_goals_category ON goals (category);
     CREATE INDEX IF NOT EXISTS idx_logs_userId_createdAt ON logs (userId, createdAt);
+    CREATE INDEX IF NOT EXISTS idx_activity_schedules_activityId ON activity_schedules(activityId);
+    CREATE INDEX IF NOT EXISTS idx_activity_schedules_dayTime ON activity_schedules(dayOfWeek, timeOfDay);
   `);
 }

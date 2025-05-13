@@ -1,9 +1,8 @@
 import { useLocalSearchParams } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 
-import { GoalPicker } from "@/components/GoalPicker";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { IconSymbol } from "@/components/ui/IconSymbol";
@@ -16,8 +15,11 @@ import { ProgressStatsView } from "@/views/progress/stats";
 
 const TABS = ["Photos", "Stats", "Logs"] as const;
 
-export default function ProgressScreen() {
-  const { user, goals, selectedGoalId } = useAppContext();
+interface GoalStatsScreenProps {
+  selectedGoalId?: string;
+}
+export const GoalStatsScreen: React.FC<GoalStatsScreenProps> = ({ selectedGoalId }) => {
+  const { user, goals } = useAppContext();
   const currentUserId = useMemo(() => user?.id, [user?.id]);
 
   const SCREEN_WIDTH = useWindowDimensions().width;
@@ -63,47 +65,35 @@ export default function ProgressScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.flex}>
-      <ThemedView style={[styles.flex, styles.container]}>
-        <GoalPicker
-          triggerProps={{
-            variant: "outline",
-            style: {
-              borderRadius: 0,
-              paddingVertical: Spacings.md,
-            },
-          }}
-        />
+    <ThemedView style={[styles.flex, styles.container]}>
+      <View style={[styles.tabBar, { borderColor: tabBorder }]}>
+        {TABS.map((tab, idx) => (
+          <Pressable key={tab} style={styles.tabButton} onPress={() => handleTabPress(tab, idx)}>
+            <IconSymbol
+              size={24}
+              name={tab === "Logs" ? "book" : tab === "Stats" ? "chart.xyaxis.line" : "calendar"}
+              color={color}
+            />
+            <ThemedText style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab}</ThemedText>
+          </Pressable>
+        ))}
+        <Animated.View style={[styles.underline, { width: tabWidth, backgroundColor: underline }, underlineStyle]} />
+      </View>
 
-        <View style={[styles.tabBar, { borderColor: tabBorder }]}>
-          {TABS.map((tab, idx) => (
-            <Pressable key={tab} style={styles.tabButton} onPress={() => handleTabPress(tab, idx)}>
-              <IconSymbol
-                size={24}
-                name={tab === "Logs" ? "book" : tab === "Stats" ? "chart.xyaxis.line" : "calendar"}
-                color={color}
-              />
-              <ThemedText style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab}</ThemedText>
-            </Pressable>
-          ))}
-          <Animated.View style={[styles.underline, { width: tabWidth, backgroundColor: underline }, underlineStyle]} />
-        </View>
-
-        {activeTab === "Stats" ? (
-          <ScrollView>
-            <ProgressStatsView selectedGoalId={selectedGoal} />
-          </ScrollView>
-        ) : activeTab === "Logs" ? (
-          <ProgressLogsView userId={currentUserId} selectedGoalId={selectedGoal} />
-        ) : (
-          <ScrollView>
-            <ProgressPhotoView />
-          </ScrollView>
-        )}
-      </ThemedView>
-    </SafeAreaView>
+      {activeTab === "Stats" ? (
+        <ScrollView>
+          <ProgressStatsView selectedGoalId={selectedGoal} />
+        </ScrollView>
+      ) : activeTab === "Logs" ? (
+        <ProgressLogsView userId={currentUserId} selectedGoalId={selectedGoal} />
+      ) : (
+        <ScrollView>
+          <ProgressPhotoView />
+        </ScrollView>
+      )}
+    </ThemedView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   flex: {

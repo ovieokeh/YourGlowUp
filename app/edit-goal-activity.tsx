@@ -1,70 +1,128 @@
 import { invariant } from "es-toolkit";
-import { Link, router, Stack } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
-import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Link, router, Stack, useLocalSearchParams } from "expo-router";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { StyleSheet } from "react-native";
 import "react-native-get-random-values";
-import { v4 as uuidv4 } from "uuid";
+import PagerView from "react-native-pager-view";
 
 import { useGetActivityById, useUpdateActivity } from "@/backend/queries/activities";
-import { GoalActivity, NotificationRecurrence } from "@/backend/shared";
+import { ActivityCreateInput, ActivityScheduleEntry, GoalActivity, NotificationRecurrence } from "@/backend/shared";
 import { ThemedButton } from "@/components/ThemedButton";
-import { ThemedPicker } from "@/components/ThemedPicker";
 import { ThemedText } from "@/components/ThemedText";
-import { ThemedTextInput } from "@/components/ThemedTextInput";
 import { ThemedView } from "@/components/ThemedView";
-import { BorderRadii, Spacings } from "@/constants/Theme";
-import { useThemeColor } from "@/hooks/useThemeColor";
-import { Ionicons } from "@expo/vector-icons";
-import { useSearchParams } from "expo-router/build/hooks";
+import { Spacings } from "@/constants/Theme";
+
+import { useGetGoalById } from "@/backend/queries/goals";
+import { ActivityEditBasicInfo } from "@/views/activities/edit-basic-info";
+import { ActivityEditDependencies } from "@/views/activities/edit-dependencies";
+import { ActivityEditSchedules } from "@/views/activities/edit-schedules";
+import { ActivityEditSteps } from "@/views/activities/edit-steps";
 import Toast from "react-native-toast-message";
 
+import { TabConfig } from "@/components/CenteredSwipeableTabs"; // Adjust path as needed
+import {
+  CollapsingHeaderConfig,
+  CollapsingHeaderWithTabs,
+  HeaderContentData,
+  TabDisplayConfig,
+} from "@/components/CollapsingHeaderWithTabs";
+import { TabbedPagerView } from "@/components/TabbedPagerView";
+import { useThemeColor } from "@/hooks/useThemeColor";
+import { useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const TABS = [
+  { key: "basicInfo", title: "Basic Info" },
+  { key: "steps", title: "Steps" },
+  { key: "dependencies", title: "Dependencies" },
+  { key: "schedule", title: "Schedule" },
+] as TabConfig[];
+
 export default function EditGoalActivityScreen() {
-  const searchParams = useSearchParams();
-  const id = searchParams.get("activityId") || "";
-  const goalId = searchParams.get("goalId") || "";
-  invariant(id, "id is required");
+  const params = useLocalSearchParams<{ activityId: string; goalId: string }>();
+  const id = params.activityId || "";
+  const goalId = params.goalId || "";
+  invariant(id, "activityId is required");
   invariant(goalId, "goalId is required");
 
-  const gray10 = useThemeColor({}, "gray10");
+  const [activeIndex, setActiveIndex] = useState(0);
+  const pagerRef = useRef<PagerView>(null);
 
-  const [activityForm, setActivityForm] = useState<Omit<GoalActivity, "id">>();
+  const scrollY = useSharedValue(0);
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
+  const insets = useSafeAreaInsets();
+
+  const backgroundColor = useThemeColor({}, "background");
+  const textColor = useThemeColor({}, "text");
+  const muted = useThemeColor({}, "muted");
+
+  const [activityForm, setActivityForm] = useState<ActivityCreateInput | undefined>(undefined);
 
   const activityQuery = useGetActivityById(id);
-  const activity = useMemo(() => {
-    return activityQuery.data;
-  }, [activityQuery.data]);
+  const originalActivity = useMemo(() => activityQuery.data, [activityQuery.data]);
 
-  const updateItemMutation = useUpdateActivity(id);
+  const updateItemMutation = useUpdateActivity(goalId);
+  const goalQuery = useGetGoalById(goalId);
+  const activities = useMemo(() => goalQuery.data?.activities, [goalQuery.data]);
 
   useEffect(() => {
-    if (activity) {
-      setActivityForm(activity);
+    if (originalActivity) {
+      const schedulesInputFormat =
+        originalActivity.schedules?.map((s) => ({
+          timeOfDay: s.timeOfDay,
+          dayOfWeek: s.dayOfWeek,
+        })) ?? [];
+
+      setActivityForm({
+        ...originalActivity,
+        schedules: schedulesInputFormat,
+      });
     }
-  }, [activity]);
+  }, [originalActivity]);
+
+  const possibleDependencies = useMemo(() => {
+    if (!activityForm || !originalActivity) return [];
+    const indexOfCurrentActivity = activities?.findIndex((activity) => activity.slug === originalActivity.slug);
+    if (indexOfCurrentActivity === undefined || indexOfCurrentActivity === -1) return [];
+    const deps = activities?.slice(0, indexOfCurrentActivity);
+    return deps?.filter((activity) => {
+      const isNotCurrentActivity = activity.slug !== originalActivity.slug;
+      const isNotAlreadyInSteps = !activityForm.steps.some((step) => step.slug === activity.slug);
+      return isNotCurrentActivity && isNotAlreadyInSteps;
+    });
+  }, [activityForm, activities, originalActivity]);
+
+  const onPageSelected = useCallback((position: number) => {
+    setActiveIndex(position);
+  }, []);
 
   if (activityQuery.isLoading) {
     return (
-      <ThemedView style={styles.container}>
-        <ThemedText type="title">Loading...</ThemedText>
+      <ThemedView style={styles.loadingContainer}>
+        <ThemedText type="default">Loading Activity...</ThemedText>
       </ThemedView>
     );
   }
 
-  if (!activity) {
+  if (!originalActivity || !activityForm) {
     return (
       <>
-        <Stack.Screen options={{ title: "Oops!" }} />
+        <Stack.Screen options={{ title: "Activity Not Found" }} />
         <ThemedView style={styles.container}>
-          <ThemedText type="title">This screen doesn&apos;t exist.</ThemedText>
+          <ThemedText type="title">Activity not found.</ThemedText>
           <Link href="/" style={styles.link}>
-            <ThemedText type="link">Go to home screen!</ThemedText>
+            <ThemedText type="link">Go to home screen</ThemedText>
           </Link>
         </ThemedView>
       </>
     );
   }
 
-  const onChange = (key: keyof GoalActivity, value: any) => {
+  const onChange = (key: keyof ActivityCreateInput, value: any) => {
     setActivityForm((prev) => {
       if (!prev) return prev;
       return {
@@ -74,264 +132,179 @@ export default function EditGoalActivityScreen() {
     });
   };
 
-  const updateStep = (index: number, text: string) => {
-    const steps = activityForm?.steps || [];
-    steps[index] = { ...steps[index], id: text };
-    onChange("steps", steps);
+  const handleSave = () => {
+    if (!activityForm) return;
+
+    if (activityForm.recurrence === NotificationRecurrence.WEEKLY) {
+      const hasInvalidWeeklySchedule = activityForm.schedules?.some(
+        (s) => s.dayOfWeek === undefined || s.dayOfWeek === null
+      );
+      if (hasInvalidWeeklySchedule) {
+        Toast.show({
+          type: "error",
+          text1: "Weekly schedules must specify a day.",
+          position: "bottom",
+        });
+        return;
+      }
+    }
+
+    const payload: GoalActivity = {
+      ...activityForm,
+      id: originalActivity.id,
+      schedules: activityForm.schedules as ActivityScheduleEntry[],
+    } as GoalActivity;
+
+    updateItemMutation
+      .mutateAsync(payload)
+      .then(() => {
+        Toast.show({
+          type: "success",
+          text1: `${activityForm.name} updated`,
+          position: "bottom",
+        });
+        router.back();
+      })
+      .catch((err) => {
+        console.error("Update failed:", err);
+        Toast.show({
+          type: "error",
+          text1: "Update failed",
+          text2: "Please try again.",
+          position: "bottom",
+        });
+      });
   };
-  const removeStep = (index: number) => {
-    const steps = activityForm?.steps || [];
-    steps.splice(index, 1);
-    onChange("steps", steps);
+
+  const handleTabPress = (index: number) => {
+    setActiveIndex(index);
+    pagerRef.current?.setPage(index);
   };
-  const addStep = () => {
-    const steps = activityForm?.steps || [];
-    steps.push({
-      id: uuidv4(),
-      slug: "random-slug",
-      content: "",
-      instructionMedia: {
-        type: "image",
-        url: "",
-      },
-    });
-    onChange("steps", steps);
+
+  const renderPageContent = (tab: TabConfig) => {
+    if (!activityForm) return null;
+
+    switch (tab.key) {
+      case "basicInfo":
+        return (
+          <ActivityEditBasicInfo
+            name={activityForm.name}
+            description={activityForm.description}
+            featuredImage={activityForm.featuredImage}
+            onChange={onChange}
+          />
+        );
+      case "steps":
+        return <ActivityEditSteps steps={activityForm.steps} onChange={onChange} />;
+      case "dependencies":
+        return (
+          <ActivityEditDependencies
+            reliesOn={activityForm.reliesOn}
+            possibleDependencies={possibleDependencies}
+            activities={activities}
+            onChange={onChange}
+          />
+        );
+      case "schedule":
+        return (
+          <ActivityEditSchedules
+            schedules={activityForm.schedules}
+            recurrence={activityForm.recurrence}
+            onChange={onChange}
+          />
+        );
+      default:
+        return null;
+    }
   };
-  const updateTime = (index: number, time: string) => {
-    const scheduledTimes = activityForm?.scheduledTimes || [];
-    scheduledTimes[index] = time;
-    onChange("scheduledTimes", scheduledTimes);
+
+  const headerConfig: CollapsingHeaderConfig = {
+    initialHeight: 280,
+    collapsedHeight: 94, // Typical header height without status bar
+    overlayColor: "rgba(0,0,0,0.45)",
+    stickyHeaderBackgroundColor: backgroundColor,
+    stickyHeaderTextColor: textColor,
+    stickyHeaderTextMutedColor: muted,
   };
-  const removeTime = (index: number) => {
-    const scheduledTimes = activityForm?.scheduledTimes || [];
-    scheduledTimes.splice(index, 1);
-    onChange("scheduledTimes", scheduledTimes);
+
+  const headerContentData: HeaderContentData = {
+    title: activityForm?.name || "",
+    description: activityForm?.description,
+    imageUrl: activityForm?.featuredImage,
   };
-  const addTime = () => {
-    const scheduledTimes = activityForm?.scheduledTimes || [];
-    scheduledTimes.push("10:00");
-    onChange("scheduledTimes", scheduledTimes);
+
+  const tabDisplayConfig: TabDisplayConfig = {
+    tabBackgroundColor: "transparent", // For hero section
+    tabTextColor: "#fff",
+    tabTextMutedColor: "rgba(255, 255, 255, 0.7)",
   };
 
   return (
-    <ThemedView style={{ flex: 1 }}>
+    <ThemedView style={styles.flexContainer}>
       <Stack.Screen
         options={{
-          title: `Edit`,
-          headerRight: () => {
-            return (
-              <ThemedButton
-                title="Save"
-                onPress={() => {
-                  if (!activityForm) return;
-                  if (activityForm.recurrence === NotificationRecurrence.WEEKLY) {
-                    const day = activityForm.scheduledTimes?.[0]?.split("-")[0];
-                    if (!day || day === "") {
-                      Toast.show({
-                        type: "error",
-                        text1: "Please select a day for weekly notifications",
-                        position: "bottom",
-                      });
-                      return;
-                    }
-                  }
-                  updateItemMutation
-                    .mutateAsync({
-                      ...activityForm,
-                      id: activity.id,
-                    } as GoalActivity)
-                    .then(() => {
-                      Toast.show({
-                        type: "success",
-                        text1: `${activityForm.name} updated`,
-                        position: "bottom",
-                      });
-                      router.back();
-                    });
-                }}
-              />
-            );
-          },
+          title: `Edit ${activityForm.name || "Activity"}`,
+          headerRight: () => <ThemedButton title="Save" onPress={handleSave} disabled={updateItemMutation.isPending} />,
         }}
       />
 
-      <ScrollView contentContainerStyle={styles.container}>
-        <ThemedTextInput
-          label="Name"
-          value={activityForm?.name ?? ""}
-          onChangeText={(text) => onChange("name", text)}
-          placeholder="Enter name"
-        />
+      <CollapsingHeaderWithTabs
+        scrollY={scrollY}
+        headerConfig={headerConfig}
+        contentData={headerContentData}
+        tabsConfig={TABS}
+        activeTabIndex={activeIndex}
+        onTabPress={handleTabPress}
+        onBackPress={() => router.back()}
+        topInset={insets.top}
+        tabDisplayConfig={tabDisplayConfig}
+        withTabs
+      />
 
-        <ThemedTextInput
-          label="Description"
-          value={activityForm?.description ?? ""}
-          onChangeText={(text) => onChange("description", text)}
-          placeholder="Enter description"
-        />
-
-        <View style={{ gap: Spacings.sm }}>
-          <ThemedText type="subtitle">Instructions</ThemedText>
-          <View style={{ gap: Spacings.xs }}>
-            {(activityForm?.steps || []).map((step, index) => (
-              <View key={`step-${index}`} style={styles.row}>
-                <ThemedTextInput
-                  value={step.id}
-                  onChangeText={(text) => updateStep(index, text)}
-                  containerStyle={{ flex: 1, maxWidth: "90%" }}
-                />
-                <TouchableOpacity onPress={() => removeStep(index)}>
-                  <Ionicons name="remove" size={24} color="red" />
-                </TouchableOpacity>
-              </View>
-            ))}
-          </View>
-          <ThemedButton title="Add Step" onPress={addStep} variant="outline" icon="plus" />
-        </View>
-
-        <View style={{ gap: Spacings.xs }}>
-          <ThemedText type="subtitle">Notification Times</ThemedText>
-          <View style={{ gap: Spacings.xs }}>
-            <ThemedPicker
-              placeholder="Select Notification Type"
-              items={Object.values(NotificationRecurrence).map((type) => ({
-                label: type,
-                value: type,
-              }))}
-              selectedValue={activityForm?.recurrence}
-              onValueChange={(val) => {
-                onChange("recurrence", val);
-              }}
-            />
-            {(activityForm?.scheduledTimes || []).map((time, index) => (
-              <View
-                key={`time-${index}`}
-                style={{
-                  gap: Spacings.sm,
-                  padding: Spacings.sm,
-                  backgroundColor: gray10,
-                }}
-              >
-                <NotificationTimePicker
-                  value={time ?? "10:00"}
-                  type={activityForm?.recurrence ?? NotificationRecurrence.DAILY}
-                  onChange={(val) => updateTime(index, val)}
-                />
-                <ThemedButton
-                  variant="ghost"
-                  icon="trash"
-                  title="Remove"
-                  onPress={() => {
-                    removeTime(index);
-                  }}
-                  style={
-                    {
-                      // als
-                    }
-                  }
-                />
-              </View>
-            ))}
-          </View>
-          <ThemedButton title="Add Notification Time" onPress={addTime} variant="outline" icon="plus" />
-        </View>
-      </ScrollView>
+      <TabbedPagerView
+        tabs={TABS}
+        activeIndex={activeIndex}
+        onPageSelected={onPageSelected}
+        scrollHandler={scrollHandler}
+        renderPageContent={renderPageContent}
+        pagerRef={pagerRef}
+        pageContainerStyle={styles.pageStyle}
+        scrollContentContainerStyle={styles.scrollContentForPage}
+      />
     </ThemedView>
   );
 }
 
-export const NotificationTimePicker = ({
-  value = "10:00",
-  type,
-  onChange,
-}: {
-  value: string;
-  type: NotificationRecurrence | undefined;
-  onChange: (value: string) => void;
-}) => {
-  const borderColor = useThemeColor({}, "border");
-  const [selectedTime, setSelectedTime] = useState(() => {
-    if (type === NotificationRecurrence.WEEKLY) {
-      return value.split("-")[1];
-    }
-    return value;
-  }); // either time like "10:00" or "monday-10:00"
-  const [selectedDay, setSelectedDay] = useState<string>(() => {
-    if (type === NotificationRecurrence.WEEKLY) {
-      return value.split("-")[0];
-    }
-    return "monday";
-  });
-
-  const days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
-  const hourOptions = new Array(24).fill(0).map((_, i) => String(i).padStart(2, "0"));
-  const minuteOptions = new Array(12).fill(0).map((_, i) => String(i * 5).padStart(2, "0"));
-  const dayOptions = days.map((day) => ({ label: day, value: day }));
-  const time = useMemo(() => {
-    if (type === NotificationRecurrence.DAILY) {
-      return selectedTime;
-    }
-    return selectedTime ? `${selectedDay}-${selectedTime}` : null;
-  }, [selectedTime, selectedDay, type]);
-  useEffect(() => {
-    if (time) {
-      onChange(time);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [time]);
-
-  return (
-    <View
-      style={{
-        gap: Spacings.sm,
-        padding: Spacings.sm,
-        borderWidth: 1,
-        borderRadius: BorderRadii.sm,
-        borderColor: borderColor,
-      }}
-    >
-      {type === NotificationRecurrence.WEEKLY && (
-        <ThemedPicker
-          items={dayOptions}
-          selectedValue={selectedDay}
-          onValueChange={(val) => setSelectedDay(val)}
-          placeholder="Select Day"
-        />
-      )}
-
-      <View style={{ flexDirection: "row", gap: Spacings.sm }}>
-        <ThemedPicker
-          items={hourOptions.map((hour) => ({ label: hour, value: hour }))}
-          selectedValue={selectedTime.split(":")[0]}
-          onValueChange={(val) => setSelectedTime(`${val}:${selectedTime.split(":")[1]}`)}
-          style={{ flex: 1, maxWidth: "90%" }}
-        />
-        <ThemedPicker
-          items={minuteOptions.map((minute) => ({ label: minute, value: minute }))}
-          selectedValue={selectedTime.split(":")[1]}
-          onValueChange={(val) => setSelectedTime(`${selectedTime.split(":")[0]}:${val}`)}
-          style={{ flex: 1, maxWidth: "90%" }}
-        />
-      </View>
-    </View>
-  );
-};
-
 const styles = StyleSheet.create({
+  flexContainer: {
+    flex: 1,
+  },
   container: {
+    flex: 1,
     padding: Spacings.md,
-    paddingBottom: Spacings.xl * 2,
-    gap: Spacings.xl,
-  },
-  scrollView: {
-    flexGrow: 1,
-  },
-  row: {
-    flexDirection: "row",
+    justifyContent: "center",
     alignItems: "center",
-    gap: Spacings.sm,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
   link: {
-    // marginTop: Spacings.md,
+    marginTop: Spacings.md,
+    paddingVertical: Spacings.sm,
+  },
+  pagerView: {
+    flex: 1,
+  },
+  pageStyle: {
+    flex: 1,
+  },
+  scrollContentForPage: {
+    flex: 1,
+    paddingTop: 0,
+    padding: Spacings.md,
+    paddingBottom: Spacings.xl,
+    gap: Spacings.xl,
   },
 });

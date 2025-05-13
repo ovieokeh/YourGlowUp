@@ -28,7 +28,7 @@ export default function GoalsLayout() {
       <Stack.Screen
         name="[id]"
         options={{
-          headerShown: true,
+          headerShown: false,
           title: "Edit Goal Activity",
           headerStyle: {
             backgroundColor: background,

@@ -4,13 +4,12 @@ import {
   getActivities,
   getActivityById,
   getActivityBySlug,
-  getAllPendingActivitiesToday,
   getPendingActivities,
   getPendingActivitiesToday,
   removeActivity,
   updateActivity,
 } from "../activities";
-import { GoalActivity } from "../shared";
+import { ActivityCreateInput, GoalActivity } from "../shared";
 
 export const useGetActivities = (goalId?: string) => {
   return useQuery({
@@ -42,9 +41,15 @@ export const useGetActivityBySlug = (goalId: string, slug: string) => {
 export const useAddActivity = (goalId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (activity: GoalActivity) => addActivity(goalId, activity),
-    onSuccess: () => {
+    mutationFn: (activityInput: ActivityCreateInput) => addActivity(goalId, activityInput),
+    onSuccess: (/* data, variables, context */) => {
+      queryClient.invalidateQueries({ queryKey: ["goals", goalId] });
       queryClient.invalidateQueries({ queryKey: ["activities", goalId] });
+
+      queryClient.invalidateQueries({ queryKey: ["pending-activities", goalId] });
+      queryClient.invalidateQueries({ queryKey: ["pending-activities-today", goalId] });
+
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
     },
   });
 };
@@ -53,8 +58,21 @@ export const useUpdateActivity = (goalId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (activity: GoalActivity) => updateActivity(goalId, activity),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
+      const activityId = variables.id;
+
+      queryClient.invalidateQueries({ queryKey: ["goals", goalId] });
       queryClient.invalidateQueries({ queryKey: ["activities", goalId] });
+
+      if (activityId) {
+        queryClient.invalidateQueries({ queryKey: ["activity", activityId] });
+        queryClient.invalidateQueries({ queryKey: ["activity", goalId, variables.slug] });
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["pending-activities", goalId] });
+      queryClient.invalidateQueries({ queryKey: ["pending-activities-today", goalId] });
+
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
     },
   });
 };
@@ -63,44 +81,53 @@ export const useRemoveActivity = (goalId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (activityId: string) => removeActivity(activityId),
-    onSuccess: () => {
+    onSuccess: (_data, activityId) => {
+      queryClient.invalidateQueries({ queryKey: ["goals", goalId] });
       queryClient.invalidateQueries({ queryKey: ["activities", goalId] });
+
+      if (activityId) {
+        queryClient.invalidateQueries({ queryKey: ["activity", activityId] });
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["pending-activities", goalId] });
+      queryClient.invalidateQueries({ queryKey: ["pending-activities-today", goalId] });
+
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
     },
   });
 };
 
-export const useGetPendingActivities = (goalId: string, completedActivityIds: string[]) => {
+export const useGetPendingActivities = (completedActivityIds: string[], goalId?: string) => {
   return useQuery({
-    queryKey: ["pending-activities", goalId, completedActivityIds],
-    queryFn: () => getPendingActivities(goalId, completedActivityIds),
+    queryKey: ["pending-activities", goalId ?? "all", completedActivityIds],
+
+    queryFn: () => getPendingActivities(completedActivityIds, goalId),
+
     enabled: !!goalId,
-    staleTime: 1000 * 60 * 5,
+
+    staleTime: 1000 * 60 * 1,
   });
 };
 
-export const useGetPendingActivitiesToday = (goalId: string | undefined, completedActivityIds: string[]) => {
+export const useGetPendingActivitiesToday = (completedActivityIds: string[], goalId?: string) => {
   return useQuery({
-    queryKey: ["pending-activities-today", goalId, completedActivityIds],
-    queryFn: () => getPendingActivitiesToday(goalId ?? "", completedActivityIds),
+    queryKey: ["pending-activities-today", goalId ?? "all", completedActivityIds],
+    queryFn: () => getPendingActivitiesToday(completedActivityIds, goalId),
+
     enabled: !!goalId,
-    staleTime: 1000 * 60 * 5,
+
+    staleTime: 1000 * 60 * 1,
   });
 };
 
-export const useGetAllPendingActivitiesToday = () => {
-  return useQuery({
-    queryKey: ["all-pending-activities-today"],
-    queryFn: getAllPendingActivitiesToday,
-    staleTime: 1000 * 60 * 5,
-  });
-};
+export const withGoalActivities = (goalId: string, callback: (activities: GoalActivity[]) => void): Promise<void> => {
+  return getActivities(goalId)
+    .then((activities) => {
+      callback(activities);
+    })
+    .catch((error) => {
+      console.error(`Error in withGoalActivities for goal ${goalId}:`, error);
 
-export const withGoalActivities = (goalId: string, callback: (goal: GoalActivity[]) => void): Promise<void> => {
-  return getActivities(goalId).then((activities) => {
-    if (!activities) {
-      throw new Error("Goal not found");
-    }
-
-    callback(activities);
-  });
+      throw error;
+    });
 };

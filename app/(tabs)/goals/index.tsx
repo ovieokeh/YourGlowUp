@@ -1,38 +1,24 @@
-import { useFocusEffect, useRouter } from "expo-router";
-import React, { useMemo } from "react";
-import { FlatList, Image, Pressable, StyleSheet, View } from "react-native";
+import { useRouter } from "expo-router";
+import React from "react";
+import { FlatList, Pressable, StyleSheet, View } from "react-native";
 
-import { useGetGoals } from "@/backend/queries/goals";
-import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { IconSymbol } from "@/components/ui/IconSymbol";
+import { BorderRadii, Spacings } from "@/constants/Theme";
 import { useAppContext } from "@/hooks/app/context";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { EmptyGoalsView } from "@/views/shared/EmptyGoalsView";
 
 export default function GoalsScreen() {
-  const { user } = useAppContext();
-  const currentUserId = useMemo(() => user?.id, [user?.id]);
+  const { goals, isLoadingGoals } = useAppContext();
   const router = useRouter();
-
-  const goalsQuery = useGetGoals(currentUserId, {
-    mine: false,
-    copied: false,
-    public: false,
-  });
-
-  const isLoading = goalsQuery.isLoading;
-  const goals = useMemo(() => goalsQuery.data || [], [goalsQuery.data]);
 
   const background = useThemeColor({}, "background");
   const border = useThemeColor({}, "border");
   const text = useThemeColor({}, "text");
 
-  useFocusEffect(() => {
-    goalsQuery.refetch();
-  });
-
-  if (isLoading) {
+  if (isLoadingGoals) {
     return (
       <ThemedView style={styles.container}>
         <ThemedText>Loading...</ThemedText>
@@ -44,8 +30,8 @@ export default function GoalsScreen() {
     <ThemedView style={styles.container}>
       <FlatList
         data={goals}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={{ paddingBottom: 96 }}
+        keyExtractor={(goal) => goal.id.toString()}
+        contentContainerStyle={{ flex: 1 }}
         renderItem={({ item }) => (
           <Pressable
             onPress={() => router.push(`/goals/${item.id}`)}
@@ -62,78 +48,40 @@ export default function GoalsScreen() {
             </View>
           </Pressable>
         )}
-        ListEmptyComponent={
-          <View
-            style={[
-              {
-                width: "100%",
-                alignItems: "center",
-                justifyContent: "center",
-              },
-            ]}
-          >
-            <Image
-              source={require("@/assets/images/empty-goals.png")}
-              style={{ width: 200, height: 200, marginBottom: 16 }}
-              resizeMode="contain"
-            />
-            <ThemedText style={styles.name}>No goals found</ThemedText>
-            <ThemedText style={styles.description}>You can add a new goal.</ThemedText>
-            <ThemedText style={styles.description}>Or</ThemedText>
-            <ThemedText style={styles.description}>Explore public goals.</ThemedText>
-            <ThemedButton
-              variant="solid"
-              title="Explore"
-              onPress={() => router.push("/goals/explore")}
-              icon="magnifyingglass"
-              iconSize={20}
-            />
-          </View>
-        }
+        ListEmptyComponent={<EmptyGoalsView />}
       />
-
-      <View style={styles.actions}>
-        <ThemedButton
-          variant="solid"
-          title="Generate AI Goal"
-          onPress={() => {
-            router.push("/face-analysis");
-          }}
-          icon="wand.and.stars"
-        />
-      </View>
     </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, paddingBottom: 96 },
+  container: { flex: 1, padding: Spacings.md, paddingBottom: 96 },
   card: {
     borderWidth: 1,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: BorderRadii.md,
+    padding: Spacings.sm,
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: 12,
-    marginBottom: 16,
+    gap: Spacings.sm,
+    marginBottom: Spacings.sm,
   },
-  icon: { marginTop: 4 },
+  icon: { marginTop: Spacings.xs },
   content: { flex: 1 },
   name: { fontSize: 16, fontWeight: "600" },
-  description: { marginTop: 4, fontSize: 14, opacity: 0.7 },
-  time: { marginTop: 4, fontSize: 13, opacity: 0.5 },
+  description: { fontSize: 14, opacity: 0.7 },
+  time: { marginTop: Spacings.xs, fontSize: 13, opacity: 0.5 },
   actions: {
     marginTop: "auto",
     gap: 12,
-    paddingBottom: 20,
+    paddingBottom: Spacings.xl,
   },
   actionButton: {
     borderWidth: 1,
-    borderRadius: 10,
-    padding: 12,
+    borderRadius: BorderRadii.md,
+    padding: Spacings.sm,
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: Spacings.sm,
     justifyContent: "center",
   },
   actionText: {

@@ -13,8 +13,8 @@ export const TodaysStats: React.FC<{
 }> = ({ goalId }) => {
   const statsQuery = useGetStats({
     goalId,
-    startDate: Date.now() - 1 * 24 * 60 * 60 * 1000,
-    endDate: Date.now(),
+    // startDate: Date.now() - 1 * 24 * 60 * 60 * 1000,
+    // endDate: Date.now(),
   });
   const stats = useMemo(() => {
     return statsQuery.data;
@@ -23,22 +23,12 @@ export const TodaysStats: React.FC<{
   const wrapperBorder = useThemeColor({}, "border");
   const muted = useThemeColor({}, "muted");
   const text = useThemeColor({}, "text");
-  const accent = useThemeColor({}, "accent");
+  const danger = useThemeColor({}, "danger");
+  const success = useThemeColor({}, "success");
 
   const last = stats?.timeSeries.at(-1)?.totalDuration ?? 0;
   const prev = stats?.timeSeries.at(-2)?.totalDuration ?? 0;
   const trend = last > prev ? "up" : last < prev ? "down" : "flat";
-
-  const mostCompleted = stats?.itemStats.slice().sort((a, b) => b.count - a.count)[0];
-  const mostActiveDay = stats?.timeSeries.slice().sort((a, b) => b.totalDuration - a.totalDuration)[0];
-  const mostActiveDayDate = mostActiveDay
-    ? new Date(mostActiveDay?.date).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      })
-    : "";
-  const mostActiveDayDuration = mostActiveDay?.totalDuration ?? 0;
-  const mostActiveDayDurationFormatted = `${Math.floor(mostActiveDayDuration / 60)}h ${mostActiveDayDuration % 60}m`;
 
   const streak = stats?.consistency?.currentStreak ?? 0;
 
@@ -59,19 +49,19 @@ export const TodaysStats: React.FC<{
       <View style={styles.statsGrid}>
         <View style={{ flexDirection: "row", gap: Spacings.sm }}>
           <StatCard
-            icon="calendar"
-            label="Streak"
+            icon="bolt"
+            label="Current Streak"
             value={`${streak ?? 0}${streak > 1 ? " 🔥" : ""}`}
-            color={accent}
+            color={text}
             muted={muted}
             text={text}
             variant="vertical"
           />
           <StatCard
-            icon="figure.walk.circle"
+            icon="bolt.heart"
             label="Longest Streak"
             value={stats?.consistency.longestStreak.toString() ?? "0"}
-            color={accent}
+            color={text}
             muted={muted}
             text={text}
             variant="vertical"
@@ -84,50 +74,26 @@ export const TodaysStats: React.FC<{
                 ? "chart.line.uptrend.xyaxis"
                 : trend === "down"
                 ? "chart.line.downtrend.xyaxis"
-                : "chart.xyaxis.line"
+                : "chart.line.flattrend.xyaxis"
             }
-            label="Trend"
+            label="Activity Trend"
             value={`${trend}`}
-            color={accent}
+            color={trend === "up" ? success : trend === "down" ? danger : text}
             muted={muted}
             text={text}
             variant="vertical"
           />
 
           <StatCard
-            icon="figure.walk.circle"
-            label="Completed"
+            icon="checkmark.circle"
+            label="Completed today"
             value={stats?.totalCompleted.toString() ?? "0"}
-            color={accent}
+            color={text}
             muted={muted}
             text={text}
             variant="vertical"
           />
         </View>
-        {mostCompleted && (
-          <StatCard
-            icon="star.circle"
-            label="Top Exercise"
-            value={`${mostCompleted.name} (${mostCompleted.count})`}
-            color={accent}
-            muted={muted}
-            text={text}
-            variant="vertical"
-          />
-        )}
-        {mostActiveDay && (
-          <StatCard
-            icon="calendar"
-            label="Most Active Day"
-            value={`${mostActiveDayDate} (${mostActiveDayDurationFormatted})`}
-            color={accent}
-            muted={muted}
-            text={text}
-            variant="vertical"
-          />
-        )}
-
-        <View style={{ flexDirection: "row", gap: Spacings.sm }}></View>
       </View>
     </View>
   );
@@ -172,8 +138,6 @@ const StatCard = ({
 
 const styles = StyleSheet.create({
   wrapper: {
-    paddingVertical: Spacings.xl,
-    paddingHorizontal: Spacings.md,
     gap: Spacings.sm,
   },
   title: {
@@ -190,21 +154,15 @@ const styles = StyleSheet.create({
     // maxWidth: Dimensions.get("window").width / 2.6,
     flex: 1,
     width: "100%",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.18,
-    elevation: 1,
-    shadowRadius: 1.0,
     backgroundColor: "transparent",
   },
   cardLabel: {
     fontSize: 13,
+    textTransform: "capitalize",
   },
   cardValue: {
     fontSize: 18,
+    textTransform: "capitalize",
     fontWeight: "700",
   },
   cardSubValue: {

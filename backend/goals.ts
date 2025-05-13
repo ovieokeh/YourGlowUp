@@ -15,31 +15,36 @@ export async function addGoal(input: GoalCreateInput): Promise<string> {
     progress, meta
   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`;
 
-  await localDb.runAsync(stmt, [
-    id,
-    input.slug,
-    JSON.stringify(input.name),
-    JSON.stringify(input.description),
-    input.featuredImage ?? null,
-    input.category,
-    JSON.stringify(input.tags),
-    input.author.id,
-    input.author.name,
-    input.author.avatarUrl ?? null,
-    now,
-    now,
-    input.isPublic ? 1 : 0,
-    1, // version
-    "draft", // status
-    input.completionType,
-    input.completionDate ?? null,
-    input.defaultRecurrence ?? null,
-    JSON.stringify(input.defaultScheduledTimes ?? []),
-    JSON.stringify({}), // progress
-    JSON.stringify({}), // meta
-  ]);
+  const rowId = await localDb
+    .runAsync(stmt, [
+      id,
+      input.slug,
+      input.name,
+      input.description,
+      input.featuredImage ?? null,
+      input.category,
+      JSON.stringify(input.tags),
+      input.author.id,
+      input.author.name,
+      input.author.avatarUrl ?? null,
+      now,
+      now,
+      input.isPublic ? 1 : 0,
+      1, // version
+      "draft", // status
+      input.completionType,
+      input.completionDate ?? null,
+      input.defaultRecurrence ?? null,
+      JSON.stringify(input.defaultScheduledTimes ?? []),
+      JSON.stringify({}), // progress
+      JSON.stringify({}), // meta
+    ])
+    .catch((error) => {
+      console.error("Error updating goal", error);
+      throw error;
+    });
 
-  return id;
+  return rowId ? id : "";
 }
 
 export async function removeGoal(goalId: string): Promise<void> {
@@ -102,23 +107,28 @@ export async function updateGoal(goalId: string, updates: Partial<Goal>): Promis
     progress = ?, meta = ?
     WHERE id = ?;`;
 
-  await localDb.runAsync(stmt, [
-    updates.slug ?? existingGoal.slug,
-    JSON.stringify(updates.name),
-    JSON.stringify(updates.description),
-    updates.featuredImage ?? existingGoal.featuredImage ?? null,
-    updates.category ?? existingGoal.category,
-    JSON.stringify(updates.tags ?? existingGoal.tags ?? []),
-    updates.isPublic ? 1 : 0,
-    now,
-    updates.completionType ?? existingGoal.completionType,
-    updates.completionDate ?? existingGoal.completionDate ?? null,
-    updates.defaultRecurrence ?? existingGoal.defaultRecurrence ?? null,
-    JSON.stringify(updates.defaultScheduledTimes ?? existingGoal.defaultScheduledTimes ?? []),
-    JSON.stringify(updates.progress ?? existingGoal.progress ?? {}),
-    JSON.stringify(updates.meta ?? existingGoal.meta ?? {}),
-    goalId,
-  ]);
+  await localDb
+    .runAsync(stmt, [
+      updates.slug ?? existingGoal.slug,
+      updates.name ?? existingGoal.name,
+      updates.description ?? existingGoal.description,
+      updates.featuredImage ?? existingGoal.featuredImage ?? null,
+      updates.category ?? existingGoal.category,
+      JSON.stringify(updates.tags ?? existingGoal.tags ?? []),
+      updates.isPublic ? 1 : 0,
+      now,
+      updates.completionType ?? existingGoal.completionType,
+      updates.completionDate ?? existingGoal.completionDate ?? null,
+      updates.defaultRecurrence ?? existingGoal.defaultRecurrence ?? null,
+      JSON.stringify(updates.defaultScheduledTimes ?? existingGoal.defaultScheduledTimes ?? []),
+      JSON.stringify(updates.progress ?? existingGoal.progress ?? {}),
+      JSON.stringify(updates.meta ?? existingGoal.meta ?? {}),
+      goalId,
+    ])
+    .catch((error) => {
+      console.error("Error updating goal", error);
+      throw error;
+    });
 }
 
 export async function updateGoalActivities(goalId: string, activities: GoalActivity[]): Promise<void> {
@@ -158,16 +168,14 @@ export async function copyGoal(original: Goal, newOwnerId: string, newOwnerName:
 function deserializeGoal(row: GoalBase, activities: GoalActivity[]): Goal {
   return {
     ...row,
-    name: JSON.parse(row.name as any),
-    description: JSON.parse(row.description as any),
     tags: JSON.parse(row.tags as any),
     author: {
       id: (row as any).author_id,
       name: (row as any).author_name,
       avatarUrl: (row as any).author_avatar ?? undefined,
     },
-    createdAt: Date.parse(row.createdAt as any),
-    updatedAt: Date.parse(row.updatedAt as any),
+    createdAt: new Date(row.createdAt as any).toISOString(),
+    updatedAt: new Date(row.updatedAt as any).toISOString(),
     isPublic: !!row.isPublic,
     defaultScheduledTimes: JSON.parse(row.defaultScheduledTimes as any),
     progress: row.progress ? JSON.parse(row.progress as any) : undefined,
