@@ -1,5 +1,5 @@
 const accent = "#00b89f";
-const glowDark = "#060307";
+const glowDark = "#020d17";
 const glowLight = "#fbf8fc";
 
 export const Colors = {

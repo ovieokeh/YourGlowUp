@@ -14,11 +14,7 @@ export const XPCounter = () => {
   const { selectedGoalId } = useAppContext();
   const [modalVisible, setModalVisible] = useState(false);
   const { badges } = useBadges();
-  const stats = useGetStats({
-    goalId: selectedGoalId,
-    startDate: new Date(0).getTime(),
-    endDate: new Date().getTime(),
-  });
+  const stats = useGetStats(selectedGoalId, new Date(0).getTime(), new Date().getTime());
   const streak = useMemo(() => stats.data?.consistency.currentStreak || 0, [stats.data]);
 
   const textColor = useThemeColor({}, "text");

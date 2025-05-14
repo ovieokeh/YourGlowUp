@@ -14,16 +14,14 @@ export default function ActivityCompleteScreen() {
   const params = useLocalSearchParams();
   const goalId = params.goalId as string;
 
-  const statsQuery = useGetStats({
-    goalId,
-  });
+  const statsQuery = useGetStats(goalId);
   const stats = useMemo(() => statsQuery.data, [statsQuery.data]);
 
   const border = useThemeColor({}, "border");
   const successBg = useThemeColor({}, "successBg");
 
   const streak = stats?.consistency.currentStreak ?? 0;
-  const activeDays = stats?.consistency.activeDays ?? 0;
+  const activeDays = stats?.consistency.totalActiveDays ?? 0;
 
   return (
     <SafeAreaView style={{ flex: 1 }}>

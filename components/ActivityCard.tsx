@@ -1,39 +1,64 @@
 import { Image } from "expo-image";
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { GoalActivity, isGuidedActivity } from "@/backend/shared";
+import { useAddLog } from "@/backend/queries/logs";
+import { GoalActivity, isGuidedActivity, LogCreateInput, LogType } from "@/backend/shared";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol, IconSymbolName } from "@/components/ui/IconSymbol";
 import { BorderRadii, Spacings } from "@/constants/Theme";
 import { useAppContext } from "@/hooks/app/context";
 import { useActivityDuration } from "@/hooks/useActivityDuration";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { formatScheduleEntry } from "@/utils/schedule";
+import { useSound } from "@/utils/sounds";
+import { router } from "expo-router";
+import { ActivityCompletionModal } from "./ActivityCompletionModal";
+import { ThemedButton } from "./ThemedButton";
 
 export const ActivityCard = ({
   item,
   actionButtonTitle,
   actionButtonIcon,
+  hiddenFields = [],
   handlePress,
 }: {
   item: GoalActivity;
   actionButtonTitle?: string;
   actionButtonIcon?: IconSymbolName;
-  handlePress: () => void;
+  hiddenFields?: string[];
+  handlePress?: () => void;
 }) => {
+  const { user } = useAppContext();
   const text = useThemeColor({}, "text");
   const accent = useThemeColor({}, "accent");
   const cardBg = useThemeColor({}, "background");
   const cardBorder = useThemeColor({}, "border");
   const gray10 = useThemeColor({}, "gray10");
+  const muted = useThemeColor({}, "muted");
   const { goals } = useAppContext();
+  const [isCompletionModalVisible, setIsCompletionModalVisible] = useState(false);
 
   const duration = useActivityDuration(item);
+
+  const saveLogMutation = useAddLog(user?.id);
+  const { play } = useSound();
 
   const itemGoal = useMemo(() => {
     return goals.find((goal) => goal.id === item.goalId);
   }, [goals, item.goalId]);
+
+  const handleComplete = useCallback(async () => {
+    if (!itemGoal || !user?.id) return;
+
+    await saveLogMutation.mutateAsync({
+      type: LogType.ACTIVITY,
+      userId: user.id,
+      goalId: itemGoal?.id,
+      activityId: item.id,
+      activityType: item.type,
+    } as LogCreateInput);
+    play("complete-exercise");
+  }, [item, play, saveLogMutation, itemGoal, user?.id]);
 
   const readableDuration = (seconds: number) => {
     const totalMinutes = Math.floor(seconds / 60);
@@ -50,71 +75,79 @@ export const ActivityCard = ({
     return parts.join(" ");
   };
 
-  const MAX_SCHEDULES_TO_SHOW = 2;
-  const scheduleDisplayString = useMemo(() => {
-    if (!item.schedules || item.schedules.length === 0) {
-      return null;
-    }
-
-    const formattedSchedules = item.schedules
-      .slice(0, MAX_SCHEDULES_TO_SHOW)
-      .map((schedule) => formatScheduleEntry(schedule, item.recurrence))
-      .join(", ");
-
-    const remainingCount = item.schedules.length - MAX_SCHEDULES_TO_SHOW;
-    const moreText = remainingCount > 0 ? ` +${remainingCount} more` : "";
-
-    return formattedSchedules + moreText;
-  }, [item.schedules, item.recurrence]);
+  const numOfSteps = item.steps.length;
 
   return (
     <View
       style={[
         styles.card,
         {
+          borderWidth: 1,
+          borderRadius: BorderRadii.sm,
           borderColor: cardBorder,
           backgroundColor: cardBg,
         },
       ]}
     >
-      <View style={{ flexDirection: "row", alignItems: "flex-start", gap: Spacings.sm, padding: Spacings.sm }}>
+      {!hiddenFields.includes("info") && (
+        <ThemedButton
+          variant="ghost"
+          onPress={() =>
+            router.push({ pathname: "/activity/[slug]", params: { slug: item.slug || item.id, goalId: item.goalId } })
+          }
+          icon="info.circle"
+          style={{
+            position: "absolute",
+            alignSelf: "flex-end",
+            paddingHorizontal: 0,
+            // paddingVertical: 0,
+          }}
+          textStyle={{ color: muted, fontSize: 12 }}
+        />
+      )}
+      <View style={{ flexDirection: "row", alignItems: "flex-start", gap: Spacings.sm }}>
         {/* Image or Placeholder */}
         {!!item.featuredImage?.length ? (
           <Image source={{ uri: item.featuredImage }} style={styles.image} contentFit="cover" />
         ) : (
-          <View style={[styles.imagePlaceholder, { backgroundColor: cardBorder }]}>
+          <View style={[styles.image, { backgroundColor: cardBorder }]}>
             <IconSymbol name="photo" size={40} color={text} />
           </View>
         )}
-        <View>
-          <ThemedText style={styles.activityName} numberOfLines={2}>
-            {item.name}
-          </ThemedText>
-          <ThemedText style={styles.activityGoalName} numberOfLines={2}>
-            {itemGoal?.name}
-          </ThemedText>
+        <View style={{ flex: 1, gap: Spacings.xs }}>
+          <View style={{ maxWidth: "94%", overflow: "hidden" }}>
+            <ThemedText type="subtitle" numberOfLines={2}>
+              {item.name}
+            </ThemedText>
+            <ThemedText type="caption" numberOfLines={2}>
+              {itemGoal?.name}
+            </ThemedText>
+          </View>
 
           {/* Metadata Row */}
           <View style={styles.metadataRow}>
             {/* Category */}
             <View style={styles.metadataItem}>
               <IconSymbol name="tag.circle" size={14} color={accent} />
-              <ThemedText style={styles.metadataText}>{item.category}</ThemedText>
+              <ThemedText type="caption" style={{ textTransform: "capitalize" }}>
+                {item.category}
+              </ThemedText>
             </View>
             {/* Schedule Info Row (if applicable) */}
-            {scheduleDisplayString && (
-              <View style={styles.metadataRow}>
-                <View style={styles.metadataItem}>
-                  <IconSymbol name="calendar.badge.clock" size={14} color={text} />
-                  <ThemedText style={styles.metadataText}>{scheduleDisplayString}</ThemedText>
-                </View>
+            {numOfSteps > 0 && (
+              <View style={styles.metadataItem}>
+                <ThemedText type="caption">-</ThemedText>
+                <ThemedText type="caption">
+                  {numOfSteps} {numOfSteps === 0 || numOfSteps > 1 ? "steps" : "step"}
+                </ThemedText>
               </View>
             )}
             {/* Duration (if applicable) */}
             {isGuidedActivity(item) && duration > 0 && (
               <View style={styles.metadataItem}>
+                <ThemedText type="caption">-</ThemedText>
                 <IconSymbol name="timer" size={14} color={text} />
-                <ThemedText style={styles.metadataText}>{readableDuration(duration)}</ThemedText>
+                <ThemedText type="caption">{readableDuration(duration)}</ThemedText>
               </View>
             )}
           </View>
@@ -122,15 +155,22 @@ export const ActivityCard = ({
       </View>
 
       {/* Text Content */}
-      <View style={styles.contentContainer}>
-        <ThemedText style={styles.activityDescription} numberOfLines={2}>
-          {item.description}
-        </ThemedText>
-      </View>
+
+      {!hiddenFields.includes("description") && <ThemedText numberOfLines={2}>{item.description}</ThemedText>}
 
       {/* Action Button */}
       <Pressable
-        onPress={handlePress}
+        onPress={
+          handlePress
+            ? handlePress
+            : () => {
+                if (item.completionPrompts?.length) {
+                  setIsCompletionModalVisible(true);
+                } else {
+                  handleComplete();
+                }
+              }
+        }
         style={{
           alignSelf: "flex-start",
           flexDirection: "row",
@@ -140,20 +180,25 @@ export const ActivityCard = ({
           paddingVertical: Spacings.sm,
           paddingHorizontal: Spacings.md,
           borderRadius: BorderRadii.md,
+          marginTop: Spacings.sm,
         }}
       >
         <IconSymbol name={actionButtonIcon ?? "chevron.right"} size={18} color={text} style={{}} />
-        {actionButtonTitle && (
-          <ThemedText
-            style={{
-              fontSize: 14,
-              color: text,
-            }}
-          >
-            {actionButtonTitle}
-          </ThemedText>
-        )}
+        {actionButtonTitle && <ThemedText type="caption">{actionButtonTitle}</ThemedText>}
       </Pressable>
+
+      <ActivityCompletionModal
+        item={item}
+        isVisible={isCompletionModalVisible}
+        handleSkipQuestions={() => {
+          setIsCompletionModalVisible(false);
+          handleComplete();
+        }}
+        handleSubmitAnswers={() => {
+          setIsCompletionModalVisible(false);
+          handleComplete();
+        }}
+      />
     </View>
   );
 };
@@ -162,33 +207,13 @@ const styles = StyleSheet.create({
   card: {
     overflow: "hidden",
     width: "100%",
+    padding: Spacings.sm,
     gap: Spacings.sm,
   },
   image: {
-    width: 60,
+    width: 64,
     aspectRatio: 1,
     borderRadius: BorderRadii.sm,
-  },
-  imagePlaceholder: {
-    width: 60,
-    aspectRatio: 1,
-    borderRadius: BorderRadii.sm,
-  },
-  contentContainer: {
-    flex: 1,
-    justifyContent: "center",
-    gap: Spacings.xs,
-  },
-  activityName: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  activityGoalName: {
-    fontSize: 12,
-    fontWeight: "400",
-  },
-  activityDescription: {
-    fontSize: 14,
   },
   metadataRow: {
     flexDirection: "row",
@@ -199,8 +224,5 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: Spacings.xs,
-  },
-  metadataText: {
-    fontSize: 12,
   },
 });

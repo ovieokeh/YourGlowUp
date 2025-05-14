@@ -11,147 +11,183 @@ import {
   isPromptLog,
   isStepLog,
   Log,
+  LogCreateInput, // Assuming Log is a union type: ActivityLog | PromptLog | ...
   LogType,
   MediaUploadLog,
   PromptLog,
   StepLog,
-} from "./shared";
+} from "./shared"; // Ensure these types include id and createdAt
 
-export async function addActivityLog(log: Omit<ActivityLog, "id" | "createdAt">): Promise<string> {
-  const id = uuidv4();
-  const createdAt = new Date().toISOString();
+// --- Modified Specific Add Log Functions ---
+// These functions now expect the full log object, including id and createdAt,
+// and are primarily responsible for DB insertion. They no longer generate id/createdAt themselves.
+
+export async function addActivityLog(log: ActivityLog): Promise<void> {
   await localDb.runAsync(
     `INSERT INTO logs (
       id, userId, goalId, type, activityId, activityType, completedAt, createdAt
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
-    [id, log.userId, log.goalId, LogType.ACTIVITY, log.activityId, log.activityType, log.completedAt ?? null, createdAt]
+    [log.id, log.userId, log.goalId, log.type, log.activityId, log.activityType, log.completedAt ?? null, log.createdAt]
   );
-  return id;
 }
 
-export async function addPromptLog(log: Omit<PromptLog, "id" | "createdAt">): Promise<string> {
-  const id = uuidv4();
-  const createdAt = new Date().toISOString();
+export async function addPromptLog(log: PromptLog): Promise<void> {
   await localDb.runAsync(
     `INSERT INTO logs (
       id, userId, goalId, type, activityId, sessionId, promptId, answerType, answer, createdAt
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
     [
-      id,
+      log.id,
       log.userId,
       log.goalId,
-      LogType.PROMPT,
+      log.type,
       log.activityId,
       log.sessionId ?? null,
       log.promptId,
       log.answerType,
       JSON.stringify(log.answer),
-      createdAt,
+      log.createdAt,
     ]
   );
-  return id;
 }
 
-export async function addStepLog(log: Omit<StepLog, "id" | "createdAt">): Promise<string> {
-  const id = uuidv4();
-  const createdAt = new Date().toISOString();
-  await localDb.runAsync(
-    `INSERT INTO logs (
+export async function addStepLog(log: Omit<StepLog, "id">): Promise<void> {
+  await localDb
+    .runAsync(
+      `INSERT INTO logs (
       id, userId, goalId, type, activityId, stepId, stepIndex, durationInSeconds, createdAt
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
-    [
-      id,
-      log.userId,
-      log.goalId,
-      LogType.STEP,
-      log.activityId,
-      log.stepId,
-      log.stepIndex,
-      log.durationInSeconds ?? null,
-      createdAt,
-    ]
-  );
-  return id;
+      [
+        uuidv4(),
+        log.userId,
+        log.goalId,
+        log.type,
+        log.activityId,
+        log.stepId,
+        log.stepIndex,
+        log.durationInSeconds ?? null,
+        new Date().toISOString(),
+      ]
+    )
+    .catch((error) => {
+      console.error("Error adding step log:", error);
+      throw error; // Rethrow the error to be handled by the caller if needed
+    });
 }
 
-export async function addMediaUploadLog(log: Omit<MediaUploadLog, "id" | "createdAt">): Promise<string> {
-  const id = uuidv4();
-  const createdAt = new Date().toISOString();
+export async function addMediaUploadLog(log: MediaUploadLog): Promise<void> {
   await localDb.runAsync(
     `INSERT INTO logs (
       id, userId, goalId, type, media, createdAt
     ) VALUES (?, ?, ?, ?, ?, ?);`,
-    [id, log.userId, log.goalId, LogType.MEDIA_UPLOAD, JSON.stringify(log.media), createdAt]
+    [log.id, log.userId, log.goalId, log.type, JSON.stringify(log.media), log.createdAt]
   );
-  return id;
 }
 
-export async function addFeedbackLog(log: Omit<FeedbackLog, "id" | "createdAt">): Promise<string> {
-  const id = uuidv4();
-  const createdAt = new Date().toISOString();
+export async function addFeedbackLog(log: FeedbackLog): Promise<void> {
   await localDb.runAsync(
     `INSERT INTO logs (
       id, userId, goalId, type, authorType, authorId, feedback, createdAt
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
-    [id, log.userId, log.goalId, LogType.FEEDBACK, log.authorType, log.authorId, log.feedback, createdAt]
+    [log.id, log.userId, log.goalId, log.type, log.authorType, log.authorId, log.feedback, log.createdAt]
   );
-  return id;
 }
 
-export async function addLog(log: Omit<Log, "id" | "createdAt">): Promise<string> {
+// --- Robust addLog Function ---
+// This function is now the primary entry point for adding logs.
+// It generates id and createdAt, then dispatches to the specific record insertion functions.
+
+export async function addLog(logData: LogCreateInput): Promise<string> {
   const id = uuidv4();
+  const createdAt = new Date().toISOString();
 
-  if (isActivityLog(log as any)) {
-    await addActivityLog({ ...log } as ActivityLog);
-  } else if (isPromptLog(log as any)) {
-    await addPromptLog({ ...log } as PromptLog);
-  } else if (isStepLog(log as any)) {
-    await addStepLog({ ...log } as StepLog);
-  } else if (isMediaUploadLog(log as any)) {
-    await addMediaUploadLog({ ...log } as MediaUploadLog);
-  } else if (isFeedbackLog(log as any)) {
-    await addFeedbackLog({ ...log } as FeedbackLog);
+  console.log("Adding log:", {
+    ...logData,
+    id,
+  });
+
+  // The 'type' property must be present in logData for the type guards to work.
+  // Omit<Log, "id" | "createdAt"> ensures this, as Log is a discriminated union by 'type'.
+  const fullLogBase = { ...logData, id, createdAt };
+
+  // Using `logData as Log` or `fullLogBase as Log` for type guards is appropriate here,
+  // as they need to operate on the common structure of the Log union type (specifically the 'type' discriminant).
+  // After the type guard, TypeScript will correctly narrow down the type of `fullLogBase` or `logData`.
+
+  if (isActivityLog(fullLogBase as Log)) {
+    // fullLogBase is now inferred as ActivityLog (or should be compatible)
+    await addActivityLog(fullLogBase as ActivityLog);
+  } else if (isPromptLog(fullLogBase as Log)) {
+    await addPromptLog(fullLogBase as PromptLog);
+  } else if (isStepLog(fullLogBase as Log)) {
+    await addStepLog(fullLogBase as StepLog);
+  } else if (isMediaUploadLog(fullLogBase as Log)) {
+    await addMediaUploadLog(fullLogBase as MediaUploadLog);
+  } else if (isFeedbackLog(fullLogBase as Log)) {
+    await addFeedbackLog(fullLogBase as FeedbackLog);
   } else {
-    throw new Error(`Unknown log type: ${log.type}`);
+    // This case should ideally not be reached if Log is a comprehensive union
+    // and logData.type is one of the known LogType values.
+    throw new Error(`Unknown log type: ${(logData as any).type}`);
   }
+
   return id;
 }
 
-export async function getLogs(goalId: string): Promise<Log[]> {
-  const rows = await localDb.getAllAsync<any>(`SELECT * FROM logs WHERE goalId = ? ORDER BY createdAt DESC`, [goalId]);
-  return rows.map(deserializeLog);
+// --- Log Fetching (Unchanged from previous refactoring) ---
+export interface GetLogsFilters {
+  userId?: string;
+  goalId?: string;
+  activityId?: string;
+  logType?: LogType;
+  startDate?: string; // ISO string
+  endDate?: string; // ISO string
 }
 
-export async function getAllLogs(userId: string): Promise<Log[]> {
-  const rows = await localDb.getAllAsync<any>(`SELECT * FROM logs WHERE userId = ? ORDER BY createdAt DESC`, [userId]);
-  return rows.map(deserializeLog);
-}
+export async function getFilteredLogs(filters: GetLogsFilters): Promise<Log[]> {
+  const queryParts: string[] = ["SELECT * FROM logs"];
+  const whereClauses: string[] = [];
+  const params: any[] = [];
 
-export async function getTodayLogs(userId: string): Promise<Log[]> {
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
-  const isoStart = startOfDay.toISOString();
+  if (filters.userId !== undefined) {
+    whereClauses.push("userId = ?");
+    params.push(filters.userId);
+  }
+  if (filters.goalId !== undefined) {
+    whereClauses.push("goalId = ?");
+    params.push(filters.goalId);
+  }
+  if (filters.activityId !== undefined) {
+    whereClauses.push("activityId = ?");
+    params.push(filters.activityId);
+  }
+  if (filters.logType !== undefined) {
+    whereClauses.push("type = ?");
+    params.push(filters.logType);
+  }
+  if (filters.startDate !== undefined) {
+    whereClauses.push("createdAt >= ?");
+    params.push(filters.startDate);
+  }
+  if (filters.endDate !== undefined) {
+    whereClauses.push("createdAt <= ?");
+    params.push(filters.endDate);
+  }
 
-  const rows = await localDb.getAllAsync<any>(
-    `SELECT * FROM logs WHERE userId = ? AND createdAt >= ? ORDER BY createdAt DESC`,
-    [userId, isoStart]
-  );
-  return rows.map(deserializeLog);
-}
+  if (whereClauses.length > 0) {
+    queryParts.push("WHERE " + whereClauses.join(" AND "));
+  }
 
-export async function getTodayLogsByActivityId(userId: string, activityId: string): Promise<Log[]> {
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
-  const isoStart = startOfDay.toISOString();
+  queryParts.push("ORDER BY createdAt DESC");
 
-  const rows = await localDb.getAllAsync<any>(
-    `SELECT * FROM logs WHERE userId = ? AND activityId = ? AND createdAt >= ? ORDER BY createdAt DESC`,
-    [userId, activityId, isoStart]
-  );
+  const finalQuery = queryParts.join(" ");
+  const rows = await localDb.getAllAsync<any>(finalQuery, params);
+  // console.log("Fetched logs:", JSON.stringify(rows, null, 2));
   return rows.map(deserializeLog);
 }
 
 function deserializeLog(row: any): Log {
+  // console.log("Deserializing log row:", JSON.stringify(row, null, 2));
   const base = {
     id: row.id,
     userId: row.userId,
@@ -203,6 +239,7 @@ function deserializeLog(row: any): Log {
         feedback: row.feedback,
       } as FeedbackLog;
     default:
+      console.error(`Unknown log type encountered during deserialization: ${row.type}`, row);
       throw new Error(`Unknown log type: ${row.type}`);
   }
 }

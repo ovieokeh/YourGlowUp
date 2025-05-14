@@ -2,10 +2,11 @@ import { format, parse } from "date-fns";
 import { useRouter } from "expo-router";
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
+import Animated, { LinearTransition, SlideInRight, SlideOutLeft } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { GoalActivity, isTaskActivity } from "@/backend/shared";
-import { ActivityHorizontalCard } from "@/components/ActivityHorizontalCard";
+import { GoalActivity, isGuidedActivity } from "@/backend/shared";
+import { ActivityCard } from "@/components/ActivityCard";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { TodaysStats } from "@/components/TodaysStats";
@@ -19,16 +20,13 @@ type GroupedActivityData = {
 
 interface HomeScreenContentProps {
   groupedData: GroupedActivityData[];
-  selectedGoalId?: string;
-  currentUserId?: string;
 }
 
-export const HomeScreenContent: React.FC<HomeScreenContentProps> = ({ groupedData, selectedGoalId, currentUserId }) => {
+export const HomeScreenContent: React.FC<HomeScreenContentProps> = ({ groupedData }) => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const borderColor = useThemeColor({}, "border");
   const gray10 = useThemeColor({}, "gray10");
-  const grayMuted = useThemeColor({}, "tint");
 
   const handleNavigateToActivity = (item: GoalActivity) => {
     router.push({
@@ -60,14 +58,12 @@ export const HomeScreenContent: React.FC<HomeScreenContentProps> = ({ groupedDat
           },
         ]}
       >
-        <TodaysStats goalId={selectedGoalId} />
+        <TodaysStats />
       </View>
 
       {/* Pending Activities Section */}
       <View style={styles.listContainer}>
-        <ThemedText type="subtitle" style={styles.sectionTitle}>
-          Today&apos;s activities
-        </ThemedText>
+        <ThemedText type="subtitle">Today&apos;s activities</ThemedText>
 
         {groupedData.map(({ time, items: groupItems }) => {
           const formattedTime =
@@ -75,18 +71,23 @@ export const HomeScreenContent: React.FC<HomeScreenContentProps> = ({ groupedDat
 
           return (
             <View key={time} style={styles.timeGroup}>
-              <ThemedText style={[styles.timeHeader, { color: grayMuted }]}>{formattedTime}</ThemedText>
+              <ThemedText type="defaultSemiBold">{formattedTime}</ThemedText>
               <View style={styles.cardsContainer}>
                 {groupItems.map((item) => (
-                  <ActivityHorizontalCard
+                  <Animated.View
                     key={item.id}
-                    userId={currentUserId}
-                    goalId={item.goalId}
-                    item={item}
-                    handlePress={() => handleNavigateToActivity(item)}
-                    allowCompletion={isTaskActivity(item)}
-                    mode="action"
-                  />
+                    entering={SlideInRight.duration(300)}
+                    exiting={SlideOutLeft.duration(300)}
+                    layout={LinearTransition.springify()}
+                  >
+                    <ActivityCard
+                      item={item}
+                      actionButtonTitle={isGuidedActivity(item) ? "Start" : "Complete"}
+                      actionButtonIcon={isGuidedActivity(item) ? "play.circle" : "checkmark.circle"}
+                      hiddenFields={["description"]}
+                      handlePress={isGuidedActivity(item) ? () => handleNavigateToActivity(item) : undefined}
+                    />
+                  </Animated.View>
                 ))}
               </View>
             </View>
@@ -120,7 +121,7 @@ const styles = StyleSheet.create({
   listContainer: {
     paddingHorizontal: Spacings.md,
     paddingTop: Spacings.lg, // Space above the list section title
-    gap: Spacings.lg, // Space between title and first group, and between groups
+    gap: Spacings.xxxl, // Space between title and first group, and between groups
   },
   sectionTitle: {
     fontWeight: "600",
@@ -136,7 +137,7 @@ const styles = StyleSheet.create({
     // color set dynamically
   },
   cardsContainer: {
-    gap: Spacings.sm, // Space between cards in the same time group
+    gap: Spacings.md, // Space between cards in the same time group
   },
   footer: {
     padding: Spacings.md,

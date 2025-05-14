@@ -3,7 +3,7 @@ import { ActivityStep, GuidedActivityStep, isGuidedActivityStep } from "@/backen
 import { Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import React, { useEffect, useMemo, useState } from "react";
-import { Alert, Modal, SafeAreaView, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, Modal, SafeAreaView, StyleSheet, View } from "react-native";
 import { PhotoUpload } from "./PhotoUpload";
 import { ThemedButton } from "./ThemedButton";
 import { ThemedPicker } from "./ThemedPicker";
@@ -117,7 +117,7 @@ export const EditActivityStep: React.FC<EditActivityStepProps> = ({
       {/* Step Preview */}
       {StepPreview}
 
-      <Modal visible={isModalVisible} animationType="slide">
+      <Modal visible={isModalVisible} animationType="slide" presentationStyle="formSheet">
         <SafeAreaView style={{ flex: 1 }}>
           <ThemedView style={{ flex: 1 }}>
             <View
@@ -142,68 +142,66 @@ export const EditActivityStep: React.FC<EditActivityStepProps> = ({
             </View>
 
             {/* Step Edit Form */}
-            <ScrollView>
-              <View style={styles.container}>
-                <View style={styles.fieldGroup}>
-                  <ThemedText style={styles.label}>Content:</ThemedText>
-                  <ThemedTextInput
-                    style={[styles.input, styles.multilineInput]}
-                    value={editableStep.content}
-                    onChangeText={(text) => handleChange("content", text)}
-                    placeholder="Enter step content or instructions"
-                    multiline
-                    numberOfLines={4}
-                  />
-                </View>
-
-                <PhotoUpload
-                  photoUri={editableStep.instructionMedia?.url ?? ""}
-                  onPickPhoto={(photo) =>
-                    handleGuidedChange("instructionMedia", {
-                      type: "image",
-                      url: photo?.uri,
-                    })
-                  }
+            <View style={styles.container}>
+              <View style={styles.fieldGroup}>
+                <ThemedText style={styles.label}>Content:</ThemedText>
+                <ThemedTextInput
+                  style={[styles.input, styles.multilineInput]}
+                  value={editableStep.content}
+                  onChangeText={(text) => handleChange("content", text)}
+                  placeholder="Enter step content or instructions"
+                  multiline
+                  numberOfLines={4}
                 />
-
-                {/* ---- Fields specific to GuidedActivityStep ---- */}
-                {isGuidedActivityStep(editableStep) && (
-                  <>
-                    <View style={styles.fieldGroup}>
-                      <ThemedText style={styles.label}>Duration:</ThemedText>
-                      <ThemedTextInput
-                        style={styles.input}
-                        value={String(editableStep.duration)}
-                        onChangeText={(text) => handleGuidedChange("duration", parseInt(text, 10) || 0)}
-                        placeholder="e.g., 30"
-                        keyboardType="numeric"
-                      />
-                    </View>
-
-                    <View style={styles.fieldGroup}>
-                      <ThemedText style={styles.label}>Duration Type:</ThemedText>
-                      <ThemedPicker
-                        selectedValue={editableStep.durationType}
-                        onValueChange={(itemValue) => handleGuidedChange("durationType", itemValue)}
-                        items={[
-                          { label: "Seconds", value: "seconds" },
-                          { label: "Minutes", value: "minutes" },
-                          { label: "Hours", value: "hours" },
-                        ]}
-                      />
-                    </View>
-
-                    {previousSteps && previousSteps?.length > 0 && (
-                      <VisibleIfEditor
-                        initialDependencies={editableStep.visibleIf || []}
-                        possibleDependencies={previousSteps || []}
-                        onChange={(deps) => handleGuidedChange("visibleIf", deps)}
-                      />
-                    )}
-                  </>
-                )}
               </View>
-            </ScrollView>
+
+              <PhotoUpload
+                photoUri={editableStep.instructionMedia?.url ?? ""}
+                onPickPhoto={(photo) =>
+                  handleGuidedChange("instructionMedia", {
+                    type: "image",
+                    url: photo?.uri,
+                  })
+                }
+              />
+
+              {/* ---- Fields specific to GuidedActivityStep ---- */}
+              {isGuidedActivityStep(editableStep) && (
+                <>
+                  <View style={styles.fieldGroup}>
+                    <ThemedText style={styles.label}>Duration:</ThemedText>
+                    <ThemedTextInput
+                      style={styles.input}
+                      value={String(editableStep.duration)}
+                      onChangeText={(text) => handleGuidedChange("duration", parseInt(text, 10) || 0)}
+                      placeholder="e.g., 30"
+                      keyboardType="numeric"
+                    />
+                  </View>
+
+                  <View style={styles.fieldGroup}>
+                    <ThemedText style={styles.label}>Duration Type:</ThemedText>
+                    <ThemedPicker
+                      selectedValue={editableStep.durationType}
+                      onValueChange={(itemValue) => handleGuidedChange("durationType", itemValue)}
+                      items={[
+                        { label: "Seconds", value: "seconds" },
+                        { label: "Minutes", value: "minutes" },
+                        { label: "Hours", value: "hours" },
+                      ]}
+                    />
+                  </View>
+
+                  {previousSteps && previousSteps?.length > 0 && (
+                    <VisibleIfEditor
+                      initialDependencies={editableStep.visibleIf || []}
+                      possibleDependencies={previousSteps || []}
+                      onChange={(deps) => handleGuidedChange("visibleIf", deps)}
+                    />
+                  )}
+                </>
+              )}
+            </View>
             <View style={styles.buttonContainer}>
               {onCancel && <ThemedButton title="Cancel" onPress={onCancel} variant="destructive" />}
               <ThemedButton title="Save Step" onPress={handleSave} />

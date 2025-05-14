@@ -1,90 +1,129 @@
 import { useRouter } from "expo-router";
-import React from "react";
-import { FlatList, Pressable, StyleSheet, View } from "react-native";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 
-import { ThemedText } from "@/components/ThemedText";
+import { CenteredSwipeableTabs, TabConfig } from "@/components/CenteredSwipeableTabs";
+import { CollapsingHeader, CollapsingHeaderConfig, HeaderContentData } from "@/components/CollapsingHeader";
+import { TabbedPagerView } from "@/components/TabbedPagerView";
+import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedView } from "@/components/ThemedView";
-import { IconSymbol } from "@/components/ui/IconSymbol";
-import { BorderRadii, Spacings } from "@/constants/Theme";
+import { Spacings } from "@/constants/Theme";
 import { useAppContext } from "@/hooks/app/context";
+import { useCurrentScrollY } from "@/hooks/useCurrentScrollY";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { EmptyGoalsView } from "@/views/shared/EmptyGoalsView";
+import { MyGoalsView } from "@/views/goals/my-goals";
+import { View } from "react-native";
+import PagerView from "react-native-pager-view";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const TABS = [
+  { key: "my-goals", title: "My Goals", icon: "person.circle" },
+  { key: "explore", title: "Explore", icon: "globe" },
+] as TabConfig[];
 
 export default function GoalsScreen() {
-  const { goals, isLoadingGoals } = useAppContext();
+  const { goals } = useAppContext();
   const router = useRouter();
+  const gray10 = useThemeColor({}, "gray10"); // For card background
 
-  const background = useThemeColor({}, "background");
-  const border = useThemeColor({}, "border");
-  const text = useThemeColor({}, "text");
+  const [activeIndex, setActiveIndex] = useState(0);
+  const pagerRef = useRef<PagerView>(null);
+  const insets = useSafeAreaInsets();
 
-  if (isLoadingGoals) {
-    return (
-      <ThemedView style={styles.container}>
-        <ThemedText>Loading...</ThemedText>
-      </ThemedView>
-    );
-  }
+  const { scrollY, scrollHandler } = useCurrentScrollY(activeIndex, TABS);
+
+  const onTabPress = useCallback(
+    (index: number) => {
+      if (pagerRef.current) {
+        pagerRef.current.setPage(index);
+      }
+    },
+    [pagerRef]
+  );
+
+  const renderPageContent = useCallback(
+    (tab: TabConfig) => {
+      switch (tab.key) {
+        case "my-goals":
+          return (
+            <View style={{ marginBottom: 56 }}>
+              <MyGoalsView goals={goals} />
+            </View>
+          );
+        case "explore":
+          return null;
+        default:
+          return null;
+      }
+    },
+    [goals]
+  );
+
+  const headerConfig: CollapsingHeaderConfig = {
+    initialHeight: 240,
+    collapsedHeight: 94,
+    overlayColor: "rgba(0,0,0,0.45)",
+    backgroundColor: gray10,
+  };
+
+  const headerContentData: HeaderContentData = {
+    title: "Goals",
+    description: "Explore and manage your goals",
+    imageUrl: undefined,
+  };
+
+  const swipeableTabsProps = useMemo(
+    () => ({
+      tabs: TABS,
+      activeIndex: activeIndex,
+      onTabPress: onTabPress,
+    }),
+    [activeIndex, onTabPress]
+  );
 
   return (
-    <ThemedView style={styles.container}>
-      <FlatList
-        data={goals}
-        keyExtractor={(goal) => goal.id.toString()}
-        contentContainerStyle={{ flex: 1 }}
-        renderItem={({ item }) => (
-          <Pressable
-            onPress={() => router.push(`/goals/${item.id}`)}
-            style={({ pressed }) => [
-              styles.card,
-              { backgroundColor: background, borderColor: border },
-              pressed && { opacity: 0.9 },
-            ]}
-          >
-            <IconSymbol name="clock" size={20} color={text} style={styles.icon} />
-            <View style={styles.content}>
-              <ThemedText style={styles.name}>{item.name}</ThemedText>
-              <ThemedText style={styles.description}>{item.description}</ThemedText>
-            </View>
-          </Pressable>
-        )}
-        ListEmptyComponent={<EmptyGoalsView />}
+    <ThemedView style={{ flex: 1 }}>
+      <CollapsingHeader
+        scrollY={scrollY}
+        headerConfig={headerConfig}
+        contentData={headerContentData}
+        actionRightContent={
+          <ThemedButton
+            title="Add Goal"
+            onPress={() => {
+              router.push("/(tabs)/goals/add");
+            }}
+            variant="solid"
+            icon="plus.circle"
+            style={{ marginRight: Spacings.md }}
+          />
+        }
+        topInset={insets.top}
+        content={
+          <CenteredSwipeableTabs
+            {...swipeableTabsProps}
+            tabBackgroundColor="transparent"
+            tabTextColor="#fff"
+            tabTextMutedColor="rgba(255,255,255,0.7)"
+          />
+        }
+        stickyContent={
+          <CenteredSwipeableTabs
+            {...swipeableTabsProps}
+            tabBackgroundColor={"transparent"}
+            tabTextColor={headerConfig.stickyHeaderTextColor || "#fff"}
+            tabTextMutedColor={headerConfig.stickyHeaderTextMutedColor || "rgba(255,255,255,0.7)"}
+          />
+        }
+      />
+      <TabbedPagerView
+        tabs={TABS}
+        activeIndex={activeIndex}
+        onPageSelected={setActiveIndex}
+        scrollHandler={scrollHandler}
+        renderPageContent={renderPageContent}
+        pagerRef={pagerRef}
+        scrollContentContainerStyle={{ flexGrow: 1 }}
       />
     </ThemedView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: Spacings.md, paddingBottom: 96 },
-  card: {
-    borderWidth: 1,
-    borderRadius: BorderRadii.md,
-    padding: Spacings.sm,
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: Spacings.sm,
-    marginBottom: Spacings.sm,
-  },
-  icon: { marginTop: Spacings.xs },
-  content: { flex: 1 },
-  name: { fontSize: 16, fontWeight: "600" },
-  description: { fontSize: 14, opacity: 0.7 },
-  time: { marginTop: Spacings.xs, fontSize: 13, opacity: 0.5 },
-  actions: {
-    marginTop: "auto",
-    gap: 12,
-    paddingBottom: Spacings.xl,
-  },
-  actionButton: {
-    borderWidth: 1,
-    borderRadius: BorderRadii.md,
-    padding: Spacings.sm,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacings.sm,
-    justifyContent: "center",
-  },
-  actionText: {
-    fontWeight: "600",
-  },
-});

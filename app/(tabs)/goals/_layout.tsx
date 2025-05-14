@@ -1,6 +1,5 @@
-import { ThemedButton } from "@/components/ThemedButton";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { router, Stack } from "expo-router";
+import { Stack } from "expo-router";
 
 export default function GoalsLayout() {
   const background = useThemeColor({}, "background");
@@ -9,24 +8,22 @@ export default function GoalsLayout() {
       <Stack.Screen
         name="index"
         options={{
-          headerShown: true,
+          headerShown: false,
           title: "My Goals",
-          headerTitleAlign: "left",
-          headerRight: () => (
-            <ThemedButton
-              variant="ghost"
-              icon="plus.circle"
-              iconSize={28}
-              onPress={() => router.push("/(tabs)/goals/add")}
-            />
-          ),
+        }}
+      />
+      <Stack.Screen
+        name="[id]"
+        options={{
+          headerShown: false,
+          title: "Edit Goal Activity",
           headerStyle: {
             backgroundColor: background,
           },
         }}
       />
       <Stack.Screen
-        name="[id]"
+        name="edit-activity"
         options={{
           headerShown: false,
           title: "Edit Goal Activity",
@@ -41,16 +38,6 @@ export default function GoalsLayout() {
         options={{
           headerShown: true,
           title: "Add Goal",
-          headerStyle: {
-            backgroundColor: background,
-          },
-        }}
-      />
-      <Stack.Screen
-        name="add-photo-log"
-        options={{
-          headerShown: true,
-          title: "Log Photo",
           headerStyle: {
             backgroundColor: background,
           },

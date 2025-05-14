@@ -1,22 +1,30 @@
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, Image, ScrollView, StyleSheet, View } from "react-native";
-import { useSharedValue, withTiming } from "react-native-reanimated";
+import React, { useCallback, useMemo, useRef, useState } from "react";
+import { View } from "react-native";
+import { useSharedValue } from "react-native-reanimated";
 
 import { useGetActivityBySlug } from "@/backend/queries/activities";
-import { useAddActivityLog } from "@/backend/queries/logs";
-import { LogType } from "@/backend/shared";
-import { ProgressBar } from "@/components/ProgressBar";
+import { useAddLog } from "@/backend/queries/logs";
+import { ActivityStep, LogCreateInput, LogType } from "@/backend/shared";
+import { ActivityCompletionModal } from "@/components/ActivityCompletionModal";
+import { TabConfig } from "@/components/CenteredSwipeableTabs";
+import { CollapsingHeader, CollapsingHeaderConfig, HeaderContentData } from "@/components/CollapsingHeader";
+import { StepCard } from "@/components/StepCard";
+import { StepModal } from "@/components/StepModal";
+import { TabbedPagerView } from "@/components/TabbedPagerView";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
+import { BorderRadii, Spacings } from "@/constants/Theme";
 import { useAppContext } from "@/hooks/app/context";
-import { useActivityDuration } from "@/hooks/useActivityDuration";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useSound } from "@/utils/sounds";
 import { useSearchParams } from "expo-router/build/hooks";
+import PagerView from "react-native-pager-view";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const TABS = [{ key: "activity", title: "Activity", icon: "play.circle" }] as TabConfig[];
 
 export default function ActivitySession() {
   const { user } = useAppContext();
@@ -26,291 +34,264 @@ export default function ActivitySession() {
   const router = useRouter();
 
   const activityQuery = useGetActivityBySlug(goalId, slug as string);
-  const activity = useMemo(() => {
-    if (activityQuery.data) {
-      return activityQuery.data;
-    }
-    return null;
-  }, [activityQuery.data]);
+  const activity = useMemo(() => activityQuery.data, [activityQuery.data]);
 
-  const cumulativeActivityDuration = useActivityDuration(activity);
+  const pagerRef = useRef<PagerView>(null);
+  const insets = useSafeAreaInsets();
+  const scrollY = useSharedValue(0);
 
-  const [timeLeft, setTimeLeft] = useState(cumulativeActivityDuration);
-  const [started, setStarted] = useState(false);
-  const [completed, setCompleted] = useState(false);
+  const scrollHandler = useCallback(
+    (event: any) => {
+      scrollY.value = event.nativeEvent.contentOffset.y;
+    },
+    [scrollY]
+  );
 
-  const progress = useSharedValue(0);
-
-  const saveLogMutation = useAddActivityLog(user?.id);
+  const saveLogMutation = useAddLog(user?.id);
   const { play } = useSound();
 
   const textColor = useThemeColor({}, "text");
   const background = useThemeColor({}, "background");
-  const card = useThemeColor({ light: Colors.light.background, dark: Colors.dark.background }, "background");
   const border = useThemeColor({}, "border");
-  const success = useThemeColor({}, "success");
-  const danger = useThemeColor({}, "danger");
+  const muted = useThemeColor({}, "muted");
 
-  useEffect(() => {
-    if (started && timeLeft > 0 && cumulativeActivityDuration > 0) {
-      progress.value = withTiming((cumulativeActivityDuration - timeLeft) / cumulativeActivityDuration);
-    } else if (started && timeLeft === 0 && cumulativeActivityDuration > 0) {
-      progress.value = withTiming(1);
-    }
-  }, [cumulativeActivityDuration, progress, started, timeLeft]);
+  const [currentStep, setCurrentStep] = useState<ActivityStep | null>(null);
+  const [showStepModal, setShowStepModal] = useState(false);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
 
-  useEffect(() => {
-    let timer: number | undefined;
-    let soundTimer: number | undefined;
+  const steps = useMemo(() => {
+    if (!activity) return [];
+    return activity.steps;
+  }, [activity]);
 
-    if (started && timeLeft > 0) {
-      timer = setInterval(() => {
-        setTimeLeft((t) => t - 1);
-        if (timeLeft > 1) {
-          play("tick");
-        }
-      }, 1000);
-    } else if (timeLeft === 0 && started && !completed) {
-      setCompleted(true);
-    }
+  const nextStep = useMemo(() => {
+    const currentIndex = steps.findIndex((s) => s.id === currentStep?.id);
+    return steps[currentIndex + 1];
+  }, [steps, currentStep?.id]);
+  const previousStep = useMemo(() => {
+    const currentIndex = steps.findIndex((s) => s.id === currentStep?.id);
+    return steps[currentIndex - 1];
+  }, [steps, currentStep?.id]);
 
-    return () => {
-      clearInterval(timer);
-      clearInterval(soundTimer);
-    };
-  }, [completed, started, timeLeft, activity?.name, cumulativeActivityDuration, play]);
-
-  const handleStart = () => setStarted(true);
-
-  const handleQuit = () => {
-    if (!activity) return;
-    const timeElapsed = cumulativeActivityDuration - timeLeft;
-    const threshold = Math.floor(cumulativeActivityDuration / 3);
-
-    if (timeElapsed >= threshold) {
-      Alert.alert(
-        "Quit Early?",
-        `You've completed ${Math.round(
-          (timeElapsed / cumulativeActivityDuration) * 100
-        )}% of the session.\nThis will still be saved.`,
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Save & Quit",
-            style: "default",
-            onPress: handleComplete,
-          },
-        ]
-      );
+  const handleNext = () => {
+    if (nextStep) {
+      setCurrentStep(nextStep);
     } else {
-      Alert.alert("Quit Session?", "You've completed too little to save progress.", [
-        { text: "Cancel", style: "cancel" },
-        { text: "Quit", style: "destructive", onPress: () => router.back() },
-      ]);
+      setShowStepModal(false);
+      if (activity?.completionPrompts?.length) {
+        setShowCompletionModal(true);
+      }
+    }
+  };
+  const handlePrevious = () => {
+    if (previousStep) {
+      setCurrentStep(previousStep);
     }
   };
 
   const handleComplete = useCallback(async () => {
     if (!activity || !user?.id) return;
-    const finalDuration = cumulativeActivityDuration - timeLeft;
+
     await saveLogMutation.mutateAsync({
       type: LogType.ACTIVITY,
       userId: user.id,
       goalId,
       activityId: activity.id,
       activityType: activity.type,
-      meta: { duration: finalDuration },
-    });
+    } as LogCreateInput);
     play("complete-exercise");
 
-    router.replace("/activity-complete");
-  }, [cumulativeActivityDuration, activity, play, router, saveLogMutation, goalId, user?.id, timeLeft]);
+    router.replace(`/activity-complete?goalId=${goalId}`);
+  }, [activity, play, router, saveLogMutation, goalId, user?.id]);
 
-  useEffect(() => {
-    if (timeLeft === 0 && started) {
-      setCompleted(true);
-      setStarted(false);
-      setTimeLeft(cumulativeActivityDuration);
-      progress.value = withTiming(0);
-      handleComplete();
-    }
-  }, [timeLeft, started, cumulativeActivityDuration, progress, handleComplete]);
+  const renderPageContent = useCallback(
+    (tab: TabConfig) => {
+      switch (tab.key) {
+        case "activity":
+          return (
+            <View style={{ flex: 1, gap: Spacings.md }}>
+              <View
+                style={[
+                  {
+                    padding: Spacings.sm,
+                    borderRadius: BorderRadii.sm,
+                    marginVertical: Spacings.sm,
+                    alignItems: "center",
+                    backgroundColor: border,
+                  },
+                ]}
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginBottom: Spacings.xs,
+                  }}
+                >
+                  <IconSymbol name="target" size={18} color={textColor} />
+                  <ThemedText type="defaultSemiBold">Target Area: {activity?.category}</ThemedText>
+                </View>
+                <ThemedText>{activity?.description}</ThemedText>
+              </View>
+
+              {!!activity?.steps?.length && (
+                <View style={{ gap: Spacings.md }}>
+                  <ThemedButton
+                    variant="solid"
+                    title="Start Activity"
+                    onPress={() => {
+                      setCurrentStep(steps[0]);
+                      setShowStepModal(true);
+                    }}
+                    icon="checkmark.circle"
+                  />
+
+                  <ThemedText type="subtitle">Steps:</ThemedText>
+
+                  <View style={{ gap: Spacings.md }}>
+                    {activity?.steps?.map((step, idx) => (
+                      <StepCard
+                        key={idx}
+                        step={step}
+                        handlePress={() => {
+                          setCurrentStep(step);
+                          setShowStepModal(true);
+                        }}
+                      />
+                    ))}
+                  </View>
+                </View>
+              )}
+
+              <ThemedButton
+                title="Mark as Complete"
+                variant="solid"
+                icon="checkmark.circle"
+                onPress={() => {
+                  if (activity?.completionPrompts?.length) {
+                    setShowCompletionModal(true);
+                  } else {
+                    handleComplete();
+                  }
+                }}
+              />
+            </View>
+          );
+        default:
+          return null;
+      }
+    },
+    [activity, textColor, border, steps, handleComplete]
+  );
 
   if (activityQuery.isLoading) {
     return (
-      <ThemedView style={[styles.container, { backgroundColor: background }]}>
+      <ThemedView
+        style={[
+          {
+            flex: 1,
+            paddingTop: Spacings.md,
+            backgroundColor: background,
+          },
+        ]}
+      >
         <Stack.Screen options={{ title: "Loading..." }} />
-        <ThemedText style={styles.title}>Loading...</ThemedText>
+        <ThemedText>Loading...</ThemedText>
       </ThemedView>
     );
   }
 
   if (!activity) {
     return (
-      <ThemedView style={[styles.container, { backgroundColor: background }]}>
+      <ThemedView
+        style={[
+          {
+            flex: 1,
+            paddingTop: Spacings.md,
+            backgroundColor: background,
+          },
+        ]}
+      >
         <Stack.Screen options={{ title: "Oops!" }} />
-
-        <ThemedText style={styles.title}>Activity not found.</ThemedText>
+        <ThemedText type="title">Activity not found.</ThemedText>
       </ThemedView>
     );
   }
 
-  const hasDuration = cumulativeActivityDuration > 0;
+  const headerConfig: CollapsingHeaderConfig = {
+    initialHeight: 300,
+    collapsedHeight: 54,
+    overlayColor: "rgba(0,0,0,0.45)",
+    stickyHeaderTextMutedColor: muted,
+  };
+
+  const headerContentData: HeaderContentData = {
+    title: activity?.name ?? "",
+    description: activity?.description,
+    imageUrl: activity?.featuredImage,
+  };
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          title: activity.name,
-          headerRight: () => (
-            <ThemedButton
-              title={started ? (completed ? "" : "") : ""}
-              onPress={
-                !hasDuration ? handleComplete : started ? (completed ? handleComplete : handleQuit) : handleStart
-              }
-              variant={"ghost"}
-              icon={
-                !hasDuration
-                  ? "checkmark"
-                  : started
-                  ? completed
-                    ? "checkmark.rectangle.fill"
-                    : "x.circle.fill"
-                  : "play.fill"
-              }
-              iconPlacement="right"
-              style={styles.startButton}
-              iconSize={28}
-              textStyle={{
-                ...styles.startButtonText,
-                ...{
-                  color: started ? (completed ? success : danger) : textColor,
-                },
-              }}
-            />
-          ),
+      <CollapsingHeader
+        scrollY={scrollY}
+        headerConfig={headerConfig}
+        contentData={headerContentData}
+        actionLeftContent={
+          <ThemedButton
+            variant="ghost"
+            icon="chevron.backward"
+            onPress={() => {
+              router.back();
+            }}
+            textStyle={{
+              color: background,
+            }}
+          />
+        }
+        topInset={insets.top}
+      />
+      <TabbedPagerView
+        tabs={TABS}
+        activeIndex={0}
+        onPageSelected={() => {}}
+        scrollHandler={scrollHandler}
+        renderPageContent={renderPageContent}
+        pagerRef={pagerRef}
+        pageContainerStyle={{ flex: 1 }}
+        scrollContentContainerStyle={{
+          padding: Spacings.md,
+          gap: Spacings.lg,
+          flexGrow: 1,
         }}
       />
-      {activity.featuredImage && (
-        <Image source={{ uri: activity.featuredImage }} style={styles.image} resizeMode="cover" />
-      )}
-      <View style={{ gap: Spacings.md, marginTop: Spacings.md, width: "100%" }}>
-        {started && (
-          <View style={styles.progressContainer}>
-            <ProgressBar progress={progress} />
-            <ThemedText style={styles.timer}>{timeLeft}s remaining</ThemedText>
-          </View>
-        )}
-      </View>
 
-      <ScrollView contentContainerStyle={[styles.container, { backgroundColor: background }, styles.scrollView]}>
-        <View style={[styles.infoCard, { backgroundColor: card, borderColor: border }]}>
-          <View style={[styles.descriptionContainer, { backgroundColor: border }]}>
-            <View style={styles.infoRow}>
-              <IconSymbol name="target" size={18} color={textColor} />
-              <ThemedText style={styles.infoText}>Target Area: {activity.category}</ThemedText>
-            </View>
-            <ThemedText style={styles.description}>{activity.description}</ThemedText>
-          </View>
-          {!!activity.steps?.length && (
-            <View style={styles.instructions}>
-              <ThemedText style={styles.instructionsTitle}>Steps:</ThemedText>
-              {activity.steps?.map((step, idx) => (
-                <ThemedText key={idx} style={styles.step}>
-                  {idx + 1}. {step.content}
-                </ThemedText>
-              ))}
-            </View>
-          )}
-        </View>
-      </ScrollView>
+      <StepModal
+        isVisible={showStepModal}
+        step={currentStep}
+        index={steps.findIndex((s) => s.id === currentStep?.id)}
+        totalSteps={steps.length}
+        handleNext={handleNext}
+        handlePrevious={handlePrevious}
+        setIsVisible={setShowStepModal}
+        goalId={goalId}
+        activityId={activity.id}
+        activityType={activity.type}
+      />
+
+      <ActivityCompletionModal
+        item={activity}
+        isVisible={showCompletionModal}
+        handleSkipQuestions={() => {
+          setShowCompletionModal(false);
+          handleComplete();
+        }}
+        handleSubmitAnswers={(answers) => {
+          setShowCompletionModal(false);
+          handleComplete();
+        }}
+      />
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: Spacings.md,
-    paddingBottom: Spacings.xl,
-  },
-  scrollView: {
-    paddingHorizontal: Spacings.lg,
-    alignItems: "center",
-    gap: Spacings.md,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
-    textAlign: "center",
-  },
-  image: {
-    width: "100%",
-    // height: 320,
-    aspectRatio: 1,
-  },
-  infoCard: {
-    width: "100%",
-  },
-  infoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: Spacings.xs,
-  },
-  infoText: {
-    marginLeft: Spacings.xs,
-    fontSize: 16,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  descriptionContainer: {
-    padding: Spacings.sm,
-    borderRadius: BorderRadii.sm,
-    marginVertical: Spacings.sm,
-  },
-  description: {
-    fontSize: 15,
-    lineHeight: 22,
-    textAlign: "center",
-  },
-  instructions: {
-    marginTop: Spacings.sm,
-  },
-  instructionsTitle: {
-    fontWeight: "700",
-    marginBottom: Spacings.xs,
-    fontSize: 16,
-  },
-  step: {
-    fontSize: 14,
-    marginVertical: 2,
-  },
-  progressContainer: {
-    alignItems: "center",
-    gap: Spacings.xs,
-  },
-  timer: {
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  startButton: {
-    padding: Spacings.sm,
-    borderRadius: BorderRadii.md,
-    alignItems: "center",
-    paddingVertical: Spacings.xs,
-    marginLeft: "auto",
-  },
-  startButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  backButton: {
-    flexDirection: "row",
-    marginTop: Spacings.xs,
-    alignItems: "center",
-  },
-  backButtonText: {
-    marginLeft: Spacings.xs,
-  },
-});

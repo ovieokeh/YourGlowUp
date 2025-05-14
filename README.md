@@ -266,8 +266,44 @@ Every flow will be in one of these states:
 TODO
 
 - [ ] Add all the different onboarding flows
-- [ ] Update the Goals display design - GoalCard, featured image or animation, minimal title, activities, and description, cta
-- [ ] Update the Activities display design - ActivityCard, featured image or animation, minimal title, steps, and description, cta
+- [x] Update the Goals display design - GoalCard, featured image or animation, minimal title, activities, and description, cta
+- [x] Update the Activities display design - ActivityCard, featured image or animation, minimal title, steps, and description, cta
 - [ ] Update home tab, today's activities grouped by time and goal, personalised tip, community updates, badges & achievements, explore new goals
 - [ ] Add Explore Goals screen
 - [ ] Update Marketplace screen -> Explore (Goals, Resources)
+
+1. Onboarding flow: welcome with social proof -> intent quiz -> show matching goals (option to create from scratch) -> auth -> redirect to today or goal creation screen
+
+2. Today screen: quick stats hero (streak, activity trend, etc), today's activities list (can complete instantly or click into activity session view)
+
+3. Goals screen: Hero with (my goals|explore) tabs, add goal button in the header top right, list of owned goals
+
+3.1 Explore tabs list all public goals with search and category filters
+
+3.2 Add/edit goal screen: Tabbed screen (basic info, settings)
+
+3.3 Single goal screen: Tabbed screen (activities, community, stats) with edit button in header top right. Edit button navigates to the edit goal screen.
+
+3.4 Activities tab: List of activities configured for this goal. Edit button on every activity to open the edit activity modal
+
+3.5 Community: List of community updates like ('x just finished y activity', 'a shared their progress timelapse', etc). Plus button to open share modal (pick from predefined like activity log, timelapse, etc. No free input for now)
+
+3.6 Stats: Detailed stats and charts about the community activity e.g demographics, most completed activity, total time spent in which activity, etc with filters
+
+4 Progress: Tabbed screen (stats, photos, logs)
+
+4.1 Stats tab: Detailed stats and charts about your activity e.g most completed activity, total time spent in which activity, etc with filters
+
+4.2 Photos tab: Timelapse previews of each goal that has one
+
+4.3 Logs: Raw logs with filters
+
+5 Updates screen: Lighter version of goal community but for all goals at once. Can navigate deeper into specific goal communities
+
+6 Settings screen: Tabbed screen (profile, app, help)
+
+6.1 Profile: Set display name, photo, logout, export/import data
+
+6.2 App: Theme, global notifications enabled, sound effects
+
+6.3 Help: FAQ, contact button with deeplink to open default device mail app with preconfigured template, legal pages (privacy policy, terms of service, etc)

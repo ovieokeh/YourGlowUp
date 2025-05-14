@@ -12,7 +12,6 @@ interface VisibleIfEditorProps {
   initialDependencies?: ActivityDependency[];
   possibleDependencies?: ActivityStep[];
   dependencyLabel?: string;
-  renderer: (dependency: ActivityDependency) => React.ReactNode;
   onChange: (dependencies: ActivityDependency[]) => void;
 }
 

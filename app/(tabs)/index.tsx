@@ -1,7 +1,7 @@
 import { parse } from "date-fns";
 import { useFocusEffect } from "expo-router";
 import React, { useCallback, useMemo } from "react";
-import { StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import { useGetPendingActivities } from "@/backend/queries/activities";
 import { useGetTodayLogs } from "@/backend/queries/logs";
@@ -10,6 +10,7 @@ import { useAppContext } from "@/hooks/app/context";
 
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import { Spacings } from "@/constants/Theme";
 import { HomeScreenContent } from "@/views/home/content";
 import { HomeScreenEmptyNoGoals } from "@/views/home/empty-no-goals";
 import { HomeScreenEmptyNoPending } from "@/views/home/empty-no-pending";
@@ -97,7 +98,7 @@ export default function HomeScreen() {
   }, [items, isActivityCompleted]);
 
   const isLoading = isLoadingGoals || pendingActivitiesQuery.isLoading || (!!currentUserId && logsQuery.isLoading);
-  if (isLoading) {
+  if (isLoading && !goals.length) {
     return (
       <ThemedView style={styles.loadingContainer}>
         <ThemedText type="title" style={{ textAlign: "center" }}>
@@ -109,14 +110,20 @@ export default function HomeScreen() {
 
   const renderContent = () => {
     if (goals.length === 0) {
-      return <HomeScreenEmptyNoGoals />;
+      return (
+        <View style={{ flex: 1, padding: Spacings.md }}>
+          <HomeScreenEmptyNoGoals />
+        </View>
+      );
     }
     if (items.length === 0) {
-      return <HomeScreenEmptyNoPending selectedGoalId={selectedGoalId} />;
+      return (
+        <View style={{ flex: 1, padding: Spacings.md }}>
+          <HomeScreenEmptyNoPending selectedGoalId={selectedGoalId} />
+        </View>
+      );
     }
-    return (
-      <HomeScreenContent groupedData={groupedByTime} selectedGoalId={selectedGoalId} currentUserId={currentUserId} />
-    );
+    return <HomeScreenContent groupedData={groupedByTime} />;
   };
 
   return <ThemedView style={styles.flexContainer}>{renderContent()}</ThemedView>;

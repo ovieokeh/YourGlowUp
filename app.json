@@ -16,7 +16,8 @@
         "NSCameraUsageDescription": "This app uses the camera to take photos.",
         "NSPhotoLibraryAddUsageDescription": "This app uses the photo library to save photos.",
         "NSPhotoLibraryUsageDescription": "This app uses the photo library to select photos.",
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIBackgroundModes": ["audio", "video"]
       }
     },
     "android": {
@@ -47,7 +48,23 @@
         }
       ],
       "expo-sqlite",
-      "expo-audio"
+      [
+        "expo-audio",
+        {
+          "allowsRecordingIOS": true,
+          "interruptionModeIOS": "doNotMix",
+          "playsInSilentModeIOS": true,
+          "playbackStaysActive": true,
+          "allowsBackgroundAudio": true
+        }
+      ],
+      [
+        "expo-video",
+        {
+          "supportsBackgroundPlayback": true,
+          "supportsPictureInPicture": true
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

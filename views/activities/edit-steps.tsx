@@ -1,6 +1,6 @@
 import { ActivityCreateInput, ActivityStep } from "@/backend/shared";
 import { EditActivityStep } from "@/components/EditActivityStep";
-import { ThemedFabButton } from "@/components/ThemedFabButton";
+import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { BorderRadii, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
@@ -36,33 +36,30 @@ export const ActivityEditSteps: React.FC<ActivityEditStepsProps> = ({ steps, onC
       <ThemedText type="subtitle" style={{ opacity: 0.5 }}>
         Break down the activity into smaller steps to make it easier to complete.
       </ThemedText>
-
-      <View style={styles.listContainer}>
-        {(steps ?? [])?.map((step, index) => (
-          <View
-            key={`step-${index}`}
-            style={{
-              gap: Spacings.md,
-              borderWidth: 1,
-              borderColor,
-              padding: Spacings.sm,
-              borderRadius: BorderRadii.sm,
+      {(steps ?? [])?.map((step, index) => (
+        <View
+          key={`step-${index}`}
+          style={{
+            gap: Spacings.md,
+            borderWidth: 1,
+            borderColor,
+            padding: Spacings.sm,
+            borderRadius: BorderRadii.sm,
+          }}
+        >
+          <EditActivityStep
+            initialStep={step}
+            onSave={(updatedStep) => {
+              const finalSteps = [...(steps || [])];
+              finalSteps[index] = updatedStep;
+              onChange("steps", finalSteps);
             }}
-          >
-            <EditActivityStep
-              initialStep={step}
-              onSave={(updatedStep) => {
-                const finalSteps = [...(steps || [])];
-                finalSteps[index] = updatedStep;
-                onChange("steps", finalSteps);
-              }}
-              onRemove={() => removeStep(index)}
-              previousSteps={steps?.slice(0, index) ?? []}
-            />
-          </View>
-        ))}
-      </View>
-      <ThemedFabButton
+            onRemove={() => removeStep(index)}
+            previousSteps={steps?.slice(0, index) ?? []}
+          />
+        </View>
+      ))}
+      <ThemedButton
         title="Add Step"
         onPress={addStep}
         variant="solid"
@@ -76,10 +73,7 @@ export const ActivityEditSteps: React.FC<ActivityEditStepsProps> = ({ steps, onC
 };
 const styles = StyleSheet.create({
   container: {
+    width: "100%",
     gap: Spacings.xl,
-    paddingVertical: Spacings.md,
-  },
-  listContainer: {
-    gap: Spacings.sm,
   },
 });

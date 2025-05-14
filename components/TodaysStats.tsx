@@ -5,20 +5,25 @@ import { ThemedText } from "@/components/ThemedText";
 
 import { useGetStats } from "@/backend/queries/stats";
 import { BorderRadii, Spacings } from "@/constants/Theme";
+import { useAppContext } from "@/hooks/app/context";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { useFocusEffect } from "expo-router";
 import { IconSymbol, IconSymbolName } from "./ui/IconSymbol";
 
 export const TodaysStats: React.FC<{
   goalId?: string;
 }> = ({ goalId }) => {
-  const statsQuery = useGetStats({
-    goalId,
-    // startDate: Date.now() - 1 * 24 * 60 * 60 * 1000,
-    // endDate: Date.now(),
-  });
+  const { user } = useAppContext();
+  const statsQuery = useGetStats();
   const stats = useMemo(() => {
     return statsQuery.data;
   }, [statsQuery.data]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      statsQuery.refetch();
+    }, [statsQuery])
+  );
 
   const wrapperBorder = useThemeColor({}, "border");
   const muted = useThemeColor({}, "muted");
@@ -43,7 +48,7 @@ export const TodaysStats: React.FC<{
       ]}
     >
       <ThemedText type="subtitle" style={styles.title}>
-        At a glance
+        Your quick stats{user?.user_metadata?.full_name ? `, ${user?.user_metadata?.full_name}` : ""}
       </ThemedText>
 
       <View style={styles.statsGrid}>

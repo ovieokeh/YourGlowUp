@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
-import { FlatList, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import { useGetLogs } from "@/backend/queries/logs";
 import { isActivityLog, isPromptLog } from "@/backend/shared";
@@ -34,6 +34,7 @@ export function ProgressLogsView({ userId, selectedGoalId }: { userId?: string; 
   const router = useRouter();
   const logsQuery = useGetLogs(userId);
   const logs = useMemo(() => logsQuery.data || [], [logsQuery.data]);
+  console.log("logs", logs.length);
   const params = useLocalSearchParams();
   const initialTab = params.logsTab === "Activities" ? "Activities" : "Prompts";
 
@@ -44,41 +45,38 @@ export function ProgressLogsView({ userId, selectedGoalId }: { userId?: string; 
   const underline = useThemeColor({}, "tint");
   const iconColor = useThemeColor({}, "text");
 
-  const filteredLogs = selectedGoalId ? logs.filter((log) => log.goalId === selectedGoalId) : logs;
-
-  const activityLogs = filteredLogs.filter(isActivityLog);
-  const promptLogs = filteredLogs.filter(isPromptLog);
+  const activityLogs = logs.filter(isActivityLog);
+  const promptLogs = logs.filter(isPromptLog);
+  console.log("activity and prompt logs", activityLogs.length, promptLogs.length);
 
   const handleTabPress = (tab: (typeof TABS)[number], index: number) => {
     setActiveTab(tab);
   };
 
-  return (
-    <View style={{ flex: 1, paddingBottom: Spacings.xl * 2 }}>
-      <View style={[styles.tabBar, { borderColor: underline }]}>
-        {TABS.map((tab, idx) => (
-          <ThemedButton
-            variant="outline"
-            key={tab}
-            onPress={() => handleTabPress(tab, idx)}
-            active={activeTab === tab}
-            title={tab}
-          />
-        ))}
-      </View>
-
-      {activeTab === "Activities" ? (
-        <FlatList
-          contentContainerStyle={styles.list}
-          data={activityLogs}
-          keyExtractor={(item) => item.id.toString()}
-          ListEmptyComponent={() => (
-            <View style={styles.emptyState}>
-              <ThemedText style={styles.emptyText}>No tasks completed yet.</ThemedText>
-            </View>
-          )}
-          renderItem={({ item }) => (
-            <View style={[styles.log, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+  const renderPageContent = () => {
+    if (activeTab === "Activities" && !activityLogs.length) {
+      return (
+        <View style={{ flex: 1, paddingBottom: Spacings.xl * 2 }}>
+          <View style={styles.emptyState}>
+            <ThemedText style={styles.emptyText}>No activities logged yet.</ThemedText>
+          </View>
+        </View>
+      );
+    }
+    if (activeTab === "Prompts" && !promptLogs.length) {
+      return (
+        <View style={{ flex: 1, paddingBottom: Spacings.xl * 2 }}>
+          <View style={styles.emptyState}>
+            <ThemedText style={styles.emptyText}>No prompts logged yet.</ThemedText>
+          </View>
+        </View>
+      );
+    }
+    if (activeTab === "Activities") {
+      return (
+        <View style={styles.list}>
+          {activityLogs.map((item) => (
+            <View key={item.id} style={[styles.log, { backgroundColor: cardBg, borderColor: cardBorder }]}>
               <ThemedText style={styles.rowText}>{item.type}</ThemedText>
               {item.meta && (
                 <View
@@ -94,20 +92,15 @@ export function ProgressLogsView({ userId, selectedGoalId }: { userId?: string; 
               )}
               <ThemedText style={styles.timestamp}>{new Date(item.createdAt).toLocaleString()}</ThemedText>
             </View>
-          )}
-        />
-      ) : (
-        <FlatList
-          contentContainerStyle={styles.list}
-          data={promptLogs}
-          keyExtractor={(item) => item.id.toString()}
-          ListEmptyComponent={() => (
-            <View style={styles.emptyState}>
-              <ThemedText style={styles.emptyText}>No exercises logged yet.</ThemedText>
-            </View>
-          )}
-          renderItem={({ item }) => (
-            <View style={[styles.log, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+          ))}
+        </View>
+      );
+    }
+    if (activeTab === "Prompts") {
+      return (
+        <View style={styles.list}>
+          {promptLogs.map((item) => (
+            <View key={item.id} style={[styles.log, { backgroundColor: cardBg, borderColor: cardBorder }]}>
               <ThemedText style={styles.exercise}>{item.type}</ThemedText>
               <View
                 style={{
@@ -128,9 +121,27 @@ export function ProgressLogsView({ userId, selectedGoalId }: { userId?: string; 
                 <ThemedText style={styles.timestamp}>{new Date(item.createdAt).toLocaleString()}</ThemedText>
               </View>
             </View>
-          )}
-        />
-      )}
+          ))}
+        </View>
+      );
+    }
+  };
+
+  return (
+    <View style={{ flex: 1, paddingBottom: Spacings.xl * 2 }}>
+      <View style={[styles.tabBar, { borderColor: underline }]}>
+        {TABS.map((tab, idx) => (
+          <ThemedButton
+            variant="outline"
+            key={tab}
+            onPress={() => handleTabPress(tab, idx)}
+            active={activeTab === tab}
+            title={tab}
+          />
+        ))}
+      </View>
+
+      {renderPageContent()}
       <ThemedFabButton
         onPress={() => router.push("/activities")}
         icon="plus"

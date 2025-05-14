@@ -1,11 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
-import { getStats, StatsInput } from "../stats";
+import { getStats } from "../stats";
 
-export const useGetStats = (opts: StatsInput) => {
+export const useGetStats = (goalId?: string, startDate?: number, endDate?: number) => {
   return useQuery({
-    queryKey: ["stats", JSON.stringify(opts)],
-    queryFn: () => getStats(opts),
+    queryKey: ["stats", goalId, startDate, endDate],
+    queryFn: () =>
+      getStats({
+        goalId,
+        startDate,
+        endDate,
+      }),
     staleTime: 1000 * 60 * 5,
-    enabled: !!opts.goalId,
+    enabled: !!goalId,
   });
 };

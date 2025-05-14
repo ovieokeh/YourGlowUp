@@ -1,7 +1,6 @@
 import { Link } from "expo-router";
 import { StyleSheet, View } from "react-native";
 
-import { GoalPicker } from "@/components/GoalPicker";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Spacings } from "@/constants/Theme";
@@ -9,11 +8,6 @@ import { Spacings } from "@/constants/Theme";
 export default function GoalCommunityView() {
   return (
     <ThemedView style={styles.container}>
-      <GoalPicker
-        triggerProps={{
-          style: {},
-        }}
-      />
       <View style={styles.content}>
         <ThemedText type="title">This screen is under construction</ThemedText>
         <Link href="/" style={styles.link}>

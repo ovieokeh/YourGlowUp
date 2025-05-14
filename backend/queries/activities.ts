@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   addActivity,
   getActivities,
@@ -100,12 +100,10 @@ export const useRemoveActivity = (goalId: string) => {
 export const useGetPendingActivities = (completedActivityIds: string[], goalId?: string) => {
   return useQuery({
     queryKey: ["pending-activities", goalId ?? "all", completedActivityIds],
-
     queryFn: () => getPendingActivities(completedActivityIds, goalId),
-
     enabled: !!goalId,
-
     staleTime: 1000 * 60 * 1,
+    placeholderData: keepPreviousData,
   });
 };
 

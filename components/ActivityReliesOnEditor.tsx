@@ -164,7 +164,7 @@ const DependencyAddModal: React.FC<{
   };
 
   return (
-    <Modal animationType="slide" transparent={false} visible={isVisible}>
+    <Modal animationType="slide" transparent={false} visible={isVisible} presentationStyle="formSheet">
       <ThemedView
         style={{
           ...styles.modalContainer,

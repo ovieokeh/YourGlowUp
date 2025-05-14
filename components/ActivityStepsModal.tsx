@@ -18,7 +18,7 @@ interface Props {
   visible: boolean;
   selectedSlugs: string[];
   onClose: () => void;
-  onSave: (selected: GoalActivity[]) => void;
+  onSave: (selected: Omit<GoalActivity, "goalId">[]) => void;
 }
 
 export const ActivityStepsModal = ({ visible, selectedSlugs, onClose, onSave }: Props) => {

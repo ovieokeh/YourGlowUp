@@ -2,7 +2,6 @@ import { queryClient } from "@/backend";
 import { resetBadges, resetShownToasts, resetXP } from "@/backend/gamification";
 import { initDatabase } from "@/backend/localDb";
 import { getOnboardingStatus, OnboardingStatus, setOnboardingStatus } from "@/backend/queries/onboarding";
-import { BackButton } from "@/components/BackButton";
 import { AppProvider } from "@/hooks/app/context";
 import { ThemeProviderCustom, useAppTheme } from "@/hooks/theme/context";
 import { BadgeProvider } from "@/providers/BadgeContext";
@@ -85,7 +84,7 @@ function App() {
     const nuke = async () => {
       // initLogsTable(true);
       // initGoalsTables(true);
-      await initDatabase(false);
+      await initDatabase(true);
       await resetBadges();
       await resetXP();
       await resetShownToasts();
@@ -94,7 +93,7 @@ function App() {
         status: OnboardingStatus.NOT_STARTED,
       });
     };
-    nuke();
+    // nuke();
   }, []);
 
   if (!loaded) {
@@ -107,14 +106,7 @@ function App() {
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="onboarding" />
           <Stack.Screen name="auth" />
-          <Stack.Screen
-            name="edit-goal-activity"
-            options={{
-              headerShown: false,
-              title: "Edit Routine Item",
-              headerTitleAlign: "center",
-            }}
-          />
+
           <Stack.Screen
             name="activities"
             options={{
@@ -126,10 +118,7 @@ function App() {
           <Stack.Screen
             name="activity/[slug]"
             options={{
-              headerShown: true,
               title: "Activity",
-              headerTitleAlign: "center",
-              headerLeft: () => <BackButton />,
             }}
           />
           <Stack.Screen

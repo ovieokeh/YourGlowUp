@@ -56,7 +56,7 @@ export const EmptyGoalsView = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    gap: Spacings.md,
   },
   title: { fontSize: 16, fontWeight: "600" },
   description: { fontSize: 14, opacity: 0.7 },

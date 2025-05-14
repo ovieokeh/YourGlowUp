@@ -1,5 +1,7 @@
 // --- ENUMS ---
 
+import { IconSymbolName } from "@/components/ui/IconSymbol";
+
 export enum GoalCompletionType {
   INDEFINITE = "INDEFINITE", // Corrected value
   ACTIVITY = "ACTIVITY", // Corrected value
@@ -14,6 +16,15 @@ export enum GoalCategory {
   FINANCE = "finance",
   CUSTOM = "custom",
 }
+
+export const CATEGORY_ICON_MAP: Record<GoalCategory, IconSymbolName> = {
+  [GoalCategory.SELF_CARE]: "heart",
+  [GoalCategory.HOBBY]: "pencil",
+  [GoalCategory.PRODUCTIVITY]: "checkmark",
+  [GoalCategory.FITNESS]: "figure.cooldown",
+  [GoalCategory.FINANCE]: "wallet.bifold",
+  [GoalCategory.CUSTOM]: "star",
+};
 
 export enum ActivityType {
   GUIDED_ACTIVITY = "GUIDED_ACTIVITY",
@@ -156,7 +167,7 @@ export interface ActivityScheduleEntry {
 
 export interface ActivityBase {
   id: string;
-  goalId: string;
+  goalId?: string;
   slug: string;
   name: string;
   description: string;
@@ -304,20 +315,19 @@ export interface LogBase {
   id: string;
   userId: string;
   goalId: string;
+  activityId: string;
   createdAt: ISO8601Timestamp; // Standardized
+  activityType: ActivityType;
   meta?: Record<string, any>;
 }
 
 export interface ActivityLog extends LogBase {
   type: LogType.ACTIVITY;
-  activityId: string;
-  activityType: ActivityType;
   completedAt?: ISO8601Timestamp; // Optional completion time
 }
 
 export interface PromptLog extends LogBase {
   type: LogType.PROMPT;
-  activityId: string;
   sessionId?: string; // Optional: To group prompts answered together
   promptId: string;
   answerType: GoalActivityCompletionPromptAnswerType;
@@ -326,7 +336,6 @@ export interface PromptLog extends LogBase {
 
 export interface StepLog extends LogBase {
   type: LogType.STEP;
-  activityId: string;
   stepId: string;
   stepIndex: number;
   durationInSeconds?: number; // Optional: Time spent on step
@@ -345,6 +354,7 @@ export interface FeedbackLog extends LogBase {
 }
 
 export type Log = ActivityLog | PromptLog | StepLog | MediaUploadLog | FeedbackLog;
+export type LogCreateInput = Omit<Log, "id" | "createdAt">;
 
 // Type guards for logs
 export const isActivityLog = (log: Log): log is ActivityLog => log.type === LogType.ACTIVITY;

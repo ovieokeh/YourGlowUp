@@ -1,26 +1,29 @@
 import { useLocalSearchParams } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { GoalPicker } from "@/components/GoalPicker";
-import { ThemedText } from "@/components/ThemedText";
+import { CenteredSwipeableTabs, TabConfig } from "@/components/CenteredSwipeableTabs";
+import { CollapsingHeader, CollapsingHeaderConfig } from "@/components/CollapsingHeader";
+import { TabbedPagerView } from "@/components/TabbedPagerView";
 import { ThemedView } from "@/components/ThemedView";
-import { IconSymbol } from "@/components/ui/IconSymbol";
-import { Colors, Spacings } from "@/constants/Theme";
 import { useAppContext } from "@/hooks/app/context";
+import { useCurrentScrollY } from "@/hooks/useCurrentScrollY";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { ProgressLogsView } from "@/views/progress/logs";
 import { ProgressPhotoView } from "@/views/progress/photos";
 import { ProgressStatsView } from "@/views/progress/stats";
+import PagerView from "react-native-pager-view";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const TABS = ["Photos", "Stats", "Logs"] as const;
+const TABS = [
+  { key: "stats", title: "Stats", icon: "chart.xyaxis.line" },
+  { key: "photos", title: "Photos", icon: "calendar" },
+  { key: "logs", title: "Logs", icon: "book" },
+] as TabConfig[];
 
 export default function ProgressScreen() {
   const { user, goals, selectedGoalId } = useAppContext();
   const currentUserId = useMemo(() => user?.id, [user?.id]);
 
-  const SCREEN_WIDTH = useWindowDimensions().width;
   const params = useLocalSearchParams();
   const [selectedGoal, setSelectedGoal] = useState<string | undefined>(selectedGoalId);
 
@@ -39,103 +42,76 @@ export default function ProgressScreen() {
     }
   }, [goalOptions, selectedGoal]);
 
-  const initialTab = params.activeTab === "Photos" ? "Photos" : "Stats";
-  const [activeTab, setActiveTab] = useState<(typeof TABS)[number]>(initialTab);
+  const insets = useSafeAreaInsets();
+  const initialTabIndex = params.activeTab === "Photos" ? 2 : 0;
+  const [activeIndex, setActiveIndex] = useState(initialTabIndex);
+  const { scrollY, scrollHandler } = useCurrentScrollY(activeIndex, TABS);
+  const pagerRef = useRef<PagerView>(null);
 
-  const tabBorder = useThemeColor({ light: Colors.light.border, dark: Colors.dark.border }, "border");
-  const color = useThemeColor({}, "text");
+  const gray10 = useThemeColor({}, "gray10");
 
-  const underline = useThemeColor({}, "tint");
-  const translateX = useSharedValue(0);
-  const tabWidth = SCREEN_WIDTH / TABS.length;
-  const underlineStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: withTiming(translateX.value, { duration: 200 }) }],
-  }));
-  useEffect(() => {
-    const index = TABS.indexOf(initialTab);
-    translateX.value = tabWidth * index;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialTab, tabWidth]);
+  const onTabPress = useCallback(
+    (index: number) => {
+      if (pagerRef.current) {
+        pagerRef.current.setPage(index);
+      }
+    },
+    [pagerRef]
+  );
 
-  const handleTabPress = (tab: (typeof TABS)[number], index: number) => {
-    setActiveTab(tab);
-    translateX.value = tabWidth * index;
+  const renderPageContent = useCallback(
+    (tab: TabConfig) => {
+      switch (tab.key) {
+        case "stats":
+          return <ProgressStatsView selectedGoalId={selectedGoal} />;
+        case "logs":
+          return <ProgressLogsView userId={currentUserId} selectedGoalId={selectedGoal} />;
+        case "photos":
+          return <ProgressPhotoView />;
+        default:
+          return null;
+      }
+    },
+    [currentUserId, selectedGoal]
+  );
+
+  const headerConfig: CollapsingHeaderConfig = {
+    initialHeight: 240,
+    collapsedHeight: 94,
+    overlayColor: "rgba(0,0,0,0.45)",
+    backgroundColor: gray10,
   };
 
   return (
-    <SafeAreaView style={styles.flex}>
-      <ThemedView style={[styles.flex, styles.container]}>
-        <GoalPicker
-          triggerProps={{
-            variant: "outline",
-            style: {
-              borderRadius: 0,
-              paddingVertical: Spacings.md,
-            },
-          }}
-        />
-
-        <View style={[styles.tabBar, { borderColor: tabBorder }]}>
-          {TABS.map((tab, idx) => (
-            <Pressable key={tab} style={styles.tabButton} onPress={() => handleTabPress(tab, idx)}>
-              <IconSymbol
-                size={24}
-                name={tab === "Logs" ? "book" : tab === "Stats" ? "chart.xyaxis.line" : "calendar"}
-                color={color}
-              />
-              <ThemedText style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab}</ThemedText>
-            </Pressable>
-          ))}
-          <Animated.View style={[styles.underline, { width: tabWidth, backgroundColor: underline }, underlineStyle]} />
-        </View>
-
-        {activeTab === "Stats" ? (
-          <ScrollView>
-            <ProgressStatsView selectedGoalId={selectedGoal} />
-          </ScrollView>
-        ) : activeTab === "Logs" ? (
-          <ProgressLogsView userId={currentUserId} selectedGoalId={selectedGoal} />
-        ) : (
-          <ScrollView>
-            <ProgressPhotoView />
-          </ScrollView>
-        )}
-      </ThemedView>
-    </SafeAreaView>
+    <ThemedView style={{ flex: 1 }}>
+      <CollapsingHeader
+        scrollY={scrollY}
+        headerConfig={headerConfig}
+        contentData={{
+          title: "Analyse your progress",
+          description: "Track your progress and stay motivated",
+        }}
+        topInset={insets.top}
+        content={
+          <CenteredSwipeableTabs
+            tabs={TABS}
+            activeIndex={activeIndex}
+            onTabPress={onTabPress}
+            tabBackgroundColor="transparent"
+            tabTextColor="#fff"
+            tabTextMutedColor="rgba(255,255,255,0.7)"
+          />
+        }
+      />
+      <TabbedPagerView
+        tabs={TABS}
+        activeIndex={activeIndex}
+        onPageSelected={setActiveIndex}
+        scrollHandler={scrollHandler}
+        pagerRef={pagerRef}
+        renderPageContent={renderPageContent}
+        scrollContentContainerStyle={{ flexGrow: 1 }}
+      />
+    </ThemedView>
   );
 }
-
-const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-  },
-  container: {
-    paddingBottom: 96,
-  },
-  tabBar: {
-    flexDirection: "row",
-    borderBottomWidth: 1,
-    paddingVertical: Spacings.sm,
-  },
-  tabButton: {
-    flex: 1,
-    flexDirection: "row",
-    gap: Spacings.sm,
-    justifyContent: "center",
-    alignContent: "center",
-    paddingVertical: Spacings.sm,
-    alignItems: "center",
-  },
-  tabText: {
-    fontSize: 16,
-  },
-  tabTextActive: {
-    fontWeight: "600",
-  },
-  underline: {
-    position: "absolute",
-    height: 2,
-    bottom: 0,
-    left: 0,
-  },
-});

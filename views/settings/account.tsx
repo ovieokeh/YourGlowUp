@@ -4,22 +4,15 @@ import * as FileSystem from "expo-file-system";
 import { useRouter } from "expo-router";
 import * as Sharing from "expo-sharing";
 import React, { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  TextInput,
-  View,
-} from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, View } from "react-native";
 
 import { addLog, getAllLogs } from "@/backend/logs";
 import { isMediaUploadLog, Log } from "@/backend/shared";
 import { AccountBenefits } from "@/components/AccountBenefits";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
+import { BorderRadii, Spacings } from "@/constants/Theme";
+import { useAppContext } from "@/hooks/app/context";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { supabase } from "@/supabase";
 import Toast from "react-native-toast-message";
@@ -29,10 +22,9 @@ const NOTIF_TIME_KEY = "settings.notifications.time";
 
 export default function AccountView() {
   const router = useRouter();
+  const { user, logout } = useAppContext();
 
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
-  const [name, setName] = useState("");
+  const [name, setName] = useState(user?.user_metadata?.full_name || "");
   const [saving, setSaving] = useState(false);
 
   const bg = useThemeColor({}, "background");
@@ -42,30 +34,10 @@ export default function AccountView() {
   const muted = useThemeColor({}, "muted");
 
   useEffect(() => {
-    (async () => {
-      setLoading(true);
-      const {
-        data: { user: currentUser },
-        error,
-      } = await supabase.auth.getUser();
-      setLoading(false);
-
-      if (error) {
-        Alert.alert("Error", "Could not fetch user", [
-          {
-            text: "OK",
-            onPress: () => router.push("/auth"),
-          },
-        ]);
-      } else if (!currentUser) {
-        // no session, redirect to auth
-        router.push("/auth");
-      } else {
-        setUser(currentUser);
-        setName(currentUser.user_metadata?.full_name || "");
-      }
-    })();
-  }, [router]);
+    if (user?.user_metadata?.full_name) {
+      setName(user.user_metadata.full_name);
+    }
+  }, [user?.user_metadata?.full_name]);
 
   const handleSave = async () => {
     if (!name) return;
@@ -90,15 +62,6 @@ export default function AccountView() {
       });
     }
   };
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/auth");
-  };
-
-  if (loading) {
-    return <ActivityIndicator style={{ flex: 1 }} color={tint} />;
-  }
 
   const exportData = async () => {
     const currentUser = await supabase.auth.getUser();
@@ -232,26 +195,27 @@ export default function AccountView() {
                 onChangeText={setName}
               />
 
-              <ThemedText style={[styles.label, { color: muted, marginTop: 16 }]}>Email</ThemedText>
+              <ThemedText style={[styles.label, { color: muted, marginTop: Spacings.md }]}>Email</ThemedText>
               <TextInput
                 style={[styles.input, { backgroundColor: bg, color: text, borderColor: border }]}
                 value={user.email}
                 editable={false}
               />
 
-              <ThemedButton
-                title="Save"
-                onPress={handleSave}
-                disabled={saving || name === (user.user_metadata?.full_name || "")}
-                style={{ ...styles.button }}
-              />
-
-              <ThemedButton
-                title="Log Out"
-                onPress={handleLogout}
-                variant="outline"
-                style={{ ...styles.button, marginTop: 8 }}
-              />
+              <View style={styles.section}>
+                <ThemedButton
+                  title="Save"
+                  onPress={handleSave}
+                  disabled={saving || name === (user.user_metadata?.full_name || "")}
+                  style={{ ...styles.button }}
+                />
+                <ThemedButton
+                  title="Log Out"
+                  onPress={logout}
+                  variant="destructive"
+                  style={{ ...styles.button, marginTop: 8 }}
+                />
+              </View>
 
               <View style={styles.section}>
                 <ThemedText type="subtitle">Data</ThemedText>
@@ -269,31 +233,30 @@ export default function AccountView() {
 const styles = StyleSheet.create({
   inner: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 24,
-
-    paddingBottom: 64,
-    gap: 16,
+    paddingHorizontal: Spacings.md,
+    paddingTop: Spacings.xl,
+    paddingBottom: Spacings.xxxl,
+    gap: Spacings.md,
   },
   label: {
     fontSize: 14,
     fontWeight: "500",
-    marginBottom: 6,
+    marginBottom: Spacings.sm,
   },
   input: {
-    padding: 14,
-    borderRadius: 8,
-    fontSize: 16,
+    padding: Spacings.sm,
+    borderRadius: BorderRadii.sm,
+    fontSize: Spacings.md,
     borderWidth: 1,
   },
   button: {
-    paddingVertical: 14,
-    borderRadius: 8,
+    paddingVertical: Spacings.md,
+    borderRadius: BorderRadii.sm,
     alignItems: "center",
-    marginTop: 16,
+    marginTop: Spacings.md,
   },
   section: {
-    marginTop: 32,
-    gap: 12,
+    marginTop: Spacings.lg,
+    gap: Spacings.sm,
   },
 });

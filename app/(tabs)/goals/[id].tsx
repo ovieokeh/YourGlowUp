@@ -3,19 +3,16 @@ import { StyleSheet } from "react-native";
 import { useGetGoalById, useUpdateGoalActivities } from "@/backend/queries/goals";
 import { GoalActivity } from "@/backend/shared";
 import { ActivityStepsModal } from "@/components/ActivityStepsModal";
-import { TabConfig } from "@/components/CenteredSwipeableTabs";
-import {
-  CollapsingHeaderConfig,
-  CollapsingHeaderWithTabs,
-  HeaderContentData,
-  TabDisplayConfig,
-} from "@/components/CollapsingHeaderWithTabs";
+import { CenteredSwipeableTabs, TabConfig } from "@/components/CenteredSwipeableTabs";
+import { CollapsingHeader, CollapsingHeaderConfig, HeaderContentData } from "@/components/CollapsingHeader";
 import { TabbedPagerView } from "@/components/TabbedPagerView";
+import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedFabButton } from "@/components/ThemedFabButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Spacings } from "@/constants/Theme";
 import { useAppContext } from "@/hooks/app/context";
+import { useCurrentScrollY } from "@/hooks/useCurrentScrollY";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { GoalActivitiesView } from "@/views/goal/activities";
 import GoalCommunityView from "@/views/goal/community";
@@ -25,13 +22,6 @@ import { router } from "expo-router";
 import { useLocalSearchParams } from "expo-router/build/hooks";
 import { useCallback, useMemo, useRef, useState } from "react";
 import PagerView from "react-native-pager-view";
-import Animated, {
-  Extrapolation,
-  interpolate,
-  useAnimatedScrollHandler,
-  useAnimatedStyle,
-  useSharedValue,
-} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const TABS = [
@@ -46,44 +36,14 @@ export default function GoalsSingleScreen() {
   const { id = "1" } = useLocalSearchParams<{ id: string }>();
   const [showSelector, setShowSelector] = useState(false);
 
-  const [activeIndex, setActiveIndex] = useState(0);
-  const pagerRef = useRef<PagerView>(null);
-
   const muted = useThemeColor({}, "muted"); // Used for image placeholder
   const backgroundColor = useThemeColor({}, "background"); // For main screen background
-  const textColor = useThemeColor({}, "text"); // For text color
 
+  const [activeIndex, setActiveIndex] = useState(0);
+  const pagerRef = useRef<PagerView>(null);
   const insets = useSafeAreaInsets();
-  const scrollY = useSharedValue(0);
 
-  const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (event) => {
-      scrollY.value = event.contentOffset.y;
-    },
-  });
-
-  const initialHeight = 300;
-  const collapsedHeight = 40; // Height of the final sticky header bar
-  const heroParallaxScrollRange = initialHeight - collapsedHeight;
-
-  // FAB Animation
-  const fabAnimatedStyle = useAnimatedStyle(() => {
-    const scale = interpolate(
-      scrollY.value,
-      [0, 50, 150],
-      [1, 1.05, 1], // Subtle bounce on initial scroll
-      Extrapolation.CLAMP
-    );
-    const translateY = interpolate(
-      scrollY.value,
-      [heroParallaxScrollRange, heroParallaxScrollRange + 100],
-      [0, 10], // Moves down slightly as content scrolls well past hero
-      Extrapolation.CLAMP
-    );
-    return {
-      transform: [{ scale }, { translateY }],
-    };
-  });
+  const { scrollY, scrollHandler } = useCurrentScrollY(activeIndex, TABS);
 
   const updateGoalActivities = useUpdateGoalActivities(currentUserId);
   const goalQuery = useGetGoalById(id);
@@ -91,29 +51,32 @@ export default function GoalsSingleScreen() {
   const activities = useMemo(() => goalQuery.data?.activities, [goalQuery.data]);
   const activitySlugs = useMemo(() => goal?.activities?.map((activity) => activity.slug) || [], [goal]);
 
-  const onBackPress = useCallback(() => {
-    router.back();
+  const handleTabPress = useCallback((index: number) => {
+    setActiveIndex(index);
+    pagerRef.current?.setPage(index);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); // Haptic feedback
   }, []);
 
-  const onPageSelected = useCallback((position: number) => {
-    setActiveIndex(position);
-  }, []);
+  const headerConfig: CollapsingHeaderConfig = {
+    initialHeight: 300,
+    collapsedHeight: 94,
+    overlayColor: "rgba(0,0,0,0.45)",
+    stickyHeaderTextMutedColor: muted,
+  };
 
-  const renderPageContent = useCallback(
-    (tab: TabConfig) => {
-      if (!goal) return null;
-      switch (tab.key) {
-        case "activities":
-          return <GoalActivitiesView activities={activities} goalId={goal.id} />;
-        case "community":
-          return <GoalCommunityView />;
-        case "stats":
-          return <GoalStatsScreen selectedGoalId={goal.id} />;
-        default:
-          return null;
-      }
-    },
-    [activities, goal]
+  const headerContentData: HeaderContentData = {
+    title: goal?.name ?? "",
+    description: goal?.description,
+    imageUrl: goal?.featuredImage,
+  };
+
+  const swipeableTabsProps = useMemo(
+    () => ({
+      tabs: TABS,
+      activeIndex: activeIndex,
+      onTabPress: handleTabPress,
+    }),
+    [activeIndex, handleTabPress]
   );
 
   if (goalQuery.isLoading) {
@@ -132,55 +95,59 @@ export default function GoalsSingleScreen() {
     );
   }
 
-  const handleTabPress = (index: number) => {
-    setActiveIndex(index);
-    pagerRef.current?.setPage(index);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); // Haptic feedback
-  };
-
-  const headerConfig: CollapsingHeaderConfig = {
-    initialHeight: 300,
-    collapsedHeight: 94, // Typical header height without status bar
-    overlayColor: "rgba(0,0,0,0.45)",
-    stickyHeaderBackgroundColor: backgroundColor,
-    stickyHeaderTextColor: textColor,
-    stickyHeaderTextMutedColor: muted,
-  };
-
-  const headerContentData: HeaderContentData = {
-    title: goal.name,
-    description: goal.description,
-    imageUrl: goal.featuredImage,
-  };
-
-  const tabDisplayConfig: TabDisplayConfig = {
-    tabBackgroundColor: "transparent", // For hero section
-    tabTextColor: "#fff",
-    tabTextMutedColor: "rgba(255, 255, 255, 0.7)",
-  };
-
   return (
     <>
-      <ThemedView style={{ flex: 1, backgroundColor: backgroundColor }}>
-        <CollapsingHeaderWithTabs
+      <ThemedView style={{ flex: 1 }}>
+        <CollapsingHeader
           scrollY={scrollY}
           headerConfig={headerConfig}
           contentData={headerContentData}
-          tabsConfig={TABS}
-          activeTabIndex={activeIndex}
-          onTabPress={handleTabPress}
-          onBackPress={onBackPress}
+          actionLeftContent={
+            <ThemedButton
+              variant="ghost"
+              icon="chevron.backward"
+              onPress={() => {
+                router.back();
+              }}
+            />
+          }
           topInset={insets.top}
-          tabDisplayConfig={tabDisplayConfig}
-          withTabs
+          content={
+            <CenteredSwipeableTabs
+              {...swipeableTabsProps}
+              tabBackgroundColor="transparent"
+              tabTextColor="#fff"
+              tabTextMutedColor="rgba(255,255,255,0.7)"
+            />
+          }
+          stickyContent={
+            <CenteredSwipeableTabs
+              {...swipeableTabsProps}
+              tabBackgroundColor={"transparent"}
+              tabTextColor={headerConfig.stickyHeaderTextColor || "#fff"}
+              tabTextMutedColor={headerConfig.stickyHeaderTextMutedColor || "rgba(255,255,255,0.7)"}
+            />
+          }
         />
 
         <TabbedPagerView
           tabs={TABS}
           activeIndex={activeIndex}
-          onPageSelected={onPageSelected}
+          onPageSelected={setActiveIndex}
           scrollHandler={scrollHandler}
-          renderPageContent={renderPageContent}
+          renderPageContent={(tab: TabConfig) => {
+            if (!goal) return null;
+            switch (tab.key) {
+              case "activities":
+                return <GoalActivitiesView activities={activities} goalId={goal.id} />;
+              case "community":
+                return <GoalCommunityView />;
+              case "stats":
+                return <GoalStatsScreen selectedGoalId={goal.id} />;
+              default:
+                return null;
+            }
+          }}
           pagerRef={pagerRef}
           pageContainerStyle={styles.pageStyle}
           scrollContentContainerStyle={styles.scrollContentForPage}
@@ -188,27 +155,26 @@ export default function GoalsSingleScreen() {
       </ThemedView>
 
       {/* Floating Action Button */}
-      <Animated.View style={[styles.fabContainer, fabAnimatedStyle]}>
-        <ThemedFabButton
-          variant="primary"
-          title="Update Activities"
-          onPress={() => {
-            setShowSelector(true);
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          }}
-          icon="pencil"
-          iconPlacement="right"
-        />
-      </Animated.View>
+      <ThemedFabButton
+        variant="primary"
+        title="Update Activities"
+        onPress={() => {
+          setShowSelector(true);
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        }}
+        icon="pencil"
+        iconPlacement="right"
+        bottom={96}
+      />
 
       {/* Modal */}
       <ActivityStepsModal
         visible={showSelector}
         selectedSlugs={activitySlugs}
         onClose={() => setShowSelector(false)}
-        onSave={(newActivities: GoalActivity[]) => {
+        onSave={(newActivities) => {
           updateGoalActivities
-            .mutateAsync({ goalId: goal.id, activities: newActivities })
+            .mutateAsync({ goalId: goal.id, activities: newActivities as GoalActivity[] })
             .then(() => {
               setShowSelector(false);
             })
