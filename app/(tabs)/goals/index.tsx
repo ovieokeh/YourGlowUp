@@ -2,18 +2,17 @@ import { useRouter } from "expo-router";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 
 import { CenteredSwipeableTabs, TabConfig } from "@/components/CenteredSwipeableTabs";
-import { CollapsingHeader, CollapsingHeaderConfig, HeaderContentData } from "@/components/CollapsingHeader";
+import { CollapsingHeader } from "@/components/CollapsingHeader";
+import { AddGoalModal } from "@/components/modals/AddGoalModal";
 import { TabbedPagerView } from "@/components/TabbedPagerView";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedView } from "@/components/ThemedView";
-import { Spacings } from "@/constants/Theme";
 import { useAppContext } from "@/hooks/app/context";
 import { useCurrentScrollY } from "@/hooks/useCurrentScrollY";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { MyGoalsView } from "@/views/goals/my-goals";
 import { View } from "react-native";
 import PagerView from "react-native-pager-view";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const TABS = [
   { key: "my-goals", title: "My Goals", icon: "person.circle" },
@@ -23,11 +22,14 @@ const TABS = [
 export default function GoalsScreen() {
   const { goals } = useAppContext();
   const router = useRouter();
-  const gray10 = useThemeColor({}, "gray10"); // For card background
+
+  const textColor = useThemeColor({}, "text");
+  const muted = useThemeColor({}, "muted");
+
+  const [isAddModalVisible, setAddModalVisible] = useState(false);
 
   const [activeIndex, setActiveIndex] = useState(0);
   const pagerRef = useRef<PagerView>(null);
-  const insets = useSafeAreaInsets();
 
   const { scrollY, scrollHandler } = useCurrentScrollY(activeIndex, TABS);
 
@@ -58,18 +60,16 @@ export default function GoalsScreen() {
     [goals]
   );
 
-  const headerConfig: CollapsingHeaderConfig = {
-    initialHeight: 240,
-    collapsedHeight: 94,
-    overlayColor: "rgba(0,0,0,0.45)",
-    backgroundColor: gray10,
-  };
-
-  const headerContentData: HeaderContentData = {
-    title: "Goals",
-    description: "Explore and manage your goals",
-    imageUrl: undefined,
-  };
+  const onSubmit = useCallback(
+    (goalId: string) => {
+      setAddModalVisible(false);
+      router.push(`/(tabs)/goals/${goalId}`);
+    },
+    [router]
+  );
+  const onRequestClose = useCallback(() => {
+    setAddModalVisible(false);
+  }, []);
 
   const swipeableTabsProps = useMemo(
     () => ({
@@ -84,36 +84,29 @@ export default function GoalsScreen() {
     <ThemedView style={{ flex: 1 }}>
       <CollapsingHeader
         scrollY={scrollY}
-        headerConfig={headerConfig}
-        contentData={headerContentData}
-        actionRightContent={
+        config={{
+          title: "Goals",
+          description: "Explore and manage your goals",
+          initialHeroHeight: 140,
+        }}
+        topRightContent={
           <ThemedButton
-            title="Add Goal"
             onPress={() => {
-              router.push("/(tabs)/goals/add");
+              setAddModalVisible(true);
             }}
-            variant="solid"
-            icon="plus.circle"
-            style={{ marginRight: Spacings.md }}
+            variant="ghost"
+            icon="plus"
           />
         }
-        topInset={insets.top}
         content={
           <CenteredSwipeableTabs
             {...swipeableTabsProps}
             tabBackgroundColor="transparent"
-            tabTextColor="#fff"
-            tabTextMutedColor="rgba(255,255,255,0.7)"
+            tabTextColor={textColor}
+            tabTextMutedColor={muted}
           />
         }
-        stickyContent={
-          <CenteredSwipeableTabs
-            {...swipeableTabsProps}
-            tabBackgroundColor={"transparent"}
-            tabTextColor={headerConfig.stickyHeaderTextColor || "#fff"}
-            tabTextMutedColor={headerConfig.stickyHeaderTextMutedColor || "rgba(255,255,255,0.7)"}
-          />
-        }
+        isStickyContent
       />
       <TabbedPagerView
         tabs={TABS}
@@ -124,6 +117,7 @@ export default function GoalsScreen() {
         pagerRef={pagerRef}
         scrollContentContainerStyle={{ flexGrow: 1 }}
       />
+      <AddGoalModal isVisible={isAddModalVisible} onRequestClose={onRequestClose} onUpsertSuccess={onSubmit} />
     </ThemedView>
   );
 }

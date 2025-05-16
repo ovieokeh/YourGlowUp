@@ -105,9 +105,7 @@ export function ThemedButton({
         <ActivityIndicator color={textColor} />
       ) : (
         <View style={styles.row}>
-          {icon && iconPlacement === "left" && (
-            <IconSymbol name={icon} size={iconSize} color={textColor} style={styles.iconLeft} />
-          )}
+          {icon && iconPlacement === "left" && <IconSymbol name={icon} size={iconSize} color={textColor} style={{}} />}
           {title && (
             <ThemedText
               style={[
@@ -126,9 +124,7 @@ export function ThemedButton({
               {title}
             </ThemedText>
           )}
-          {icon && iconPlacement === "right" && (
-            <IconSymbol name={icon} size={iconSize} color={textColor} style={styles.iconRight} />
-          )}
+          {icon && iconPlacement === "right" && <IconSymbol name={icon} size={iconSize} color={textColor} style={{}} />}
         </View>
       )}
     </TouchableOpacity>
@@ -146,12 +142,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "center",
-  },
-  iconLeft: {
-    marginRight: Spacings.sm,
-  },
-  iconRight: {
-    marginLeft: Spacings.sm,
+    gap: Spacings.xs,
   },
   text: {
     fontSize: 16,

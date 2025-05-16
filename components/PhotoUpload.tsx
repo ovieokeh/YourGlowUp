@@ -6,11 +6,12 @@ import { decode } from "base64-arraybuffer";
 import * as FileSystem from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Image, Modal, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
+import { Modal, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import Toast from "react-native-toast-message";
 
+import { Image } from "expo-image";
 import { ThemedButton } from "./ThemedButton";
 import { ThemedView } from "./ThemedView";
 
@@ -34,7 +35,7 @@ export function PhotoUpload({
   overlayImage,
   initialTransform,
   previewType = "horizontal",
-  showPreview = true,
+  showPreview = false,
   allowTransform = false,
   loading,
   setLoading: setExternalLoading,
@@ -405,7 +406,7 @@ export function PhotoUpload({
                 <Image
                   source={{ uri: photoUri }}
                   style={[styles.photo, { width: "100%", height: "100%" }]}
-                  resizeMode="contain"
+                  contentFit="contain"
                 />
               )
             ) : (
@@ -417,7 +418,7 @@ export function PhotoUpload({
               <Image
                 source={overlayImage}
                 style={[styles.overlay, { width: "100%", height: "100%" }]}
-                resizeMode="contain"
+                contentFit="contain"
               />
             )}
           </View>

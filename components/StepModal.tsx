@@ -96,7 +96,7 @@ export const StepModal = ({
           source={{ uri: step.instructionMedia?.url }}
           style={{
             width: "100%",
-            aspectRatio: 16 / 9,
+            height: dimensions.height * 0.4,
           }}
           contentFit="cover"
           contentPosition="top"

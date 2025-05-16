@@ -2,12 +2,11 @@ import { useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { CenteredSwipeableTabs, TabConfig } from "@/components/CenteredSwipeableTabs";
-import { CollapsingHeader, CollapsingHeaderConfig } from "@/components/CollapsingHeader";
+import { CollapsingHeader } from "@/components/CollapsingHeader";
 import { TabbedPagerView } from "@/components/TabbedPagerView";
 import { ThemedView } from "@/components/ThemedView";
 import { useAppContext } from "@/hooks/app/context";
 import { useCurrentScrollY } from "@/hooks/useCurrentScrollY";
-import { useThemeColor } from "@/hooks/useThemeColor";
 import { ProgressLogsView } from "@/views/progress/logs";
 import { ProgressPhotoView } from "@/views/progress/photos";
 import { ProgressStatsView } from "@/views/progress/stats";
@@ -48,8 +47,6 @@ export default function ProgressScreen() {
   const { scrollY, scrollHandler } = useCurrentScrollY(activeIndex, TABS);
   const pagerRef = useRef<PagerView>(null);
 
-  const gray10 = useThemeColor({}, "gray10");
-
   const onTabPress = useCallback(
     (index: number) => {
       if (pagerRef.current) {
@@ -75,23 +72,15 @@ export default function ProgressScreen() {
     [currentUserId, selectedGoal]
   );
 
-  const headerConfig: CollapsingHeaderConfig = {
-    initialHeight: 240,
-    collapsedHeight: 94,
-    overlayColor: "rgba(0,0,0,0.45)",
-    backgroundColor: gray10,
-  };
-
   return (
     <ThemedView style={{ flex: 1 }}>
       <CollapsingHeader
         scrollY={scrollY}
-        headerConfig={headerConfig}
-        contentData={{
-          title: "Analyse your progress",
+        config={{
+          title: "Analytics",
           description: "Track your progress and stay motivated",
+          initialHeroHeight: 140,
         }}
-        topInset={insets.top}
         content={
           <CenteredSwipeableTabs
             tabs={TABS}

@@ -1,3 +1,4 @@
+import { Spacings } from "@/constants/Theme";
 import React from "react";
 import { NativeScrollEvent, NativeSyntheticEvent, StyleSheet } from "react-native";
 import PagerView, { PagerViewOnPageSelectedEvent } from "react-native-pager-view";
@@ -57,8 +58,13 @@ export const TabbedPagerView: React.FC<TabbedPagerViewProps> = ({
             scrollEventThrottle={16}
             bounces={false}
             directionalLockEnabled
-            overScrollMode="never"
-            contentContainerStyle={scrollContentContainerStyle}
+            // overScrollMode="never"
+            contentContainerStyle={[
+              scrollContentContainerStyle,
+              {
+                paddingBottom: insets.bottom + Spacings.xxxl,
+              },
+            ]}
           >
             {renderPageContent(tab, index)}
           </Animated.ScrollView>

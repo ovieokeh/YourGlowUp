@@ -12,7 +12,7 @@ import { ThemedTextInput } from "@/components/ThemedTextInput";
 import { DEFAULT_ACTIVITIES } from "@/constants/Goals";
 import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { ThemedView } from "./ThemedView";
+import { ThemedView } from "../ThemedView";
 
 interface Props {
   visible: boolean;

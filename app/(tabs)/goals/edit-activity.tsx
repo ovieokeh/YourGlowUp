@@ -2,7 +2,7 @@ import { useGetActivityById, useUpdateActivity } from "@/backend/queries/activit
 import { useGetGoalById } from "@/backend/queries/goals";
 import { ActivityCreateInput, GoalActivity, NotificationRecurrence } from "@/backend/shared";
 import { CenteredSwipeableTabs, TabConfig } from "@/components/CenteredSwipeableTabs";
-import { CollapsingHeader, CollapsingHeaderConfig, HeaderContentData } from "@/components/CollapsingHeader";
+import { CollapsingHeader } from "@/components/CollapsingHeader";
 import { TabbedPagerView } from "@/components/TabbedPagerView";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedFabButton } from "@/components/ThemedFabButton";
@@ -20,7 +20,6 @@ import { Link, router, Tabs, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet } from "react-native";
 import PagerView from "react-native-pager-view";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
 const TABS: TabConfig[] = [
@@ -37,9 +36,7 @@ export default function EditGoalActivityScreen() {
   invariant(id, "activityId is required");
   invariant(goalId, "goalId is required");
 
-  const insets = useSafeAreaInsets();
   const backgroundColor = useThemeColor({}, "background");
-  const muted = useThemeColor({}, "muted");
 
   const [activeIndex, setActiveIndex] = useState(0);
   const { scrollY, scrollHandler } = useCurrentScrollY(activeIndex, TABS);
@@ -136,21 +133,11 @@ export default function EditGoalActivityScreen() {
     [activityForm, possibleDependencies, activities, onChange]
   );
 
-  const headerConfig: CollapsingHeaderConfig = React.useMemo(
-    () => ({
-      initialHeight: 280,
-      collapsedHeight: 94,
-      overlayColor: "rgba(0,0,0,0.45)",
-      stickyHeaderTextMutedColor: muted,
-    }),
-    [muted]
-  );
-
-  const headerContentData: HeaderContentData = React.useMemo(
+  const headerContentData = React.useMemo(
     () => ({
       title: activityForm?.name || "",
       description: activityForm?.description,
-      imageUrl: activityForm?.featuredImage,
+      backgroundImageUrl: activityForm?.featuredImage,
     }),
     [activityForm]
   );
@@ -191,9 +178,8 @@ export default function EditGoalActivityScreen() {
       <ThemedView style={{ flex: 1, backgroundColor }}>
         <CollapsingHeader
           scrollY={scrollY}
-          headerConfig={headerConfig}
-          contentData={headerContentData}
-          actionLeftContent={
+          config={headerContentData}
+          topLeftContent={
             <ThemedButton
               variant="ghost"
               icon="chevron.backward"
@@ -202,7 +188,6 @@ export default function EditGoalActivityScreen() {
               }}
             />
           }
-          topInset={insets.top}
           content={
             <CenteredSwipeableTabs
               {...swipeableTabsProps}
@@ -211,14 +196,7 @@ export default function EditGoalActivityScreen() {
               tabTextMutedColor="rgba(255,255,255,0.7)"
             />
           }
-          stickyContent={
-            <CenteredSwipeableTabs
-              {...swipeableTabsProps}
-              tabBackgroundColor={headerConfig.stickyHeaderBackgroundColor || "transparent"}
-              tabTextColor={headerConfig.stickyHeaderTextColor || "#fff"}
-              tabTextMutedColor={headerConfig.stickyHeaderTextMutedColor || "rgba(255,255,255,0.7)"}
-            />
-          }
+          isStickyContent
         />
         <TabbedPagerView
           tabs={TABS}

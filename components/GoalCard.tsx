@@ -76,12 +76,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({
               {goal.activities.length === 0 || goal.activities.length > 1 ? "activities" : "activity"}
             </ThemedText>
           </View>
-          {goal.defaultRecurrence && (
-            <View style={styles.metaRow}>
-              <IconSymbol name="clock.badge" size={14} color={text} />
-              <ThemedText type="caption">{goal.defaultRecurrence}</ThemedText>
-            </View>
-          )}
+
           {tagString && (
             <View style={styles.metaRow}>
               <IconSymbol name="tag.circle" size={14} color={accent} />
@@ -137,7 +132,7 @@ const styles = StyleSheet.create({
   },
   image: {
     width: "100%",
-    aspectRatio: 16 / 9,
+    height: 120,
   },
   content: {
     flexDirection: "column",

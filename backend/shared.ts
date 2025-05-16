@@ -157,7 +157,6 @@ export interface ActivityDependency {
   slug: string;
 }
 
-// --- ADD this interface ---
 export interface ActivityScheduleEntry {
   id: string; // The schedule entry's own unique ID from activity_schedules table
   activityId: string; // The parent activity ID
@@ -251,7 +250,6 @@ export const isGuidedActivity = (activity: GoalActivity): activity is GuidedActi
   activity.type === ActivityType.GUIDED_ACTIVITY;
 
 // --- GOALS ---
-
 export interface GoalBase {
   id: string;
   slug: string;
@@ -269,8 +267,6 @@ export interface GoalBase {
   status: "draft" | "published";
   completionType: GoalCompletionType;
   completionDate?: ISO8601Date; // Use ISO8601Date
-  defaultRecurrence?: NotificationRecurrence; // Use Enum
-  defaultScheduledTimes?: string[]; // ** FIELD TO BE REFINED **
   progress?: {
     completedActivities: number;
     totalActivities: number;
@@ -288,8 +284,6 @@ export interface GoalCreateInput {
   tags: string[];
   author: Author; // Might just need authorId depending on context
   isPublic: boolean;
-  defaultRecurrence?: NotificationRecurrence; // Changed from string literal
-  defaultScheduledTimes?: string[]; // ** FIELD TO BE REFINED **
   completionType: GoalCompletionType;
   completionDate?: ISO8601Date; // Use ISO8601Date
 }

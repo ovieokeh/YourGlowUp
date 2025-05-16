@@ -12,7 +12,7 @@ import { useActivityDuration } from "@/hooks/useActivityDuration";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useSound } from "@/utils/sounds";
 import { router } from "expo-router";
-import { ActivityCompletionModal } from "./ActivityCompletionModal";
+import { ActivityCompletionModal } from "./modals/ActivityCompletionModal";
 import { ThemedButton } from "./ThemedButton";
 
 export const ActivityCard = ({
@@ -100,6 +100,7 @@ export const ActivityCard = ({
             position: "absolute",
             alignSelf: "flex-end",
             paddingHorizontal: 0,
+            right: Spacings.sm,
             // paddingVertical: 0,
           }}
           textStyle={{ color: muted, fontSize: 12 }}

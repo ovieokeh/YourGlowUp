@@ -2,9 +2,10 @@ import { StyleSheet } from "react-native";
 
 import { useGetGoalById, useUpdateGoalActivities } from "@/backend/queries/goals";
 import { GoalActivity } from "@/backend/shared";
-import { ActivityStepsModal } from "@/components/ActivityStepsModal";
 import { CenteredSwipeableTabs, TabConfig } from "@/components/CenteredSwipeableTabs";
-import { CollapsingHeader, CollapsingHeaderConfig, HeaderContentData } from "@/components/CollapsingHeader";
+import { CollapsingHeader } from "@/components/CollapsingHeader";
+import { ActivityStepsModal } from "@/components/modals/ActivityStepsModal";
+import { AddGoalModal } from "@/components/modals/AddGoalModal";
 import { TabbedPagerView } from "@/components/TabbedPagerView";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedFabButton } from "@/components/ThemedFabButton";
@@ -22,7 +23,6 @@ import { router } from "expo-router";
 import { useLocalSearchParams } from "expo-router/build/hooks";
 import { useCallback, useMemo, useRef, useState } from "react";
 import PagerView from "react-native-pager-view";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const TABS = [
   { key: "activities", title: "Activities", icon: "checkmark.circle" },
@@ -35,15 +35,7 @@ export default function GoalsSingleScreen() {
   const currentUserId = useMemo(() => user?.id, [user?.id]);
   const { id = "1" } = useLocalSearchParams<{ id: string }>();
   const [showSelector, setShowSelector] = useState(false);
-
-  const muted = useThemeColor({}, "muted"); // Used for image placeholder
-  const backgroundColor = useThemeColor({}, "background"); // For main screen background
-
-  const [activeIndex, setActiveIndex] = useState(0);
-  const pagerRef = useRef<PagerView>(null);
-  const insets = useSafeAreaInsets();
-
-  const { scrollY, scrollHandler } = useCurrentScrollY(activeIndex, TABS);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const updateGoalActivities = useUpdateGoalActivities(currentUserId);
   const goalQuery = useGetGoalById(id);
@@ -51,24 +43,18 @@ export default function GoalsSingleScreen() {
   const activities = useMemo(() => goalQuery.data?.activities, [goalQuery.data]);
   const activitySlugs = useMemo(() => goal?.activities?.map((activity) => activity.slug) || [], [goal]);
 
+  const backgroundColor = useThemeColor({}, "background"); // For main screen background
+
+  const [activeIndex, setActiveIndex] = useState(0);
+  const pagerRef = useRef<PagerView>(null);
+
+  const { scrollY, scrollHandler } = useCurrentScrollY(activeIndex, TABS);
+
   const handleTabPress = useCallback((index: number) => {
     setActiveIndex(index);
     pagerRef.current?.setPage(index);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); // Haptic feedback
   }, []);
-
-  const headerConfig: CollapsingHeaderConfig = {
-    initialHeight: 300,
-    collapsedHeight: 94,
-    overlayColor: "rgba(0,0,0,0.45)",
-    stickyHeaderTextMutedColor: muted,
-  };
-
-  const headerContentData: HeaderContentData = {
-    title: goal?.name ?? "",
-    description: goal?.description,
-    imageUrl: goal?.featuredImage,
-  };
 
   const swipeableTabsProps = useMemo(
     () => ({
@@ -100,9 +86,12 @@ export default function GoalsSingleScreen() {
       <ThemedView style={{ flex: 1 }}>
         <CollapsingHeader
           scrollY={scrollY}
-          headerConfig={headerConfig}
-          contentData={headerContentData}
-          actionLeftContent={
+          config={{
+            title: goal?.name,
+            description: goal.description,
+            backgroundImageUrl: goal.featuredImage,
+          }}
+          topLeftContent={
             <ThemedButton
               variant="ghost"
               icon="chevron.backward"
@@ -111,24 +100,17 @@ export default function GoalsSingleScreen() {
               }}
             />
           }
-          topInset={insets.top}
-          content={
-            <CenteredSwipeableTabs
-              {...swipeableTabsProps}
-              tabBackgroundColor="transparent"
-              tabTextColor="#fff"
-              tabTextMutedColor="rgba(255,255,255,0.7)"
-            />
-          }
-          stickyContent={
-            <CenteredSwipeableTabs
-              {...swipeableTabsProps}
-              tabBackgroundColor={"transparent"}
-              tabTextColor={headerConfig.stickyHeaderTextColor || "#fff"}
-              tabTextMutedColor={headerConfig.stickyHeaderTextMutedColor || "rgba(255,255,255,0.7)"}
+          topRightContent={
+            <ThemedButton
+              variant="ghost"
+              icon="pencil.circle.fill"
+              onPress={() => {
+                setShowEditModal(true);
+              }}
             />
           }
         />
+        <CenteredSwipeableTabs {...swipeableTabsProps} />
 
         <TabbedPagerView
           tabs={TABS}
@@ -181,6 +163,18 @@ export default function GoalsSingleScreen() {
             .catch((error) => {
               console.error("Error updating goal activities", error);
             });
+        }}
+      />
+      <AddGoalModal
+        id={goal.id}
+        isVisible={showEditModal}
+        onRequestClose={() => setShowEditModal(false)}
+        onUpsertSuccess={() => {
+          setShowEditModal(false);
+        }}
+        onDeleteSuccess={() => {
+          setShowEditModal(false);
+          router.back();
         }}
       />
     </>

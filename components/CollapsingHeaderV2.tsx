@@ -11,8 +11,6 @@ interface CollapsingHeaderProps {
     title: string;
     description?: string;
     backgroundImageUrl?: string;
-    initialHeroHeight?: number;
-    topInset?: number;
   };
   styleConfig?: {
     textColor?: TextStyle["color"];
@@ -44,10 +42,10 @@ export const CollapsingHeader = (props: CollapsingHeaderProps) => {
     styleConfig: { textColor = textColorTheme, backgroundColor = backgroundColorTheme } = {},
   } = props;
 
-  const initialHeroHeight = props.config.initialHeroHeight || 240;
   const insets = useSafeAreaInsets();
-  const topInset = props.config.topInset ?? insets.top;
+  const topInset = insets.top;
 
+  const initialHeroHeight = 260;
   const collapsedHeroHeight = isStickyContent ? contentHeight + topInset : -topInset - contentHeight;
 
   const heroHeight = useAnimatedStyle(() => {
@@ -178,11 +176,6 @@ export const CollapsingHeader = (props: CollapsingHeaderProps) => {
                 borderBottomWidth: 1,
                 borderBottomColor: borderColor,
                 padding: Spacings.md,
-                alignItems: "center",
-                justifyContent: "center",
-                flexDirection: "row",
-                flexWrap: "wrap",
-                width: "100%",
               },
               bottomOpacity,
             ]}

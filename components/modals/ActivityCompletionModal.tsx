@@ -5,11 +5,11 @@ import { useAppContext } from "@/hooks/app/context";
 import { useMemo, useRef, useState } from "react";
 import { Modal, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ThemedButton } from "./ThemedButton";
-import { ThemedPicker } from "./ThemedPicker";
-import { ThemedText } from "./ThemedText";
-import { ThemedTextInput } from "./ThemedTextInput";
-import { ThemedView } from "./ThemedView";
+import { ThemedButton } from "../ThemedButton";
+import { ThemedPicker } from "../ThemedPicker";
+import { ThemedText } from "../ThemedText";
+import { ThemedTextInput } from "../ThemedTextInput";
+import { ThemedView } from "../ThemedView";
 
 export const ActivityCompletionModal = ({
   item,

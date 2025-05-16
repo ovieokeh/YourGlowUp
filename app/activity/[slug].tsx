@@ -6,13 +6,14 @@ import { useSharedValue } from "react-native-reanimated";
 import { useGetActivityBySlug } from "@/backend/queries/activities";
 import { useAddLog } from "@/backend/queries/logs";
 import { ActivityStep, LogCreateInput, LogType } from "@/backend/shared";
-import { ActivityCompletionModal } from "@/components/ActivityCompletionModal";
 import { TabConfig } from "@/components/CenteredSwipeableTabs";
-import { CollapsingHeader, CollapsingHeaderConfig, HeaderContentData } from "@/components/CollapsingHeader";
+import { CollapsingHeader } from "@/components/CollapsingHeader";
+import { ActivityCompletionModal } from "@/components/modals/ActivityCompletionModal";
 import { StepCard } from "@/components/StepCard";
 import { StepModal } from "@/components/StepModal";
 import { TabbedPagerView } from "@/components/TabbedPagerView";
 import { ThemedButton } from "@/components/ThemedButton";
+import { ThemedFabButton } from "@/components/ThemedFabButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { IconSymbol } from "@/components/ui/IconSymbol";
@@ -22,7 +23,6 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { useSound } from "@/utils/sounds";
 import { useSearchParams } from "expo-router/build/hooks";
 import PagerView from "react-native-pager-view";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const TABS = [{ key: "activity", title: "Activity", icon: "play.circle" }] as TabConfig[];
 
@@ -37,7 +37,6 @@ export default function ActivitySession() {
   const activity = useMemo(() => activityQuery.data, [activityQuery.data]);
 
   const pagerRef = useRef<PagerView>(null);
-  const insets = useSafeAreaInsets();
   const scrollY = useSharedValue(0);
 
   const scrollHandler = useCallback(
@@ -53,7 +52,6 @@ export default function ActivitySession() {
   const textColor = useThemeColor({}, "text");
   const background = useThemeColor({}, "background");
   const border = useThemeColor({}, "border");
-  const muted = useThemeColor({}, "muted");
 
   const [currentStep, setCurrentStep] = useState<ActivityStep | null>(null);
   const [showStepModal, setShowStepModal] = useState(false);
@@ -138,13 +136,16 @@ export default function ActivitySession() {
               {!!activity?.steps?.length && (
                 <View style={{ gap: Spacings.md }}>
                   <ThemedButton
-                    variant="solid"
-                    title="Start Activity"
-                    onPress={() => {
-                      setCurrentStep(steps[0]);
-                      setShowStepModal(true);
-                    }}
+                    title="Mark as Complete"
+                    variant="outline"
                     icon="checkmark.circle"
+                    onPress={() => {
+                      if (activity?.completionPrompts?.length) {
+                        setShowCompletionModal(true);
+                      } else {
+                        handleComplete();
+                      }
+                    }}
                   />
 
                   <ThemedText type="subtitle">Steps:</ThemedText>
@@ -163,26 +164,13 @@ export default function ActivitySession() {
                   </View>
                 </View>
               )}
-
-              <ThemedButton
-                title="Mark as Complete"
-                variant="solid"
-                icon="checkmark.circle"
-                onPress={() => {
-                  if (activity?.completionPrompts?.length) {
-                    setShowCompletionModal(true);
-                  } else {
-                    handleComplete();
-                  }
-                }}
-              />
             </View>
           );
         default:
           return null;
       }
     },
-    [activity, textColor, border, steps, handleComplete]
+    [activity, textColor, border, handleComplete]
   );
 
   if (activityQuery.isLoading) {
@@ -219,38 +207,24 @@ export default function ActivitySession() {
     );
   }
 
-  const headerConfig: CollapsingHeaderConfig = {
-    initialHeight: 300,
-    collapsedHeight: 54,
-    overlayColor: "rgba(0,0,0,0.45)",
-    stickyHeaderTextMutedColor: muted,
-  };
-
-  const headerContentData: HeaderContentData = {
-    title: activity?.name ?? "",
-    description: activity?.description,
-    imageUrl: activity?.featuredImage,
-  };
-
   return (
     <>
       <CollapsingHeader
         scrollY={scrollY}
-        headerConfig={headerConfig}
-        contentData={headerContentData}
-        actionLeftContent={
+        config={{
+          title: activity?.name ?? "",
+          description: activity?.description,
+          backgroundImageUrl: activity?.featuredImage,
+        }}
+        topLeftContent={
           <ThemedButton
             variant="ghost"
             icon="chevron.backward"
             onPress={() => {
               router.back();
             }}
-            textStyle={{
-              color: background,
-            }}
           />
         }
-        topInset={insets.top}
       />
       <TabbedPagerView
         tabs={TABS}
@@ -264,6 +238,22 @@ export default function ActivitySession() {
           padding: Spacings.md,
           gap: Spacings.lg,
           flexGrow: 1,
+        }}
+      />
+
+      <ThemedFabButton
+        variant="ghost"
+        onPress={() => {
+          setCurrentStep(steps[0]);
+          setShowStepModal(true);
+        }}
+        icon="play.circle.fill"
+        iconSize={54}
+        style={{
+          right: 0,
+        }}
+        textStyle={{
+          color: textColor,
         }}
       />
 

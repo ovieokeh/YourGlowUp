@@ -30,7 +30,7 @@ export function ThemedTextInput({
   return (
     <View style={[styles.container, containerStyle]}>
       {label && (
-        <ThemedText type="subtitle" style={[styles.label, labelStyle]}>
+        <ThemedText type="defaultSemiBold" style={[styles.label, labelStyle]}>
           {label}
         </ThemedText>
       )}

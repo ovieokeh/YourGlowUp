@@ -81,7 +81,7 @@ interface CenteredSwipeableTabsProps {
 export const CenteredSwipeableTabs: React.FC<CenteredSwipeableTabsProps> = ({
   tabs,
   activeIndex,
-  tabBackgroundColor,
+  tabBackgroundColor = "transparent",
   tabTextColor,
   tabTextMutedColor,
   onTabPress,

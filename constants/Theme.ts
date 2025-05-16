@@ -1,11 +1,14 @@
 const accent = "#00b89f";
 const glowDark = "#020d17";
+const glowDarkAlt = "#0d1a2b";
 const glowLight = "#fbf8fc";
+const glowLightAlt = "#f0eef1";
 
 export const Colors = {
   light: {
     text: glowDark,
     background: glowLight,
+    backgroundAlt: glowLightAlt,
     tint: "#084c87",
     icon: "#A7A7A7",
     tabIconDefault: "#A7A7A7",
@@ -18,10 +21,12 @@ export const Colors = {
     tabBar: glowLight,
     gray10: "#f0eef1",
     successBg: "#F5FFF4",
+    overlayTransparent: "rgba(255, 255, 255, 0.3)",
   },
   dark: {
     text: glowLight,
     background: glowDark,
+    backgroundAlt: glowDarkAlt,
     tint: "#3590de",
     icon: "#7F7F7F",
     tabIconDefault: "#7F7F7F",
@@ -34,6 +39,7 @@ export const Colors = {
     tabBar: "#181818",
     gray10: "#121212",
     successBg: "#1F3A1F",
+    overlayTransparent: "rgba(0, 0, 0, 0.5)",
   },
 };
 
