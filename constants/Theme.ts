@@ -35,7 +35,7 @@ export const Colors = {
     accent: accent,
     success: "#2DD881",
     danger: "#FF2E63",
-    muted: "#757575",
+    muted: "#9e9d9d",
     tabBar: "#181818",
     gray10: "#121212",
     successBg: "#1F3A1F",

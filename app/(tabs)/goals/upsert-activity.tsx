@@ -1,6 +1,6 @@
-import { useGetActivityById, useUpdateActivity } from "@/backend/queries/activities";
+import { useAddActivity, useGetActivityById, useUpdateActivity } from "@/backend/queries/activities";
 import { useGetGoalById } from "@/backend/queries/goals";
-import { ActivityCreateInput, GoalActivity, NotificationRecurrence } from "@/backend/shared";
+import { Activity, ActivityCreateInput, GoalCategory, NotificationRecurrence } from "@/backend/shared";
 import { CenteredSwipeableTabs, TabConfig } from "@/components/CenteredSwipeableTabs";
 import { CollapsingHeader } from "@/components/CollapsingHeader";
 import { TabbedPagerView } from "@/components/TabbedPagerView";
@@ -15,9 +15,10 @@ import { ActivityEditBasicInfo } from "@/views/activities/edit-basic-info";
 import { ActivityEditDependencies } from "@/views/activities/edit-dependencies";
 import { ActivityEditSchedules } from "@/views/activities/edit-schedules";
 import { ActivityEditSteps } from "@/views/activities/edit-steps";
-import { Link, router, Tabs } from "expo-router";
+import { invariant } from "es-toolkit";
+import { router, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Modal, StyleSheet } from "react-native";
+import { KeyboardAvoidingView, StyleSheet } from "react-native";
 import PagerView from "react-native-pager-view";
 import Toast from "react-native-toast-message";
 
@@ -28,11 +29,12 @@ const TABS: TabConfig[] = [
   { key: "schedule", title: "Schedule" },
 ];
 
-interface EditActivityModalProps {
-  id: string;
-  goalId: string;
-}
-export const EditActivityModal: React.FC<EditActivityModalProps> = ({ id, goalId }) => {
+export default function UpsertActivityScreen() {
+  const params = useLocalSearchParams<{ activityId: string; goalId: string }>();
+  const id = params.activityId || "";
+  const goalId = params.goalId || "";
+  invariant(goalId, "goalId is required");
+
   const backgroundColor = useThemeColor({}, "background");
 
   const [activeIndex, setActiveIndex] = useState(0);
@@ -43,15 +45,31 @@ export const EditActivityModal: React.FC<EditActivityModalProps> = ({ id, goalId
   const activityQuery = useGetActivityById(id);
   const updateItemMutation = useUpdateActivity(goalId);
   const goalQuery = useGetGoalById(goalId);
+  const addItemMutation = useAddActivity(goalId);
 
   const activities = useMemo(() => goalQuery.data?.activities || [], [goalQuery.data]);
   const originalActivity = activityQuery.data;
 
-  const [activityForm, setActivityForm] = useState<ActivityCreateInput>();
+  const [activityForm, setActivityForm] = useState<ActivityCreateInput>({
+    slug: "",
+    name: "",
+    description: "",
+    category: GoalCategory.SELF_CARE,
+    notificationsEnabled: false,
+    featuredImage: "",
+    reliesOn: [],
+    steps: [],
+    schedules: [],
+    recurrence: NotificationRecurrence.DAILY,
+  });
 
   useEffect(() => {
     if (originalActivity) {
-      setActivityForm({ ...originalActivity, schedules: originalActivity.schedules ?? [] });
+      setActivityForm({
+        ...originalActivity,
+        schedules: originalActivity.schedules ?? [],
+        steps: originalActivity.steps ?? [],
+      });
     }
   }, [originalActivity]);
 
@@ -68,17 +86,29 @@ export const EditActivityModal: React.FC<EditActivityModalProps> = ({ id, goalId
       Toast.show({ type: "error", text1: "Weekly schedules must specify a day.", position: "bottom" });
       return;
     }
-    const payload: GoalActivity = { ...activityForm, id: originalActivity!.id } as GoalActivity;
-    updateItemMutation
-      .mutateAsync(payload)
-      .then(() => {
-        Toast.show({ type: "success", text1: `${activityForm.name} updated`, position: "bottom" });
-        router.back();
-      })
-      .catch(() => {
-        Toast.show({ type: "error", text1: "Update failed", text2: "Please try again.", position: "bottom" });
-      });
-  }, [activityForm, originalActivity, updateItemMutation]);
+    if (originalActivity?.id) {
+      const payload: Activity = { ...activityForm, id: originalActivity.id } as Activity;
+      updateItemMutation
+        .mutateAsync(payload)
+        .then(() => {
+          Toast.show({ type: "success", text1: `${activityForm.name} updated`, position: "bottom" });
+          router.back();
+        })
+        .catch(() => {
+          Toast.show({ type: "error", text1: "Update failed", text2: "Please try again.", position: "bottom" });
+        });
+    } else {
+      addItemMutation
+        .mutateAsync(activityForm)
+        .then(() => {
+          Toast.show({ type: "success", text1: `${activityForm.name} created`, position: "bottom" });
+          router.back();
+        })
+        .catch(() => {
+          Toast.show({ type: "error", text1: "Creation failed", text2: "Please try again.", position: "bottom" });
+        });
+    }
+  }, [activityForm, originalActivity, updateItemMutation, addItemMutation]);
 
   const handleTabPress = useCallback((index: number) => {
     setActiveIndex(index);
@@ -86,30 +116,29 @@ export const EditActivityModal: React.FC<EditActivityModalProps> = ({ id, goalId
   }, []);
 
   const possibleDependencies = React.useMemo(() => {
-    if (!activityForm || !originalActivity) return [];
+    if (!activityForm || !originalActivity) return activities;
     const idx = activities.findIndex((a) => a.slug === originalActivity.slug);
     return activities.slice(0, idx).filter((a) => !activityForm.steps.some((s) => s.slug === a.slug));
   }, [activityForm, activities, originalActivity]);
 
   const renderPageContent = useCallback(
     (tab: TabConfig) => {
-      if (!activityForm) return null;
       switch (tab.key) {
         case "basicInfo":
           return (
             <ActivityEditBasicInfo
-              name={activityForm.name}
-              description={activityForm.description}
-              featuredImage={activityForm.featuredImage}
+              name={activityForm?.name}
+              description={activityForm?.description}
+              featuredImage={activityForm?.featuredImage}
               onChange={onChange}
             />
           );
         case "steps":
-          return <ActivityEditSteps steps={activityForm.steps} onChange={onChange} />;
+          return <ActivityEditSteps steps={activityForm?.steps} onChange={onChange} />;
         case "dependencies":
           return (
             <ActivityEditDependencies
-              reliesOn={activityForm.reliesOn}
+              reliesOn={activityForm?.reliesOn}
               possibleDependencies={possibleDependencies}
               activities={activities}
               onChange={onChange}
@@ -118,8 +147,8 @@ export const EditActivityModal: React.FC<EditActivityModalProps> = ({ id, goalId
         case "schedule":
           return (
             <ActivityEditSchedules
-              schedules={activityForm.schedules}
-              recurrence={activityForm.recurrence}
+              schedules={activityForm?.schedules}
+              recurrence={activityForm?.recurrence}
               onChange={onChange}
             />
           );
@@ -130,10 +159,10 @@ export const EditActivityModal: React.FC<EditActivityModalProps> = ({ id, goalId
     [activityForm, possibleDependencies, activities, onChange]
   );
 
-  const headerContentData = useMemo(
+  const headerContentData = React.useMemo(
     () => ({
-      title: activityForm?.name || "",
-      description: activityForm?.description,
+      title: activityForm?.name || "New Activity",
+      description: activityForm?.description || "Description goes here",
       backgroundImageUrl: activityForm?.featuredImage,
     }),
     [activityForm]
@@ -156,60 +185,41 @@ export const EditActivityModal: React.FC<EditActivityModalProps> = ({ id, goalId
     );
   }
 
-  if (!originalActivity || !activityForm) {
-    return (
-      <>
-        <Tabs.Screen options={{ title: "Activity Not Found" }} />
-        <ThemedView style={styles.container}>
-          <ThemedText type="title">Activity not found.</ThemedText>
-          <Link href="/" style={styles.link}>
-            <ThemedText type="link">Go to home screen</ThemedText>
-          </Link>
-        </ThemedView>
-      </>
-    );
-  }
-
   return (
-    <Modal animationType="slide" presentationStyle="pageSheet">
-      <ThemedView style={{ flex: 1, backgroundColor }}>
-        <CollapsingHeader
-          scrollY={scrollY}
-          config={headerContentData}
-          topLeftContent={
-            <ThemedButton
-              variant="ghost"
-              icon="chevron.backward"
-              onPress={() => {
-                router.back();
-              }}
-            />
-          }
-          content={
-            <CenteredSwipeableTabs
-              {...swipeableTabsProps}
-              tabBackgroundColor="transparent"
-              tabTextColor="#fff"
-              tabTextMutedColor="rgba(255,255,255,0.7)"
-            />
-          }
-          isStickyContent
-        />
-        <TabbedPagerView
-          tabs={TABS}
-          activeIndex={activeIndex}
-          onPageSelected={setActiveIndex}
-          scrollHandler={scrollHandler}
-          renderPageContent={renderPageContent}
-          pagerRef={pagerRef}
-          pageContainerStyle={styles.pageStyle}
-          scrollContentContainerStyle={styles.scrollContentForPage}
-        />
-      </ThemedView>
-      <ThemedFabButton variant="primary" title="Update Activity" icon="checkmark" onPress={handleSave} bottom={96} />
-    </Modal>
+    <>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+        <ThemedView style={{ flex: 1, backgroundColor }}>
+          <CollapsingHeader
+            scrollY={scrollY}
+            config={headerContentData}
+            topLeftContent={
+              <ThemedButton
+                variant="ghost"
+                icon="chevron.backward"
+                onPress={() => {
+                  router.back();
+                }}
+              />
+            }
+            content={<CenteredSwipeableTabs {...swipeableTabsProps} />}
+            isStickyContent
+          />
+          <TabbedPagerView
+            tabs={TABS}
+            activeIndex={activeIndex}
+            onPageSelected={setActiveIndex}
+            scrollHandler={scrollHandler}
+            renderPageContent={renderPageContent}
+            pagerRef={pagerRef}
+            pageContainerStyle={styles.pageStyle}
+            scrollContentContainerStyle={styles.scrollContentForPage}
+          />
+        </ThemedView>
+        <ThemedFabButton variant="primary" title="Update Activity" icon="checkmark" onPress={handleSave} bottom={96} />
+      </KeyboardAvoidingView>
+    </>
   );
-};
+}
 
 const styles = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },

@@ -7,10 +7,13 @@ import { AddGoalModal } from "@/components/modals/AddGoalModal";
 import { TabbedPagerView } from "@/components/TabbedPagerView";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedView } from "@/components/ThemedView";
+import { Spacings } from "@/constants/Theme";
 import { useAppContext } from "@/hooks/app/context";
 import { useCurrentScrollY } from "@/hooks/useCurrentScrollY";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { GoalsExploreView } from "@/views/goals/explore";
 import { MyGoalsView } from "@/views/goals/my-goals";
+import { useSearchParams } from "expo-router/build/hooks";
 import { View } from "react-native";
 import PagerView from "react-native-pager-view";
 
@@ -22,13 +25,15 @@ const TABS = [
 export default function GoalsScreen() {
   const { goals } = useAppContext();
   const router = useRouter();
+  const params = useSearchParams();
+  const activeTab = (params.get("activeTab") as string) || "my-goals";
 
   const textColor = useThemeColor({}, "text");
   const muted = useThemeColor({}, "muted");
 
   const [isAddModalVisible, setAddModalVisible] = useState(false);
 
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(TABS.findIndex((tab) => tab.key === activeTab));
   const pagerRef = useRef<PagerView>(null);
 
   const { scrollY, scrollHandler } = useCurrentScrollY(activeIndex, TABS);
@@ -52,7 +57,11 @@ export default function GoalsScreen() {
             </View>
           );
         case "explore":
-          return null;
+          return (
+            <View style={{ padding: Spacings.md, marginBottom: 56 }}>
+              <GoalsExploreView />
+            </View>
+          );
         default:
           return null;
       }
@@ -85,10 +94,10 @@ export default function GoalsScreen() {
       <CollapsingHeader
         scrollY={scrollY}
         config={{
-          title: "Goals",
-          description: "Explore and manage your goals",
-          initialHeroHeight: 140,
+          title: "Set and track your goals",
+          initialHeroHeight: 120,
         }}
+        contentHeight={-10}
         topRightContent={
           <ThemedButton
             onPress={() => {

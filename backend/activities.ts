@@ -3,11 +3,10 @@ import { v4 as uuidv4 } from "uuid";
 
 import { localDb } from "./localDb";
 import {
+  Activity,
   ActivityCreateInput,
   ActivityScheduleCreateInput,
   ActivityScheduleEntry,
-  ActivityType,
-  GoalActivity,
   NotificationRecurrence,
 } from "./shared"; // Assuming shared types are in './shared'
 
@@ -16,7 +15,7 @@ function nonNullable<T>(value: T | null): value is T {
   return value !== null;
 }
 
-let _cachedAllActivities: GoalActivity[] | null = null;
+let _cachedAllActivities: Activity[] | null = null;
 
 /**
  * Fetches schedule entries for a given list of activity IDs.
@@ -48,10 +47,10 @@ async function fetchSchedulesForActivities(activityIds: string[]): Promise<Map<s
 }
 
 /**
- * Deserializes a raw DB row from the 'activities' table into a GoalActivity object.
+ * Deserializes a raw DB row from the 'activities' table into a Activity object.
  * Does NOT populate the 'schedules' field - that requires a separate step.
  */
-function deserializeActivity(row: any): GoalActivity | null {
+function deserializeActivity(row: any): Activity | null {
   if (!row || typeof row !== "object") {
     return null;
   }
@@ -77,7 +76,7 @@ function deserializeActivity(row: any): GoalActivity | null {
       schedules: [],
     };
 
-    return base as GoalActivity;
+    return base as Activity;
   } catch (error: unknown) {
     console.error(`Error deserializing activity JSON (id: ${row.id}):`, error, "\nRow data:", row);
     return null;
@@ -128,13 +127,12 @@ export async function addActivity(goalId: string, activityInput: ActivityCreateI
 
   const stmt = `INSERT INTO activities (
     id, goalId, slug, name, description, featuredImage, category,
-    notificationsEnabled, /* scheduledTimes REMOVED */ recurrence, type, completionPrompts,
+    notificationsEnabled, recurrence, completionPrompts,
     steps, reliesOn, unlockCondition, unlockParams, meta
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`; // Adjust parameter count
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`; // Adjust parameter count
 
   try {
     // Perform insertion in a transaction if possible
-    // await localDb.transactionAsync(async (tx) => { // Conceptual transaction
 
     await localDb.runAsync(stmt, [
       // Use tx.runAsync inside transaction
@@ -146,9 +144,7 @@ export async function addActivity(goalId: string, activityInput: ActivityCreateI
       activityData.featuredImage ?? null,
       activityData.category,
       activityData.notificationsEnabled ? 1 : 0,
-      // scheduledTimes removed
       activityData.recurrence ?? null,
-      activityData.type ?? ActivityType.TASK_ACTIVITY, // FIXME: Determine type correctly if needed, not hardcoded
       JSON.stringify(activityData.completionPrompts ?? []),
       JSON.stringify(activityData.steps), // FIXME: Steps data missing from ActivityCreateInput? Assuming empty for now.
       JSON.stringify(activityData.reliesOn ?? []),
@@ -160,8 +156,6 @@ export async function addActivity(goalId: string, activityInput: ActivityCreateI
     // Sync schedules (pass recurrence from input)
     await syncActivitySchedules(activityId, activityData.recurrence, schedules);
 
-    // }); // End conceptual transaction
-
     _cachedAllActivities = null; // Invalidate cache
     return activityId;
   } catch (error: unknown) {
@@ -171,7 +165,7 @@ export async function addActivity(goalId: string, activityInput: ActivityCreateI
 }
 
 // --- MODIFY updateActivity ---
-export async function updateActivity(goalId: string, activity: GoalActivity): Promise<void> {
+export async function updateActivity(goalId: string, activity: Activity): Promise<void> {
   if (!activity.id) {
     throw new Error("Cannot update activity without an ID.");
   }
@@ -180,7 +174,7 @@ export async function updateActivity(goalId: string, activity: GoalActivity): Pr
 
   const stmt = `UPDATE activities SET
     slug = ?, name = ?, description = ?, featuredImage = ?, category = ?,
-    notificationsEnabled = ?, /* scheduledTimes REMOVED */ recurrence = ?, type = ?, completionPrompts = ?,
+    notificationsEnabled = ?, recurrence = ?, completionPrompts = ?,
     steps = ?, reliesOn = ?, unlockCondition = ?, unlockParams = ?, meta = ?
     WHERE id = ? AND goalId = ?;`; // Adjust parameter count
 
@@ -198,7 +192,6 @@ export async function updateActivity(goalId: string, activity: GoalActivity): Pr
       activityData.notificationsEnabled ? 1 : 0,
       // scheduledTimes removed
       activityData.recurrence ?? null,
-      activityData.type,
       JSON.stringify(activityData.completionPrompts ?? []),
       JSON.stringify(activityData.steps),
       JSON.stringify(activityData.reliesOn ?? []),
@@ -238,7 +231,7 @@ export async function removeActivity(activityId: string): Promise<void> {
 // --- MODIFY Fetching Functions ---
 
 // Get all activities for a specific goal, now includes schedules
-export async function getActivities(goalId: string): Promise<GoalActivity[]> {
+export async function getActivities(goalId: string): Promise<Activity[]> {
   try {
     // 1. Fetch base activities
     const rows = await localDb.getAllAsync<any>(`SELECT * FROM activities WHERE goalId = ?`, [goalId]);
@@ -260,8 +253,22 @@ export async function getActivities(goalId: string): Promise<GoalActivity[]> {
   }
 }
 
+export async function getActivitiesSnapshot(goalId: string): Promise<{
+  count: number;
+}> {
+  try {
+    console.log("getActivitiesSnapshot", goalId);
+    const row = await localDb.getFirstAsync<any>(`SELECT COUNT(*) as count FROM activities WHERE goalId = ?`, [goalId]);
+    console.log("getActivitiesSnapshot", row);
+    if (!row) return { count: 0 };
+    return { count: row.count };
+  } catch (error: unknown) {
+    console.error(`Error fetching activities snapshot for goalId ${goalId}:`, error);
+    throw error;
+  }
+}
 // Get single activity by ID, now includes schedules
-export async function getActivityById(activityId: string): Promise<GoalActivity | null> {
+export async function getActivityById(activityId: string): Promise<Activity | null> {
   try {
     // 1. Fetch base activity
     const row = await localDb.getFirstAsync<any>(`SELECT * FROM activities WHERE id = ?`, [activityId]);
@@ -281,7 +288,7 @@ export async function getActivityById(activityId: string): Promise<GoalActivity 
 }
 
 // Get single activity by slug, now includes schedules
-export async function getActivityBySlug(goalId: string, slug: string): Promise<GoalActivity | null> {
+export async function getActivityBySlug(goalId: string, slug: string): Promise<Activity | null> {
   try {
     // 1. Fetch base activity
     const row = await localDb.getFirstAsync<any>(`SELECT * FROM activities WHERE goalId = ? AND slug = ?`, [
@@ -304,7 +311,7 @@ export async function getActivityBySlug(goalId: string, slug: string): Promise<G
 }
 
 // Gets *all* activities matching filters, potentially hitting cache, includes schedules
-export async function getAllActivities(filters?: ActivityFilters): Promise<GoalActivity[]> {
+export async function getAllActivities(filters?: ActivityFilters): Promise<Activity[]> {
   // ** Caching Note **: The simple cache might become less effective if filters often change.
   // It now needs to store activities *with* schedules. Fetching schedules adds overhead.
   // Consider if caching is still needed or requires a more sophisticated strategy.
@@ -322,10 +329,6 @@ export async function getAllActivities(filters?: ActivityFilters): Promise<GoalA
   if (filters?.category) {
     clauses.push("category = ?");
     params.push(filters.category);
-  }
-  if (filters?.type) {
-    clauses.push("type = ?");
-    params.push(filters.type);
   }
   // Filter by scheduledDate using LIKE is no longer directly possible/meaningful here.
   // You would need to JOIN with activity_schedules or filter in JS.
@@ -361,7 +364,7 @@ export async function getAllActivities(filters?: ActivityFilters): Promise<GoalA
 // --- MODIFY getPendingActivities ---
 // Gets pending activities, optionally filtered by goalId. Excludes completed IDs.
 // Now also fetches associated schedules.
-export async function getPendingActivities(completedActivityIds: string[], goalId?: string): Promise<GoalActivity[]> {
+export async function getPendingActivities(completedActivityIds: string[], goalId?: string): Promise<Activity[]> {
   let stmt = `SELECT * FROM activities`; // Select from activities table
   const params: any[] = [];
   const whereClauses: string[] = [];
@@ -402,10 +405,7 @@ export async function getPendingActivities(completedActivityIds: string[], goalI
 
 // --- REIMPLEMENT getPendingActivitiesToday ---
 // This now performs the primary filtering using SQL JOINs.
-export async function getPendingActivitiesToday(
-  completedActivityIds: string[],
-  goalId?: string
-): Promise<GoalActivity[]> {
+export async function getPendingActivitiesToday(completedActivityIds: string[], goalId?: string): Promise<Activity[]> {
   // Need current day (ISO 1-7) and time (HH:MM) for the query
   const now = new Date();
   // Adjust day calculation: JavaScript's getDay() is 0=Sun, 6=Sat. ISO is 1=Mon, 7=Sun.
@@ -496,6 +496,5 @@ export async function getPendingActivitiesToday(
 export interface ActivityFilters {
   goalId?: string;
   category?: string;
-  type?: ActivityType;
   // scheduledDate?: string; // Removed - requires different handling now
 }

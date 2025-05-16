@@ -81,7 +81,6 @@ export const ActivityEditSchedules: React.FC<ActivityEditSchedulesProps> = ({ re
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingVertical: Spacings.md,
   },
   listContainer: {
     gap: Spacings.sm,

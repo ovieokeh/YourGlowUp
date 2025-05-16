@@ -1,5 +1,5 @@
 import { useAddLog } from "@/backend/queries/logs";
-import { GoalActivity, LogType, PromptLog } from "@/backend/shared";
+import { Activity, LogType, PromptLog } from "@/backend/shared";
 import { Spacings } from "@/constants/Theme";
 import { useAppContext } from "@/hooks/app/context";
 import { useMemo, useRef, useState } from "react";
@@ -17,7 +17,7 @@ export const ActivityCompletionModal = ({
   handleSkipQuestions,
   handleSubmitAnswers,
 }: {
-  item: GoalActivity;
+  item: Activity;
   isVisible: boolean;
   handleSkipQuestions: () => void;
   handleSubmitAnswers: (answers: { [key: string]: string }) => void;

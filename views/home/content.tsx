@@ -5,7 +5,7 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import Animated, { LinearTransition, SlideInRight, SlideOutLeft } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { GoalActivity, isGuidedActivity } from "@/backend/shared";
+import { Activity } from "@/backend/shared";
 import { ActivityCard } from "@/components/ActivityCard";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
@@ -15,7 +15,7 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 
 type GroupedActivityData = {
   time: string;
-  items: GoalActivity[];
+  items: Activity[];
 };
 
 interface HomeScreenContentProps {
@@ -28,7 +28,7 @@ export const HomeScreenContent: React.FC<HomeScreenContentProps> = ({ groupedDat
   const borderColor = useThemeColor({}, "border");
   const gray10 = useThemeColor({}, "gray10");
 
-  const handleNavigateToActivity = (item: GoalActivity) => {
+  const handleNavigateToActivity = (item: Activity) => {
     router.push({
       pathname: "/activity/[slug]",
       params: {
@@ -80,13 +80,7 @@ export const HomeScreenContent: React.FC<HomeScreenContentProps> = ({ groupedDat
                     exiting={SlideOutLeft.duration(300)}
                     layout={LinearTransition.springify()}
                   >
-                    <ActivityCard
-                      item={item}
-                      actionButtonTitle={isGuidedActivity(item) ? "Start" : "Complete"}
-                      actionButtonIcon={isGuidedActivity(item) ? "play.circle" : "checkmark.circle"}
-                      hiddenFields={["description"]}
-                      handlePress={isGuidedActivity(item) ? () => handleNavigateToActivity(item) : undefined}
-                    />
+                    <ActivityCard item={item} actions={["view", "complete"]} hiddenFields={["description"]} />
                   </Animated.View>
                 ))}
               </View>

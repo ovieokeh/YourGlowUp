@@ -95,7 +95,6 @@ export default function ActivitySession() {
       userId: user.id,
       goalId,
       activityId: activity.id,
-      activityType: activity.type,
     } as LogCreateInput);
     play("complete-exercise");
 
@@ -107,15 +106,14 @@ export default function ActivitySession() {
       switch (tab.key) {
         case "activity":
           return (
-            <View style={{ flex: 1, gap: Spacings.md }}>
+            <View style={{ flex: 1, gap: Spacings.lg }}>
               <View
                 style={[
                   {
                     padding: Spacings.sm,
                     borderRadius: BorderRadii.sm,
-                    marginVertical: Spacings.sm,
                     alignItems: "center",
-                    backgroundColor: border,
+                    opacity: 0.7,
                   },
                 ]}
               >
@@ -130,24 +128,22 @@ export default function ActivitySession() {
                   <IconSymbol name="target" size={18} color={textColor} />
                   <ThemedText type="defaultSemiBold">Target Area: {activity?.category}</ThemedText>
                 </View>
-                <ThemedText>{activity?.description}</ThemedText>
               </View>
+
+              <ThemedButton
+                title="Mark as Complete"
+                icon="checkmark.circle"
+                onPress={() => {
+                  if (activity?.completionPrompts?.length) {
+                    setShowCompletionModal(true);
+                  } else {
+                    handleComplete();
+                  }
+                }}
+              />
 
               {!!activity?.steps?.length && (
                 <View style={{ gap: Spacings.md }}>
-                  <ThemedButton
-                    title="Mark as Complete"
-                    variant="outline"
-                    icon="checkmark.circle"
-                    onPress={() => {
-                      if (activity?.completionPrompts?.length) {
-                        setShowCompletionModal(true);
-                      } else {
-                        handleComplete();
-                      }
-                    }}
-                  />
-
                   <ThemedText type="subtitle">Steps:</ThemedText>
 
                   <View style={{ gap: Spacings.md }}>
@@ -170,7 +166,7 @@ export default function ActivitySession() {
           return null;
       }
     },
-    [activity, textColor, border, handleComplete]
+    [activity, textColor, handleComplete]
   );
 
   if (activityQuery.isLoading) {
@@ -267,7 +263,6 @@ export default function ActivitySession() {
         setIsVisible={setShowStepModal}
         goalId={goalId}
         activityId={activity.id}
-        activityType={activity.type}
       />
 
       <ActivityCompletionModal

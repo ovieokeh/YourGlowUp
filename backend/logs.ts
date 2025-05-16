@@ -25,9 +25,9 @@ import {
 export async function addActivityLog(log: ActivityLog): Promise<void> {
   await localDb.runAsync(
     `INSERT INTO logs (
-      id, userId, goalId, type, activityId, activityType, completedAt, createdAt
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
-    [log.id, log.userId, log.goalId, log.type, log.activityId, log.activityType, log.completedAt ?? null, log.createdAt]
+      id, userId, goalId, type, activityId, completedAt, createdAt
+    ) VALUES (?, ?, ?, ?, ?, ?, ?);`,
+    [log.id, log.userId, log.goalId, log.type, log.activityId, log.completedAt ?? null, log.createdAt]
   );
 }
 
@@ -100,11 +100,6 @@ export async function addFeedbackLog(log: FeedbackLog): Promise<void> {
 export async function addLog(logData: LogCreateInput): Promise<string> {
   const id = uuidv4();
   const createdAt = new Date().toISOString();
-
-  console.log("Adding log:", {
-    ...logData,
-    id,
-  });
 
   // The 'type' property must be present in logData for the type guards to work.
   // Omit<Log, "id" | "createdAt"> ensures this, as Log is a discriminated union by 'type'.

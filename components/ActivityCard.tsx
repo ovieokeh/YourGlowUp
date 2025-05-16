@@ -1,11 +1,11 @@
 import { Image } from "expo-image";
 import React, { useCallback, useMemo, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import { useAddLog } from "@/backend/queries/logs";
-import { GoalActivity, isGuidedActivity, LogCreateInput, LogType } from "@/backend/shared";
+import { Activity, LogCreateInput, LogType } from "@/backend/shared";
 import { ThemedText } from "@/components/ThemedText";
-import { IconSymbol, IconSymbolName } from "@/components/ui/IconSymbol";
+import { IconSymbol } from "@/components/ui/IconSymbol";
 import { BorderRadii, Spacings } from "@/constants/Theme";
 import { useAppContext } from "@/hooks/app/context";
 import { useActivityDuration } from "@/hooks/useActivityDuration";
@@ -15,27 +15,23 @@ import { router } from "expo-router";
 import { ActivityCompletionModal } from "./modals/ActivityCompletionModal";
 import { ThemedButton } from "./ThemedButton";
 
-export const ActivityCard = ({
-  item,
-  actionButtonTitle,
-  actionButtonIcon,
-  hiddenFields = [],
-  handlePress,
-}: {
-  item: GoalActivity;
-  actionButtonTitle?: string;
-  actionButtonIcon?: IconSymbolName;
+type ActivityCardAction = "view" | "edit" | "delete" | "complete";
+interface ActivityCardProps {
+  item: Activity;
   hiddenFields?: string[];
-  handlePress?: () => void;
-}) => {
+  actions?: ActivityCardAction[];
+  topContent?: React.ReactNode;
+}
+export const ActivityCard = ({ item, actions, hiddenFields = [], topContent }: ActivityCardProps) => {
   const { user } = useAppContext();
   const text = useThemeColor({}, "text");
   const accent = useThemeColor({}, "accent");
   const cardBg = useThemeColor({}, "background");
   const cardBorder = useThemeColor({}, "border");
-  const gray10 = useThemeColor({}, "gray10");
   const muted = useThemeColor({}, "muted");
+
   const { goals } = useAppContext();
+
   const [isCompletionModalVisible, setIsCompletionModalVisible] = useState(false);
 
   const duration = useActivityDuration(item);
@@ -55,7 +51,6 @@ export const ActivityCard = ({
       userId: user.id,
       goalId: itemGoal?.id,
       activityId: item.id,
-      activityType: item.type,
     } as LogCreateInput);
     play("complete-exercise");
   }, [item, play, saveLogMutation, itemGoal, user?.id]);
@@ -89,13 +84,8 @@ export const ActivityCard = ({
         },
       ]}
     >
-      {!hiddenFields.includes("info") && (
-        <ThemedButton
-          variant="ghost"
-          onPress={() =>
-            router.push({ pathname: "/activity/[slug]", params: { slug: item.slug || item.id, goalId: item.goalId } })
-          }
-          icon="info.circle"
+      {topContent && (
+        <View
           style={{
             position: "absolute",
             alignSelf: "flex-end",
@@ -103,8 +93,9 @@ export const ActivityCard = ({
             right: Spacings.sm,
             // paddingVertical: 0,
           }}
-          textStyle={{ color: muted, fontSize: 12 }}
-        />
+        >
+          {topContent}
+        </View>
       )}
       <View style={{ flexDirection: "row", alignItems: "flex-start", gap: Spacings.sm }}>
         {/* Image or Placeholder */}
@@ -144,7 +135,7 @@ export const ActivityCard = ({
               </View>
             )}
             {/* Duration (if applicable) */}
-            {isGuidedActivity(item) && duration > 0 && (
+            {duration > 0 && (
               <View style={styles.metadataItem}>
                 <ThemedText type="caption">-</ThemedText>
                 <IconSymbol name="timer" size={14} color={text} />
@@ -157,37 +148,63 @@ export const ActivityCard = ({
 
       {/* Text Content */}
 
-      {!hiddenFields.includes("description") && <ThemedText numberOfLines={2}>{item.description}</ThemedText>}
+      {!hiddenFields.includes("description") && (
+        <ThemedText numberOfLines={2} style={{ color: muted }}>
+          {item.description}
+        </ThemedText>
+      )}
 
-      {/* Action Button */}
-      <Pressable
-        onPress={
-          handlePress
-            ? handlePress
-            : () => {
+      {/* Action Buttons */}
+      {actions?.length ? (
+        <View style={{ flexDirection: "row", gap: Spacings.sm, marginTop: "auto", paddingVertical: Spacings.sm }}>
+          {actions?.includes("complete") && (
+            <ThemedButton
+              variant="ghost"
+              title="Complete"
+              icon="checkmark.circle.fill"
+              onPress={() => {
                 if (item.completionPrompts?.length) {
                   setIsCompletionModalVisible(true);
                 } else {
                   handleComplete();
                 }
-              }
-        }
-        style={{
-          alignSelf: "flex-start",
-          flexDirection: "row",
-          alignItems: "center",
-          gap: Spacings.sm,
-          backgroundColor: gray10,
-          paddingVertical: Spacings.sm,
-          paddingHorizontal: Spacings.md,
-          borderRadius: BorderRadii.md,
-          marginTop: Spacings.sm,
-        }}
-      >
-        <IconSymbol name={actionButtonIcon ?? "chevron.right"} size={18} color={text} style={{}} />
-        {actionButtonTitle && <ThemedText type="caption">{actionButtonTitle}</ThemedText>}
-      </Pressable>
+              }}
+            />
+          )}
+          {actions?.includes("edit") && (
+            <ThemedButton
+              variant="ghost"
+              title="Edit"
+              icon="pencil.circle"
+              onPress={() => {
+                router.push({
+                  pathname: "/(tabs)/goals/upsert-activity",
+                  params: { activityId: item.id, goalId: item.goalId },
+                });
+              }}
+            />
+          )}
+          {actions?.includes("delete") && (
+            <ThemedButton variant="ghost" title="Delete" icon="trash" onPress={() => {}} />
+          )}
 
+          {actions?.includes("view") && (
+            <ThemedButton
+              variant="ghost"
+              icon="chevron.right"
+              onPress={() =>
+                router.push({
+                  pathname: "/activity/[slug]",
+                  params: { slug: item.slug || item.id, goalId: item.goalId },
+                })
+              }
+              style={{ marginLeft: "auto" }}
+            />
+          )}
+        </View>
+      ) : null}
+
+      {/* Modals */}
       <ActivityCompletionModal
         item={item}
         isVisible={isCompletionModalVisible}

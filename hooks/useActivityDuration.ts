@@ -1,17 +1,25 @@
-import { GoalActivity, isGuidedActivity } from "@/backend/shared";
+import { Activity, ActivityStep } from "@/backend/shared";
 import { useMemo } from "react";
+export const getTotalActivityDuration = (steps: ActivityStep[]) => {
+  return steps.reduce((total, step) => {
+    const stepDuration = step.duration || 0;
+    const stepDurationType = step.durationType || "seconds";
 
-export const useActivityDuration = (activity?: GoalActivity | null) => {
-  const cumulativeActivityDuration = useMemo(() => {
-    if (activity && isGuidedActivity(activity)) {
-      return activity.steps?.reduce((acc, step) => {
-        if (step.duration) {
-          return acc + step.duration;
-        }
-        return acc;
-      }, 0);
+    if (stepDurationType === "seconds") {
+      return total + stepDuration;
+    } else if (stepDurationType === "minutes") {
+      return total + stepDuration * 60;
+    } else if (stepDurationType === "hours") {
+      return total + stepDuration * 3600;
     }
-    return 0;
+    return total;
+  }, 0);
+};
+export const useActivityDuration = (activity?: Activity | null) => {
+  const cumulativeActivityDuration = useMemo(() => {
+    if (!activity) return 0;
+    const totalDuration = getTotalActivityDuration(activity.steps);
+    return totalDuration;
   }, [activity]);
   return cumulativeActivityDuration;
 };

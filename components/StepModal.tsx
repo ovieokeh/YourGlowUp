@@ -1,5 +1,5 @@
 import { useAddStepLog } from "@/backend/queries/logs";
-import { ActivityStep, LogType, StepLog } from "@/backend/shared";
+import { ActivityStep, LogType } from "@/backend/shared";
 import { Spacings } from "@/constants/Theme";
 import { useAppContext } from "@/hooks/app/context";
 import { useThemeColor } from "@/hooks/useThemeColor";
@@ -20,7 +20,6 @@ interface StepModalProps {
   index: number;
   totalSteps: number;
   activityId: string;
-  activityType: string;
   goalId: string;
   handleNext: () => void;
   handlePrevious: () => void;
@@ -32,7 +31,6 @@ export const StepModal = ({
   index,
   totalSteps,
   activityId,
-  activityType,
   goalId,
   handlePrevious,
   handleNext,
@@ -47,21 +45,21 @@ export const StepModal = ({
 
   const logDuration = useCallback(
     (durationInSeconds: number) => {
-      if (!step?.id) {
+      if (!step?.id || !user?.id) {
         return;
       }
       mutate({
-        userId: user?.id,
+        userId: user.id,
         goalId,
         activityId,
-        activityType,
         type: LogType.STEP,
         stepId: step.id,
         stepIndex: index,
         durationInSeconds,
-      } as StepLog);
+        createdAt: new Date().toISOString(),
+      });
     },
-    [mutate, step?.id, user?.id, index, goalId, activityId, activityType]
+    [mutate, step?.id, user?.id, index, goalId, activityId]
   );
   const handleComplete = useCallback(
     (durationInSeconds: number) => {

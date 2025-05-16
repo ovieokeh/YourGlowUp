@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { addLog, addStepLog, getFilteredLogs } from "../logs";
 
-import { Log, LogCreateInput, StepLog } from "../shared";
+import { LogCreateInput, StepLog } from "../shared";
 
 export const useGetLogs = (userId?: string) => {
   return useQuery({

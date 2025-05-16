@@ -2,7 +2,7 @@ import "react-native-get-random-values";
 import { v4 as uuidv4 } from "uuid";
 import { addActivity, getActivities } from "./activities";
 import { localDb } from "./localDb";
-import { Goal, GoalActivity, GoalBase, GoalCreateInput } from "./shared";
+import { Activity, Goal, GoalBase, GoalCreateInput } from "./shared";
 
 export async function addGoal(input: GoalCreateInput): Promise<string> {
   const id = uuidv4();
@@ -11,9 +11,9 @@ export async function addGoal(input: GoalCreateInput): Promise<string> {
   const stmt = `INSERT INTO goals (
     id, slug, name, description, featuredImage, category, tags,
     author_id, author_name, author_avatar, createdAt, updatedAt,
-    isPublic, version, status, completionType, completionDate, defaultRecurrence, defaultScheduledTimes,
+    isPublic, version, status, completionType, completionDate,
     progress, meta
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`;
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`;
 
   const rowId = await localDb
     .runAsync(stmt, [
@@ -34,8 +34,6 @@ export async function addGoal(input: GoalCreateInput): Promise<string> {
       "draft", // status
       input.completionType,
       input.completionDate ?? null,
-      input.defaultRecurrence ?? null,
-      JSON.stringify(input.defaultScheduledTimes ?? []),
       JSON.stringify({}), // progress
       JSON.stringify({}), // meta
     ])
@@ -54,6 +52,7 @@ export async function removeGoal(goalId: string): Promise<void> {
 export async function getGoalById(goalId: string): Promise<Goal | null> {
   const result = await localDb.getFirstAsync<GoalBase>(`SELECT * FROM goals WHERE id = ?`, [goalId]);
   if (!result) return null;
+
   const activities = await getActivities(goalId);
   return deserializeGoal(result, activities);
 }
@@ -63,12 +62,15 @@ export interface GetGoalsOptions {
   copied?: boolean;
   public?: boolean;
 }
-export async function getGoals(currentUserId: string, opts?: GetGoalsOptions): Promise<Goal[]> {
+export async function getGoals(currentUserId?: string, opts?: GetGoalsOptions): Promise<Goal[]> {
   let query = `SELECT * FROM goals`;
   const conditions: string[] = [];
   const params: any[] = [];
 
   if (opts?.mine) {
+    if (!currentUserId) {
+      throw new Error("Current user ID is required when fetching own goals");
+    }
     conditions.push("author_id = ?");
     params.push(currentUserId);
   }
@@ -78,6 +80,9 @@ export async function getGoals(currentUserId: string, opts?: GetGoalsOptions): P
   }
 
   if (opts?.copied) {
+    if (!currentUserId) {
+      throw new Error("Current user ID is required when fetching own goals");
+    }
     conditions.push("author_id != ?");
     params.push(currentUserId);
   }
@@ -119,8 +124,6 @@ export async function updateGoal(goalId: string, updates: Partial<Goal>): Promis
       now,
       updates.completionType ?? existingGoal.completionType,
       updates.completionDate ?? existingGoal.completionDate ?? null,
-      updates.defaultRecurrence ?? existingGoal.defaultRecurrence ?? null,
-      JSON.stringify(updates.defaultScheduledTimes ?? existingGoal.defaultScheduledTimes ?? []),
       JSON.stringify(updates.progress ?? existingGoal.progress ?? {}),
       JSON.stringify(updates.meta ?? existingGoal.meta ?? {}),
       goalId,
@@ -131,7 +134,7 @@ export async function updateGoal(goalId: string, updates: Partial<Goal>): Promis
     });
 }
 
-export async function updateGoalActivities(goalId: string, activities: GoalActivity[]): Promise<void> {
+export async function updateGoalActivities(goalId: string, activities: Activity[]): Promise<void> {
   await localDb.runAsync(`DELETE FROM activities WHERE goalId = ?`, [goalId]);
   for (const activity of activities) {
     await addActivity(goalId, activity);
@@ -151,8 +154,6 @@ export async function copyGoal(original: Goal, newOwnerId: string, newOwnerName:
       name: newOwnerName,
     },
     isPublic: false,
-    defaultRecurrence: original.defaultRecurrence,
-    defaultScheduledTimes: original.defaultScheduledTimes,
     completionType: original.completionType,
     completionDate: original.completionDate,
   };
@@ -165,7 +166,7 @@ export async function copyGoal(original: Goal, newOwnerId: string, newOwnerName:
   return newGoalId;
 }
 
-function deserializeGoal(row: GoalBase, activities: GoalActivity[]): Goal {
+function deserializeGoal(row: GoalBase, activities: Activity[]): Goal {
   return {
     ...row,
     tags: JSON.parse(row.tags as any),
@@ -177,7 +178,6 @@ function deserializeGoal(row: GoalBase, activities: GoalActivity[]): Goal {
     createdAt: new Date(row.createdAt as any).toISOString(),
     updatedAt: new Date(row.updatedAt as any).toISOString(),
     isPublic: !!row.isPublic,
-    defaultScheduledTimes: JSON.parse(row.defaultScheduledTimes as any),
     progress: row.progress ? JSON.parse(row.progress as any) : undefined,
     meta: row.meta ? JSON.parse(row.meta as any) : undefined,
     activities: [...(row.activities ?? []), ...activities],

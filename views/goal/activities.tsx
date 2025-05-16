@@ -1,26 +1,29 @@
-import { GoalActivity } from "@/backend/shared";
+import { Activity } from "@/backend/shared";
 import { ActivityCard } from "@/components/ActivityCard";
+import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { Spacings } from "@/constants/Theme";
+import { useThemeColor } from "@/hooks/useThemeColor";
 import { format, parse } from "date-fns";
-import { router } from "expo-router";
 import { useMemo } from "react";
 import { StyleSheet, View } from "react-native";
 
 interface GoalActivitiesViewProps {
-  activities?: GoalActivity[];
+  activities?: Activity[];
   goalId: string;
 }
 export const GoalActivitiesView: React.FC<GoalActivitiesViewProps> = ({ activities, goalId }) => {
+  const muted = useThemeColor({}, "muted");
+
   const groupedByTime = useMemo(() => {
-    const map: Record<string, GoalActivity[]> = {};
+    const map: Record<string, Activity[]> = {};
     const now = new Date();
 
     if (!activities) {
       return [
         {
           time: "Unscheduled",
-          items: [] as GoalActivity[],
+          items: [] as Activity[],
         },
       ];
     }
@@ -63,7 +66,7 @@ export const GoalActivitiesView: React.FC<GoalActivitiesViewProps> = ({ activiti
           acc.push({ time: key, items: value });
         }
         return acc;
-      }, [] as { time: string; items: GoalActivity[] }[]);
+      }, [] as { time: string; items: Activity[] }[]);
   }, [activities]);
 
   return (
@@ -83,18 +86,20 @@ export const GoalActivitiesView: React.FC<GoalActivitiesViewProps> = ({ activiti
                 <ActivityCard
                   key={item.id}
                   item={item}
-                  actionButtonTitle="Edit"
-                  actionButtonIcon="pencil.circle"
-                  handlePress={() => {
-                    router.push({
-                      pathname: "/(tabs)/goals/edit-activity",
-                      params: {
-                        activityId: item.id,
-                        goalId: goalId,
-                      },
-                    });
-                  }}
+                  actions={["view", "edit"]}
                   hiddenFields={["info"]}
+                  topContent={
+                    <ThemedButton
+                      variant="ghost"
+                      icon="minus.circle"
+                      onPress={() => {
+                        // Handle delete action
+                      }}
+                      textStyle={{
+                        color: muted,
+                      }}
+                    />
+                  }
                 />
               ))}
             </View>

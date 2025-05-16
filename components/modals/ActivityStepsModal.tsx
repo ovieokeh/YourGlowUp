@@ -1,47 +1,45 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import Fuse from "fuse.js";
 import React, { useMemo, useState } from "react";
 import { FlatList, Modal, StyleSheet, TouchableOpacity, View } from "react-native";
 
-import { ActivityType, GoalActivity } from "@/backend/shared";
+import { Activity, GoalCategory } from "@/backend/shared";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedPicker } from "@/components/ThemedPicker";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedTextInput } from "@/components/ThemedTextInput";
 import { DEFAULT_ACTIVITIES } from "@/constants/Goals";
-import { BorderRadii, Colors, Spacings } from "@/constants/Theme";
+import { BorderRadii, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { router } from "expo-router";
+import { ActivityCard } from "../ActivityCard";
 import { ThemedView } from "../ThemedView";
 
 interface Props {
+  goalId: string;
   visible: boolean;
   selectedSlugs: string[];
+  defaultCategory?: GoalCategory;
   onClose: () => void;
-  onSave: (selected: Omit<GoalActivity, "goalId">[]) => void;
+  onSave: (selected: Omit<Activity, "goalId">[]) => void;
 }
 
-export const ActivityStepsModal = ({ visible, selectedSlugs, onClose, onSave }: Props) => {
+export const ActivityStepsModal = ({ goalId, visible, selectedSlugs, defaultCategory, onClose, onSave }: Props) => {
   const [query, setQuery] = useState("");
-  const [typeFilter, setTypeFilter] = useState<"all" | ActivityType>("all");
-  const [categoryFilter, setAreaFilter] = useState<string>("all");
+  const [categoryFilter, setAreaFilter] = useState<string>(defaultCategory || "all");
   const [selected, setSelected] = useState<Set<string>>(new Set(selectedSlugs.map((id) => id.toString())));
 
   const textColor = useThemeColor({}, "text");
-  const borderColor = useThemeColor({}, "border");
   const areas = useMemo(() => Array.from(new Set(DEFAULT_ACTIVITIES.map((i) => i.category))), []);
   const fuse = useMemo(() => new Fuse(DEFAULT_ACTIVITIES, { keys: ["name", "category"] }), []);
 
   const matches = useMemo(() => {
     let list = query ? fuse.search(query).map((r) => r.item) : [...DEFAULT_ACTIVITIES];
-    if (typeFilter !== "all") {
-      list = list.filter((activity) => activity.type === typeFilter);
-    }
     if (categoryFilter !== "all") {
       list = list.filter((activity) => activity.category === categoryFilter);
     }
     return list;
-  }, [query, fuse, typeFilter, categoryFilter]);
+  }, [query, fuse, categoryFilter]);
 
   const toggleSelect = (id: string) => {
     const next = new Set(selected);
@@ -58,7 +56,6 @@ export const ActivityStepsModal = ({ visible, selectedSlugs, onClose, onSave }: 
     onSave(selectedItems);
     setSelected(new Set());
     setQuery("");
-    setTypeFilter("all");
     setAreaFilter("all");
     onClose();
   };
@@ -66,14 +63,36 @@ export const ActivityStepsModal = ({ visible, selectedSlugs, onClose, onSave }: 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="formSheet">
       <ThemedView style={styles.container}>
-        <ThemedView style={{ gap: Spacings.sm }}>
+        <View style={{ gap: Spacings.sm }}>
           <View style={styles.header}>
             <ThemedText type="subtitle" style={{ flex: 1 }}>
-              Update Goal
+              Activities
             </ThemedText>
             <TouchableOpacity onPress={onClose} style={{ alignSelf: "flex-end", marginLeft: "auto" }}>
               <Ionicons name="close" size={24} color={textColor} />
             </TouchableOpacity>
+          </View>
+
+          <View
+            style={{
+              paddingHorizontal: Spacings.md,
+              gap: Spacings.sm,
+              marginBottom: Spacings.md,
+              alignItems: "center",
+            }}
+          >
+            <ThemedButton
+              title="Create New Activity"
+              icon="plus"
+              onPress={() => {
+                onClose();
+                router.push({
+                  pathname: "/(tabs)/goals/upsert-activity",
+                  params: { goalId },
+                });
+              }}
+            />
+            <ThemedText>Or explore these suggested activities</ThemedText>
           </View>
 
           <View style={styles.searchRow}>
@@ -90,61 +109,42 @@ export const ActivityStepsModal = ({ visible, selectedSlugs, onClose, onSave }: 
 
           <View style={styles.filters}>
             <ThemedPicker
-              items={[
-                { label: "All Types", value: "all" as const },
-                ...Object.values(ActivityType).map((type) => ({ label: type, value: type })),
-              ]}
-              selectedValue={typeFilter}
-              onValueChange={(v) => setTypeFilter(v)}
-              style={styles.picker}
-            />
-            <ThemedPicker
               items={[{ label: "All Areas", value: "all" }, ...areas.map((area) => ({ label: area, value: area }))]}
               selectedValue={categoryFilter}
               onValueChange={(v) => setAreaFilter(v)}
               style={styles.picker}
             />
           </View>
-        </ThemedView>
+        </View>
 
         <FlatList
           data={matches}
           keyExtractor={(activity) => activity.slug}
-          numColumns={2}
-          columnWrapperStyle={{ gap: Spacings.sm }}
-          contentContainerStyle={{ padding: Spacings.md, paddingBottom: 96 }}
+          numColumns={1}
+          contentContainerStyle={{ gap: Spacings.md, padding: Spacings.md, paddingBottom: 96 }}
           renderItem={({ item }) => {
             const isSelected = selected.has(item.slug);
             return (
-              <View style={[styles.activity, { borderColor }]}>
-                {item.featuredImage && (
-                  <Image
-                    source={item.featuredImage}
-                    style={{ width: "100%", height: 120, borderRadius: BorderRadii.sm }}
-                    contentFit="cover"
-                  />
-                )}
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                  <ThemedText type="defaultSemiBold">{item.name}</ThemedText>
-                </View>
-                <ThemedText style={{ opacity: 0.6 }}>{item.category}</ThemedText>
-
-                <View style={{ marginTop: Spacings.sm }}>
+              <ActivityCard
+                item={item as Activity}
+                actions={[]}
+                hiddenFields={["info"]}
+                topContent={
                   <ThemedButton
                     variant="ghost"
-                    title={isSelected ? "Remove" : "Add"}
+                    icon={isSelected ? "checkmark.circle.fill" : "circle"}
                     onPress={() => toggleSelect(item.slug)}
-                    icon="plus.circle"
-                    textStyle={{ color: isSelected ? Colors.light.danger : Colors.light.accent }}
                   />
-                </View>
-              </View>
+                }
+              />
             );
           }}
         />
 
         <ThemedButton
-          title={`Update Goal (${selected.size} activitys)`}
+          title={`Update Goal (${selected.size} ${
+            selected.size === 0 || selected.size > 1 ? "activities" : "activity"
+          })`}
           onPress={handleSave}
           style={styles.saveButton}
           disabled={selected.size === 0}
@@ -191,14 +191,6 @@ const styles = StyleSheet.create({
   picker: {
     flex: 1,
     height: 44,
-  },
-  activity: {
-    padding: Spacings.sm,
-    marginBottom: Spacings.sm,
-    borderWidth: 1,
-    borderRadius: BorderRadii.sm,
-    justifyContent: "space-between",
-    flexGrow: 1,
   },
   saveButton: {
     margin: Spacings.md,

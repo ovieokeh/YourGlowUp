@@ -16,23 +16,14 @@ export default function GoalsLayout() {
         name="[id]"
         options={{
           headerShown: false,
-          title: "Edit Goal Activity",
-          headerStyle: {
-            backgroundColor: background,
-          },
         }}
       />
       <Stack.Screen
-        name="edit-activity"
+        name="upsert-activity"
         options={{
           headerShown: false,
-          title: "Edit Goal Activity",
-          headerStyle: {
-            backgroundColor: background,
-          },
         }}
       />
-      <Stack.Screen name="explore" />
       <Stack.Screen
         name="add"
         options={{

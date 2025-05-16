@@ -55,7 +55,6 @@ export function ProgressStatsView({ selectedGoalId }: { selectedGoalId: string |
       })),
     [stats]
   );
-  console.log("durationOverTime", durationOverTime);
   const categoryStats = useMemo(
     () =>
       stats?.categoryStats
@@ -67,10 +66,6 @@ export function ProgressStatsView({ selectedGoalId }: { selectedGoalId: string |
         })),
     [stats]
   );
-
-  console.log("stats", stats);
-  console.log("categoryStats", categoryStats);
-  console.log("durationOverTime", durationOverTime);
 
   return (
     <View style={styles.container}>

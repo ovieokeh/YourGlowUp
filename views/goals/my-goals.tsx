@@ -1,7 +1,6 @@
 import { Goal } from "@/backend/shared";
 import { GoalCard } from "@/components/GoalCard";
 import { Spacings } from "@/constants/Theme";
-import { router } from "expo-router";
 import { FC } from "react";
 import { View } from "react-native";
 import { EmptyGoalsView } from "../shared/EmptyGoalsView";
@@ -15,20 +14,10 @@ export const MyGoalsView: FC<MyGoalsViewProps> = ({ goals }) => {
       {goals.length === 0 ? (
         <EmptyGoalsView />
       ) : (
-        <View style={{ flex: 1, gap: Spacings.md }}>
+        <View style={{ flex: 1, gap: Spacings.xl }}>
           {/* Render your goals here */}
           {goals.map((goal) => (
-            <GoalCard
-              key={goal.id}
-              goal={goal}
-              actionButtonTitle="View"
-              handlePress={() => {
-                router.push({
-                  pathname: "/(tabs)/goals/[id]",
-                  params: { id: goal.id },
-                });
-              }}
-            />
+            <GoalCard key={goal.id} item={goal} actions={["view"]} />
           ))}
         </View>
       )}

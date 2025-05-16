@@ -1,13 +1,12 @@
 import { getAllActivities } from "./activities";
 import { getFilteredLogs } from "./logs";
-import { ActivityType, GoalActivity, isActivityLog, isPromptLog, isStepLog, Log, PromptLog } from "./shared";
+import { Activity, isActivityLog, isPromptLog, isStepLog, Log, PromptLog } from "./shared";
 
 export interface StatsInput {
   goalId?: string;
   startDate?: number;
   endDate?: number;
   category?: string;
-  type?: ActivityType;
 }
 
 export interface CategoryStat {
@@ -19,7 +18,6 @@ export interface CategoryStat {
 export interface ItemStat {
   slug: string;
   name: string;
-  type: ActivityType;
   count: number;
   totalDuration: number;
 }
@@ -68,7 +66,7 @@ export interface StatsOutput {
   promptStats: PromptStat[];
 }
 
-function getActivityName(activity: GoalActivity): string {
+function getActivityName(activity: Activity): string {
   if (typeof activity.name === "string") {
     return activity.name;
   }
@@ -77,7 +75,6 @@ function getActivityName(activity: GoalActivity): string {
 
 function getLogDuration(log: Log): number {
   if (isStepLog(log) && typeof log.durationInSeconds !== "undefined") {
-    console.log("Step log duration:", log.durationInSeconds);
     return log.durationInSeconds;
   }
 
@@ -91,19 +88,15 @@ export async function getStats(input: StatsInput): Promise<StatsOutput> {
     endDate: input.endDate ? new Date(input.endDate).toISOString() : undefined,
   });
 
-  const logTypes = new Set(logs.map((log) => log.type));
-  console.log("Log types:", logTypes);
-
   const activitiesInputFiltered = await getAllActivities({
     goalId: input.goalId,
     category: input.category,
-    type: input.type,
   });
 
-  const activityMapById: Record<string, GoalActivity> = activitiesInputFiltered.reduce((acc, act) => {
+  const activityMapById: Record<string, Activity> = activitiesInputFiltered.reduce((acc, act) => {
     acc[act.id] = act;
     return acc;
-  }, {} as Record<string, GoalActivity>);
+  }, {} as Record<string, Activity>);
 
   const activityLogs = logs.filter(isActivityLog);
 
@@ -113,7 +106,6 @@ export async function getStats(input: StatsInput): Promise<StatsOutput> {
     totalTimeSpent += getLogDuration(log);
   });
 
-  console.log("Total time spent:", totalTimeSpent);
   const totalCompleted = activityLogs.length;
 
   const timeSeriesMap: Record<string, TimeSeriesStat> = {};
@@ -127,7 +119,6 @@ export async function getStats(input: StatsInput): Promise<StatsOutput> {
     itemStatsMap[activity.slug] = {
       slug: activity.slug,
       name: getActivityName(activity),
-      type: activity.type,
       count: 0,
       totalDuration: 0,
     };
@@ -148,13 +139,11 @@ export async function getStats(input: StatsInput): Promise<StatsOutput> {
         console.warn("Log without createdAt:", log);
         continue;
       }
-      console.log("Processing log:", log.createdAt, log.type, log.activityType);
       const dateKey = dateToISOStringKey(log.createdAt);
       timeSeriesMap[dateKey] = timeSeriesMap[dateKey] || { date: dateKey, count: 0, totalDuration: 0 };
 
       // console.log("timeSeriesMap[dateKey]:", timeSeriesMap[dateKey]);
       const duration = getLogDuration(log);
-      console.log("Duration:", duration);
       if (duration > 0) {
         timeSeriesMap[dateKey].totalDuration += duration;
       }
@@ -226,7 +215,6 @@ export async function getStats(input: StatsInput): Promise<StatsOutput> {
     }
   }
 
-  console.log("Time series map:", timeSeriesMap);
   const timeSeries = Object.values(timeSeriesMap).sort((a, b) => a.date.localeCompare(b.date));
   const activityTimingStats = Object.values(activityTimingMap);
   const promptStatsResult: PromptStat[] = Object.entries(promptResponseMap).map(([promptId, optionCounts]) => ({

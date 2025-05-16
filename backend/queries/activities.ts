@@ -2,6 +2,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import {
   addActivity,
   getActivities,
+  getActivitiesSnapshot,
   getActivityById,
   getActivityBySlug,
   getPendingActivities,
@@ -9,7 +10,7 @@ import {
   removeActivity,
   updateActivity,
 } from "../activities";
-import { ActivityCreateInput, GoalActivity } from "../shared";
+import { ActivityCreateInput, Activity } from "../shared";
 
 export const useGetActivities = (goalId?: string) => {
   return useQuery({
@@ -38,12 +39,22 @@ export const useGetActivityBySlug = (goalId: string, slug: string) => {
   });
 };
 
+export const useGetActivitiesSnapshot = (goalId: string) => {
+  return useQuery({
+    queryKey: ["activities-snapshot", goalId],
+    queryFn: () => getActivitiesSnapshot(goalId),
+    enabled: !!goalId,
+    staleTime: 1000 * 60 * 5,
+  });
+};
+
 export const useAddActivity = (goalId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (activityInput: ActivityCreateInput) => addActivity(goalId, activityInput),
     onSuccess: (/* data, variables, context */) => {
       queryClient.invalidateQueries({ queryKey: ["goals", goalId] });
+      queryClient.invalidateQueries({ queryKey: ["goal", goalId] });
       queryClient.invalidateQueries({ queryKey: ["activities", goalId] });
 
       queryClient.invalidateQueries({ queryKey: ["pending-activities", goalId] });
@@ -57,11 +68,12 @@ export const useAddActivity = (goalId: string) => {
 export const useUpdateActivity = (goalId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (activity: GoalActivity) => updateActivity(goalId, activity),
+    mutationFn: (activity: Activity) => updateActivity(goalId, activity),
     onSuccess: (_data, variables) => {
       const activityId = variables.id;
 
       queryClient.invalidateQueries({ queryKey: ["goals", goalId] });
+      queryClient.invalidateQueries({ queryKey: ["goal", goalId] });
       queryClient.invalidateQueries({ queryKey: ["activities", goalId] });
 
       if (activityId) {
@@ -83,6 +95,7 @@ export const useRemoveActivity = (goalId: string) => {
     mutationFn: (activityId: string) => removeActivity(activityId),
     onSuccess: (_data, activityId) => {
       queryClient.invalidateQueries({ queryKey: ["goals", goalId] });
+      queryClient.invalidateQueries({ queryKey: ["goal", goalId] });
       queryClient.invalidateQueries({ queryKey: ["activities", goalId] });
 
       if (activityId) {
@@ -118,7 +131,7 @@ export const useGetPendingActivitiesToday = (completedActivityIds: string[], goa
   });
 };
 
-export const withGoalActivities = (goalId: string, callback: (activities: GoalActivity[]) => void): Promise<void> => {
+export const withGoalActivities = (goalId: string, callback: (activities: Activity[]) => void): Promise<void> => {
   return getActivities(goalId)
     .then((activities) => {
       callback(activities);

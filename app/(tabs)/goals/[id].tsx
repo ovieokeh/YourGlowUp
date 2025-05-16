@@ -1,7 +1,7 @@
 import { StyleSheet } from "react-native";
 
 import { useGetGoalById, useUpdateGoalActivities } from "@/backend/queries/goals";
-import { GoalActivity } from "@/backend/shared";
+import { Activity } from "@/backend/shared";
 import { CenteredSwipeableTabs, TabConfig } from "@/components/CenteredSwipeableTabs";
 import { CollapsingHeader } from "@/components/CollapsingHeader";
 import { ActivityStepsModal } from "@/components/modals/ActivityStepsModal";
@@ -56,13 +56,22 @@ export default function GoalsSingleScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); // Haptic feedback
   }, []);
 
-  const swipeableTabsProps = useMemo(
-    () => ({
-      tabs: TABS,
-      activeIndex: activeIndex,
-      onTabPress: handleTabPress,
-    }),
-    [activeIndex, handleTabPress]
+  const renderPageContent = useCallback(
+    (tab: TabConfig) => {
+      if (!goal) return null;
+
+      switch (tab.key) {
+        case "activities":
+          return <GoalActivitiesView activities={activities} goalId={goal.id} />;
+        case "community":
+          return <GoalCommunityView />;
+        case "stats":
+          return <GoalStatsScreen selectedGoalId={goal.id} />;
+        default:
+          return null;
+      }
+    },
+    [activities, goal]
   );
 
   if (goalQuery.isLoading) {
@@ -110,26 +119,14 @@ export default function GoalsSingleScreen() {
             />
           }
         />
-        <CenteredSwipeableTabs {...swipeableTabsProps} />
+        <CenteredSwipeableTabs tabs={TABS} activeIndex={activeIndex} onTabPress={handleTabPress} />
 
         <TabbedPagerView
           tabs={TABS}
           activeIndex={activeIndex}
           onPageSelected={setActiveIndex}
           scrollHandler={scrollHandler}
-          renderPageContent={(tab: TabConfig) => {
-            if (!goal) return null;
-            switch (tab.key) {
-              case "activities":
-                return <GoalActivitiesView activities={activities} goalId={goal.id} />;
-              case "community":
-                return <GoalCommunityView />;
-              case "stats":
-                return <GoalStatsScreen selectedGoalId={goal.id} />;
-              default:
-                return null;
-            }
-          }}
+          renderPageContent={renderPageContent}
           pagerRef={pagerRef}
           pageContainerStyle={styles.pageStyle}
           scrollContentContainerStyle={styles.scrollContentForPage}
@@ -144,19 +141,18 @@ export default function GoalsSingleScreen() {
           setShowSelector(true);
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         }}
-        icon="pencil"
-        iconPlacement="right"
         bottom={96}
       />
 
-      {/* Modal */}
       <ActivityStepsModal
+        goalId={goal.id}
         visible={showSelector}
         selectedSlugs={activitySlugs}
+        defaultCategory={goal.category}
         onClose={() => setShowSelector(false)}
         onSave={(newActivities) => {
           updateGoalActivities
-            .mutateAsync({ goalId: goal.id, activities: newActivities as GoalActivity[] })
+            .mutateAsync({ goalId: goal.id, activities: newActivities as Activity[] })
             .then(() => {
               setShowSelector(false);
             })

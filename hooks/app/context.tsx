@@ -26,7 +26,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [selectedGoalId, setSelectedGoalId] = useState<string>("");
   const [user, setUser] = useState<User | null>(null);
 
-  const goalsQuery = useGetGoals(user?.id);
+  const goalsQuery = useGetGoals(user?.id, {
+    mine: true,
+  });
   const goalsData = useMemo(() => {
     return goalsQuery.data || [];
   }, [goalsQuery.data]);

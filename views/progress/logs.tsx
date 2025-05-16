@@ -34,7 +34,6 @@ export function ProgressLogsView({ userId, selectedGoalId }: { userId?: string; 
   const router = useRouter();
   const logsQuery = useGetLogs(userId);
   const logs = useMemo(() => logsQuery.data || [], [logsQuery.data]);
-  console.log("logs", logs.length);
   const params = useLocalSearchParams();
   const initialTab = params.logsTab === "Activities" ? "Activities" : "Prompts";
 
@@ -47,7 +46,6 @@ export function ProgressLogsView({ userId, selectedGoalId }: { userId?: string; 
 
   const activityLogs = logs.filter(isActivityLog);
   const promptLogs = logs.filter(isPromptLog);
-  console.log("activity and prompt logs", activityLogs.length, promptLogs.length);
 
   const handleTabPress = (tab: (typeof TABS)[number], index: number) => {
     setActiveTab(tab);

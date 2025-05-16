@@ -1,10 +1,10 @@
-import { ActivityCreateInput, ActivityDependency, GoalActivity } from "@/backend/shared";
+import { Activity, ActivityCreateInput, ActivityDependency } from "@/backend/shared";
 import { ActivityReliesOnEditor } from "@/components/ActivityReliesOnEditor";
 
 interface ActivityEditDependenciesProps {
   reliesOn?: ActivityDependency[];
-  possibleDependencies?: GoalActivity[];
-  activities?: GoalActivity[];
+  possibleDependencies?: Activity[];
+  activities?: Activity[];
   onChange: (key: keyof ActivityCreateInput, value: any) => void;
 }
 export const ActivityEditDependencies: React.FC<ActivityEditDependenciesProps> = ({

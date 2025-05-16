@@ -1,5 +1,10 @@
 import * as SQLite from "expo-sqlite";
 
+import { DEFAULT_ACTIVITIES, DEFAULT_GOALS } from "@/constants/Goals";
+import { addActivity } from "./activities";
+import { addGoal } from "./goals";
+import { Activity } from "./shared";
+
 export const localDb = SQLite.openDatabaseSync("sharedstep.db");
 
 export async function initDatabase(reset: boolean): Promise<void> {
@@ -46,7 +51,6 @@ export async function initDatabase(reset: boolean): Promise<void> {
       notificationsEnabled INTEGER,
       scheduledTimes TEXT,
       recurrence TEXT,
-      type TEXT,
       completionPrompts TEXT,
       steps TEXT,
       reliesOn TEXT,
@@ -99,10 +103,54 @@ export async function initDatabase(reset: boolean): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_activities_goalId ON activities (goalId);
     CREATE INDEX IF NOT EXISTS idx_logs_type ON logs (type);
     CREATE INDEX IF NOT EXISTS idx_activities_category ON activities (category);
-    CREATE INDEX IF NOT EXISTS idx_activities_type ON activities (type);
     CREATE INDEX IF NOT EXISTS idx_goals_category ON goals (category);
     CREATE INDEX IF NOT EXISTS idx_logs_userId_createdAt ON logs (userId, createdAt);
     CREATE INDEX IF NOT EXISTS idx_activity_schedules_activityId ON activity_schedules(activityId);
     CREATE INDEX IF NOT EXISTS idx_activity_schedules_dayTime ON activity_schedules(dayOfWeek, timeOfDay);
   `);
+}
+
+// seed the database with default activities and goals
+export async function seedDatabase(): Promise<void> {
+  const allGoals = await localDb.getAllAsync("SELECT * FROM goals");
+  if (allGoals.length > 0) {
+    console.info("Database already seeded with goals");
+    return;
+  }
+
+  const goals = DEFAULT_GOALS.map((goal) => ({
+    ...goal,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }));
+  const GOAL_ID_TO_DEFAULT_ID: {
+    [key: string]: string;
+  } = {};
+
+  let goalIds: string[] = [];
+  for (const goal of goals) {
+    const goalId = await addGoal(goal);
+    GOAL_ID_TO_DEFAULT_ID[goalId] = goal.id;
+    goalIds.push(goalId);
+  }
+
+  for (const goalId of goalIds) {
+    const defaultId = GOAL_ID_TO_DEFAULT_ID[goalId];
+
+    // find default activities for this goal
+    const defaultActivities = DEFAULT_ACTIVITIES.filter((activity) => (activity as Activity).goalId === defaultId);
+
+    await Promise.all(
+      defaultActivities.map(async (activity) => {
+        const activityId = await addActivity(goalId, {
+          ...activity,
+          schedules: activity.schedules?.map((schedule) => ({
+            ...schedule,
+            activityId: activityId,
+          })),
+        });
+        return activityId;
+      })
+    );
+  }
 }

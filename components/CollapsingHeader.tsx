@@ -39,21 +39,20 @@ export const CollapsingHeader = (props: CollapsingHeaderProps) => {
     topLeftContent,
     topRightContent,
     content,
-    contentHeight = 30,
+    contentHeight = 0,
     isStickyContent = true,
     styleConfig: { textColor = textColorTheme, backgroundColor = backgroundColorTheme } = {},
   } = props;
 
-  const initialHeroHeight = props.config.initialHeroHeight || 240;
   const insets = useSafeAreaInsets();
-  const topInset = props.config.topInset ?? insets.top;
-
+  const topInset = props.config.topInset ?? insets.top + Spacings.lg;
   const collapsedHeroHeight = isStickyContent ? contentHeight + topInset : -topInset - contentHeight;
+  const initialHeroHeight = props.config.initialHeroHeight ?? 300;
 
   const heroHeight = useAnimatedStyle(() => {
     const scrollResponsiveHeight = interpolate(
       scrollY.value,
-      [0, initialHeroHeight],
+      [0, initialHeroHeight * 0.9],
       [initialHeroHeight, collapsedHeroHeight],
       Extrapolation.CLAMP
     );
@@ -76,7 +75,7 @@ export const CollapsingHeader = (props: CollapsingHeaderProps) => {
       opacity: scrollResponsiveOpacity,
     };
   });
-  const initialBottomOpacity = 0.7;
+  const initialBottomOpacity = 1;
   const collapsedBottomOpacity = 0;
   const bottomOpacity = useAnimatedStyle(() => {
     const scrollResponsiveOpacity = interpolate(
@@ -92,59 +91,60 @@ export const CollapsingHeader = (props: CollapsingHeaderProps) => {
 
   return (
     <>
-      <Animated.View
-        style={[
-          {
-            position: "absolute",
-            width: "100%",
-            zIndex: 2,
-            // top: topInset,
-            flexDirection: "row",
-            alignItems: "flex-end",
-            justifyContent: "center",
-            paddingVertical: Spacings.sm,
-            paddingTop: topInset,
-          },
-        ]}
-      >
-        {/* Overlay for readability */}
+      {(topLeftContent || topRightContent) && (
         <Animated.View
           style={[
-            StyleSheet.absoluteFill,
             {
-              backgroundColor,
-              opacity: 0.5,
+              position: "absolute",
+              width: "100%",
+              zIndex: 2,
+              // top: topInset,
+              flexDirection: "row",
+              alignItems: "flex-end",
+              justifyContent: "center",
+              paddingVertical: Spacings.sm,
+              paddingTop: topInset,
             },
-            topOpacity,
           ]}
-        />
-        {topLeftContent && (
-          <View
-            style={{
-              position: "absolute",
-              left: Spacings.md,
-              bottom: Spacings.xs,
-            }}
-          >
-            {topLeftContent}
-          </View>
-        )}
-        <ThemedText type="subtitle" style={[{ color: textColor }]}>
-          {title}
-        </ThemedText>
-        {topRightContent && (
-          <View
-            style={{
-              position: "absolute",
-              right: Spacings.md,
-              bottom: Spacings.xs,
-            }}
-          >
-            {topRightContent}
-          </View>
-        )}
-      </Animated.View>
+        >
+          {/* Overlay for readability */}
+          <Animated.View
+            style={[
+              StyleSheet.absoluteFill,
+              {
+                backgroundColor,
+                opacity: 0.5,
+              },
+              topOpacity,
+            ]}
+          />
+          {topLeftContent && (
+            <View
+              style={{
+                position: "absolute",
+                left: Spacings.md,
+                bottom: Spacings.xs,
+              }}
+            >
+              {topLeftContent}
+            </View>
+          )}
 
+          {topRightContent && (
+            <View
+              style={{
+                position: "absolute",
+                right: Spacings.md,
+                bottom: Spacings.xs,
+              }}
+            >
+              {topRightContent}
+            </View>
+          )}
+        </Animated.View>
+      )}
+
+      {/* Collapsing header */}
       <Animated.View
         style={[
           {
@@ -167,22 +167,23 @@ export const CollapsingHeader = (props: CollapsingHeaderProps) => {
         ) : (
           <View style={[StyleSheet.absoluteFillObject, { backgroundColor }]} />
         )}
-        {description && (
+
+        {title && (
           <Animated.View
             style={[
               {
-                position: "absolute",
-                bottom: 0,
-                left: 0,
-                right: 0,
+                // position: "absolute",
+                // bottom: 0,
+                // left: 0,
+                // right: 0,
+                marginTop: "auto",
                 borderBottomWidth: 1,
                 borderBottomColor: borderColor,
                 padding: Spacings.md,
                 alignItems: "center",
                 justifyContent: "center",
-                flexDirection: "row",
-                flexWrap: "wrap",
                 width: "100%",
+                gap: Spacings.md,
               },
               bottomOpacity,
             ]}
@@ -193,13 +194,18 @@ export const CollapsingHeader = (props: CollapsingHeaderProps) => {
                 StyleSheet.absoluteFill,
                 {
                   backgroundColor,
-                  opacity: 0.7,
                 },
+                bottomOpacity,
               ]}
             />
-            <ThemedText type="defaultSemiBold" style={[{ color: textColor }, bottomOpacity]}>
-              {description}
+            <ThemedText type="subtitle" style={[{ color: textColor }]}>
+              {title}
             </ThemedText>
+            {description && (
+              <ThemedText type="defaultSemiBold" style={[{ color: textColor }, bottomOpacity]}>
+                {description}
+              </ThemedText>
+            )}
           </Animated.View>
         )}
       </Animated.View>

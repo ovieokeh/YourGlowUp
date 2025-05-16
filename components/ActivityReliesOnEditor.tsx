@@ -1,4 +1,4 @@
-import { ActivityDependency, GoalActivity } from "@/backend/shared";
+import { Activity, ActivityDependency } from "@/backend/shared";
 import { BorderRadii, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { Image } from "expo-image";
@@ -11,8 +11,8 @@ import { ThemedView } from "./ThemedView";
 
 interface ActivityReliesOnEditorProps {
   dependencies?: ActivityDependency[];
-  possibleDependencies?: GoalActivity[];
-  activities: GoalActivity[];
+  possibleDependencies?: Activity[];
+  activities: Activity[];
   onChange: (dependencies: ActivityDependency[]) => void;
 }
 
@@ -81,7 +81,7 @@ export const ActivityReliesOnEditor: React.FC<ActivityReliesOnEditorProps> = ({
 
 const ActivityAsDependencyCard: React.FC<{
   activity: ActivityDependency;
-  activities: GoalActivity[];
+  activities: Activity[];
   onPressLabel?: string;
   type?: "add" | "remove";
   onPress: () => void;
@@ -150,8 +150,8 @@ const ActivityAsDependencyCard: React.FC<{
 
 const DependencyAddModal: React.FC<{
   activeDependencies: ActivityDependency[];
-  possibleDependencies: GoalActivity[];
-  activities: GoalActivity[];
+  possibleDependencies: Activity[];
+  activities: Activity[];
   isVisible: boolean;
   onSelect: (activity: ActivityDependency) => void;
   onRemove?: (activity: ActivityDependency) => void;
@@ -159,7 +159,7 @@ const DependencyAddModal: React.FC<{
 }> = ({ activeDependencies, possibleDependencies, activities, isVisible, onSelect, onClose, onRemove }) => {
   const insets = useSafeAreaInsets();
 
-  const isAlreadyAdded = (activity: GoalActivity) => {
+  const isAlreadyAdded = (activity: Activity) => {
     return activeDependencies.some((dep) => dep.slug === activity.slug);
   };
 
@@ -212,11 +212,9 @@ const DependencyAddModal: React.FC<{
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: Spacings.md,
     gap: Spacings.md,
   },
   dependencyItem: {
-    padding: Spacings.sm,
     borderWidth: 1,
     borderRadius: BorderRadii.sm,
     gap: Spacings.md,

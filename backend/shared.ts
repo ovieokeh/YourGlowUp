@@ -2,6 +2,9 @@
 
 import { IconSymbolName } from "@/components/ui/IconSymbol";
 
+// modifier of an interface or type to remove certain fields
+export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
+
 export enum GoalCompletionType {
   INDEFINITE = "INDEFINITE", // Corrected value
   ACTIVITY = "ACTIVITY", // Corrected value
@@ -18,20 +21,15 @@ export enum GoalCategory {
 }
 
 export const CATEGORY_ICON_MAP: Record<GoalCategory, IconSymbolName> = {
-  [GoalCategory.SELF_CARE]: "heart",
-  [GoalCategory.HOBBY]: "pencil",
+  [GoalCategory.SELF_CARE]: "heart.fill",
+  [GoalCategory.HOBBY]: "pencil.and.scribble",
   [GoalCategory.PRODUCTIVITY]: "checkmark",
   [GoalCategory.FITNESS]: "figure.cooldown",
   [GoalCategory.FINANCE]: "wallet.bifold",
   [GoalCategory.CUSTOM]: "star",
 };
 
-export enum ActivityType {
-  GUIDED_ACTIVITY = "GUIDED_ACTIVITY",
-  TASK_ACTIVITY = "TASK_ACTIVITY",
-}
-
-export enum GoalActivityCompletionPromptAnswerType {
+export enum CompletionPromptAnswerType {
   TEXT = "text",
   NUMBER = "number",
   BOOLEAN = "boolean",
@@ -96,7 +94,7 @@ export interface PromptConditionGroup {
 
 // --- PROMPTS ---
 
-export interface GoalActivityCompletionPromptBase {
+export interface CompletionPromptBase {
   id: string;
   slug: string;
   prompt: string; // Consider LocalizedString
@@ -105,49 +103,49 @@ export interface GoalActivityCompletionPromptBase {
   validationRules?: Record<string, any>; // Could be more specific
 }
 
-export interface GoalActivityCompletionPromptText extends GoalActivityCompletionPromptBase {
-  type: GoalActivityCompletionPromptAnswerType.TEXT;
+export interface CompletionPromptText extends CompletionPromptBase {
+  type: CompletionPromptAnswerType.TEXT;
   minLength: number;
   maxLength: number;
   placeholder?: string; // Consider LocalizedString
 }
 
-export interface GoalActivityCompletionPromptNumber extends GoalActivityCompletionPromptBase {
-  type: GoalActivityCompletionPromptAnswerType.NUMBER;
+export interface CompletionPromptNumber extends CompletionPromptBase {
+  type: CompletionPromptAnswerType.NUMBER;
   min: number;
   max: number;
 }
 
-export interface GoalActivityCompletionPromptBoolean extends GoalActivityCompletionPromptBase {
-  type: GoalActivityCompletionPromptAnswerType.BOOLEAN;
+export interface CompletionPromptBoolean extends CompletionPromptBase {
+  type: CompletionPromptAnswerType.BOOLEAN;
 }
 
-export interface GoalActivityCompletionPromptSelect extends GoalActivityCompletionPromptBase {
-  type: GoalActivityCompletionPromptAnswerType.SELECT;
+export interface CompletionPromptSelect extends CompletionPromptBase {
+  type: CompletionPromptAnswerType.SELECT;
   options: { label: string; value: string }[]; // Consider label as LocalizedString
 }
 
-export interface GoalActivityCompletionPromptMedia extends GoalActivityCompletionPromptBase {
-  type: GoalActivityCompletionPromptAnswerType.MEDIA;
+export interface CompletionPromptMedia extends CompletionPromptBase {
+  type: CompletionPromptAnswerType.MEDIA;
   media: MediaAsset;
 }
 
-export interface GoalActivityCompletionPromptDocument extends GoalActivityCompletionPromptBase {
-  type: GoalActivityCompletionPromptAnswerType.DOCUMENT;
+export interface CompletionPromptDocument extends CompletionPromptBase {
+  type: CompletionPromptAnswerType.DOCUMENT;
   documentType: "pdf" | "doc"; // Add more if needed
 }
 
-export type GoalActivityCompletionPrompt =
-  | GoalActivityCompletionPromptText
-  | GoalActivityCompletionPromptNumber
-  | GoalActivityCompletionPromptBoolean
-  | GoalActivityCompletionPromptSelect
-  | GoalActivityCompletionPromptMedia
-  | GoalActivityCompletionPromptDocument;
+export type CompletionPrompt =
+  | CompletionPromptText
+  | CompletionPromptNumber
+  | CompletionPromptBoolean
+  | CompletionPromptSelect
+  | CompletionPromptMedia
+  | CompletionPromptDocument;
 
 export interface PromptAnswer {
   promptId: string;
-  type: GoalActivityCompletionPromptAnswerType;
+  type: CompletionPromptAnswerType;
   value: string | number | boolean | string[] | MediaAsset | null; // string[] likely for multi-select
 }
 
@@ -164,18 +162,18 @@ export interface ActivityScheduleEntry {
   dayOfWeek?: number; // ISO 8601 day number (1=Mon, 7=Sun), present if weekly
 }
 
-export interface ActivityBase {
+export interface Activity {
   id: string;
   goalId?: string;
   slug: string;
   name: string;
   description: string;
   featuredImage?: string;
-  type: ActivityType;
   category: GoalCategory;
   notificationsEnabled: boolean;
   recurrence?: NotificationRecurrence;
-  completionPrompts?: GoalActivityCompletionPrompt[];
+  steps: ActivityStep[];
+  completionPrompts?: CompletionPrompt[];
   reliesOn?: ActivityDependency[];
   unlockCondition?: UnlockConditionType;
   unlockParams?: { days?: number; date?: ISO8601Date };
@@ -194,11 +192,10 @@ export interface ActivityCreateInput {
   description: string;
   featuredImage?: string;
   category: GoalCategory;
-  type: ActivityType;
   steps: ActivityStep[];
   notificationsEnabled: boolean;
   recurrence?: NotificationRecurrence; // Keep this field
-  completionPrompts?: GoalActivityCompletionPrompt[];
+  completionPrompts?: CompletionPrompt[];
   reliesOn?: ActivityDependency[];
   unlockCondition?: UnlockConditionType;
   unlockParams?: { days?: number; date?: ISO8601Date };
@@ -206,48 +203,18 @@ export interface ActivityCreateInput {
   schedules?: ActivityScheduleCreateInput[];
 }
 
-export const hasCompletionPrompts = (activity: ActivityBase): boolean =>
+export const hasCompletionPrompts = (activity: Activity): boolean =>
   !!activity.completionPrompts && activity.completionPrompts.length > 0;
 
-export interface GuidedActivityStep {
+export type ActivityStep = {
   id: string;
   slug: string;
   content: string; // Consider LocalizedString
   instructionMedia?: MediaAsset;
-  duration: number;
-  durationType: "seconds" | "minutes" | "hours";
+  duration?: number;
+  durationType?: "seconds" | "minutes" | "hours";
   visibleIf?: ActivityDependency[];
-}
-
-export interface GuidedActivity extends ActivityBase {
-  type: ActivityType.GUIDED_ACTIVITY;
-  steps: GuidedActivityStep[];
-}
-
-export interface TaskActivityStep {
-  id: string;
-  slug: string;
-  content: string; // Consider LocalizedString
-  instructionMedia: MediaAsset;
-}
-
-export type ActivityStep = GuidedActivityStep | TaskActivityStep;
-
-export const isGuidedActivityStep = (step: ActivityStep): step is GuidedActivityStep =>
-  (step as GuidedActivityStep).duration !== undefined;
-export const isTaskActivityStep = (step: ActivityStep): step is TaskActivityStep =>
-  (step as TaskActivityStep).instructionMedia !== undefined;
-
-export interface TaskActivity extends ActivityBase {
-  type: ActivityType.TASK_ACTIVITY;
-  steps: TaskActivityStep[];
-}
-
-export type GoalActivity = GuidedActivity | TaskActivity;
-export const isTaskActivity = (activity: GoalActivity): activity is TaskActivity =>
-  activity.type === ActivityType.TASK_ACTIVITY;
-export const isGuidedActivity = (activity: GoalActivity): activity is GuidedActivity =>
-  activity.type === ActivityType.GUIDED_ACTIVITY;
+};
 
 // --- GOALS ---
 export interface GoalBase {
@@ -258,7 +225,7 @@ export interface GoalBase {
   featuredImage?: string; // URL or asset reference?
   category: GoalCategory;
   tags: string[];
-  activities: GoalActivity[]; // Note: In DB likely represented by relation, not embedded array
+  activities: Activity[]; // Note: In DB likely represented by relation, not embedded array
   author: Author;
   createdAt: ISO8601Timestamp; // Changed from number
   updatedAt: ISO8601Timestamp; // Changed from number
@@ -311,7 +278,6 @@ export interface LogBase {
   goalId: string;
   activityId: string;
   createdAt: ISO8601Timestamp; // Standardized
-  activityType: ActivityType;
   meta?: Record<string, any>;
 }
 
@@ -324,7 +290,7 @@ export interface PromptLog extends LogBase {
   type: LogType.PROMPT;
   sessionId?: string; // Optional: To group prompts answered together
   promptId: string;
-  answerType: GoalActivityCompletionPromptAnswerType;
+  answerType: CompletionPromptAnswerType;
   answer: string | number | boolean | string[] | MediaAsset | null;
 }
 

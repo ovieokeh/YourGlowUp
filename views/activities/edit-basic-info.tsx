@@ -19,15 +19,15 @@ export const ActivityEditBasicInfo: React.FC<ActivityEditBasicInfoProps> = ({
 }) => {
   return (
     <View style={styles.container}>
-      <View style={[styles.section, { paddingVertical: Spacings.md }]}>
+      <View style={[styles.section]}>
         <ThemedText>
           Upload a photo that represents this activity. This will be used as the cover image for this activity.
         </ThemedText>
 
         <PhotoUpload
           photoUri={featuredImage ?? ""}
-          onPickPhoto={(url) => {
-            onChange("featuredImage", url);
+          onPickPhoto={(picked) => {
+            onChange("featuredImage", picked?.uri);
           }}
           allowTransform={false}
           previewType="vertical"

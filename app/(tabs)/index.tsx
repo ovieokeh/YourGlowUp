@@ -5,7 +5,7 @@ import { StyleSheet, View } from "react-native";
 
 import { useGetPendingActivities } from "@/backend/queries/activities";
 import { useGetTodayLogs } from "@/backend/queries/logs";
-import { GoalActivity, isActivityLog } from "@/backend/shared";
+import { Activity, isActivityLog } from "@/backend/shared";
 import { useAppContext } from "@/hooks/app/context";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -38,12 +38,12 @@ export default function HomeScreen() {
   );
 
   const isActivityCompleted = useCallback(
-    (item: GoalActivity) => activityLogs.some((log) => log.activityId === item.id),
+    (item: Activity) => activityLogs.some((log) => log.activityId === item.id),
     [activityLogs]
   );
 
   const groupedByTime = useMemo(() => {
-    const map: Record<string, GoalActivity[]> = {};
+    const map: Record<string, Activity[]> = {};
     const now = new Date();
 
     for (const item of items) {
@@ -94,7 +94,7 @@ export default function HomeScreen() {
           acc.push({ time, items: group });
         }
         return acc;
-      }, [] as { time: string; items: GoalActivity[] }[]);
+      }, [] as { time: string; items: Activity[] }[]);
   }, [items, isActivityCompleted]);
 
   const isLoading = isLoadingGoals || pendingActivitiesQuery.isLoading || (!!currentUserId && logsQuery.isLoading);

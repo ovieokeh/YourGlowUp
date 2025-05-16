@@ -1,11 +1,14 @@
+import { AddGoalModal } from "@/components/modals/AddGoalModal";
 import { Spacings } from "@/constants/Theme";
 import { Image } from "expo-image";
 import { router } from "expo-router";
+import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { ThemedButton } from "../../components/ThemedButton";
 import { ThemedText } from "../../components/ThemedText";
 
 export const EmptyGoalsView = () => {
+  const [showEditModal, setShowEditModal] = useState(false);
   return (
     <View style={styles.container}>
       <View
@@ -30,7 +33,12 @@ export const EmptyGoalsView = () => {
           <ThemedButton
             variant="solid"
             title="Explore goals"
-            onPress={() => router.push("/goals/explore")}
+            onPress={() =>
+              router.push({
+                pathname: "/(tabs)/goals",
+                params: { activeTab: "explore" },
+              })
+            }
             icon="magnifyingglass"
             iconSize={20}
             style={{
@@ -43,11 +51,23 @@ export const EmptyGoalsView = () => {
       <ThemedButton
         variant="outline"
         title="Add a new goal"
-        onPress={() => router.push("/goals/add")}
+        onPress={() => setShowEditModal(true)}
         icon="plus.circle"
         iconSize={20}
         style={{
           marginTop: "auto",
+        }}
+      />
+
+      <AddGoalModal
+        isVisible={showEditModal}
+        onRequestClose={() => setShowEditModal(false)}
+        onUpsertSuccess={() => {
+          setShowEditModal(false);
+        }}
+        onDeleteSuccess={() => {
+          setShowEditModal(false);
+          router.back();
         }}
       />
     </View>

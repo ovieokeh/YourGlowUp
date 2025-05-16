@@ -9,14 +9,22 @@ import {
   updateGoal,
   updateGoalActivities,
 } from "../goals";
-import { Goal, GoalActivity, GoalCreateInput } from "../shared";
+import { Activity, Goal, GoalCreateInput } from "../shared";
 
 export const useGetGoals = (userId: string | undefined, opts?: GetGoalsOptions) => {
   return useQuery({
-    queryKey: ["goals", userId],
+    queryKey: ["goals", userId, opts?.copied, opts?.public, opts?.mine],
     queryFn: () => getGoals(userId ?? "", opts),
     staleTime: 1000 * 60 * 5,
     enabled: !!userId,
+  });
+};
+
+export const useGetPublicGoals = () => {
+  return useQuery({
+    queryKey: ["public-goals"],
+    queryFn: () => getGoals(undefined, { public: true }),
+    staleTime: 1000 * 60 * 5,
   });
 };
 
@@ -64,7 +72,7 @@ export const useUpdateGoal = (userId: string) => {
 export const useUpdateGoalActivities = (userId: string | undefined) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (opts: { goalId: string; activities: GoalActivity[] }) =>
+    mutationFn: (opts: { goalId: string; activities: Activity[] }) =>
       updateGoalActivities(opts.goalId, opts.activities),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["goal"] });

@@ -79,7 +79,7 @@ export function ThemedButton({
       default:
         return {
           button: { backgroundColor: "transparent" },
-          textColor: (textStyle?.color as string) ?? theme.tint,
+          textColor: (textStyle?.color as string) ?? theme.text,
         };
     }
   };

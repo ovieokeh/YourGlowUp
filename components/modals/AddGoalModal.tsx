@@ -3,7 +3,6 @@ import { GoalCategory, GoalCompletionType, GoalCreateInput, ISO8601Date } from "
 import { Spacings } from "@/constants/Theme";
 import { useAppContext } from "@/hooks/app/context";
 import { useCurrentScrollY } from "@/hooks/useCurrentScrollY";
-import { useThemeColor } from "@/hooks/useThemeColor";
 import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { invariant } from "es-toolkit";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -71,8 +70,6 @@ export const AddGoalModal = ({
     }),
     [user]
   );
-
-  const background = useThemeColor({}, "background");
 
   const insets = useSafeAreaInsets();
   const [activeIndex, setActiveIndex] = useState(0);
@@ -201,26 +198,8 @@ export const AddGoalModal = ({
           <CollapsingHeader
             scrollY={scrollY}
             config={collapsingHeaderConfig}
-            topRightContent={
-              <ThemedButton
-                variant="solid"
-                title="Save"
-                onPress={handleSave}
-                style={{
-                  marginRight: Spacings.md,
-                }}
-              />
-            }
-            topLeftContent={
-              <ThemedButton
-                variant="ghost"
-                icon="chevron.backward"
-                onPress={onRequestClose}
-                textStyle={{
-                  color: background,
-                }}
-              />
-            }
+            topRightContent={<ThemedButton variant="solid" title="Save" onPress={handleSave} />}
+            topLeftContent={<ThemedButton variant="ghost" icon="xmark" onPress={onRequestClose} />}
             content={
               <CenteredSwipeableTabs
                 {...swipeableTabsProps}

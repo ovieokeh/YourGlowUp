@@ -1,16 +1,14 @@
-// components/EditActivityStep.tsx
-import { ActivityStep, GuidedActivityStep, isGuidedActivityStep } from "@/backend/shared";
+import { ActivityStep } from "@/backend/shared";
 import { Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import React, { useEffect, useMemo, useState } from "react";
 import { Alert, Modal, SafeAreaView, StyleSheet, View } from "react-native";
 import { PhotoUpload } from "./PhotoUpload";
 import { ThemedButton } from "./ThemedButton";
-import { ThemedPicker } from "./ThemedPicker";
 import { ThemedText } from "./ThemedText";
 import { ThemedTextInput } from "./ThemedTextInput";
 import { ThemedView } from "./ThemedView";
-import { VisibleIfEditor } from "./VisibleIfEditor"; // Adjust path
+import { VisibleIfEditor } from "./VisibleIfEditor";
 
 interface EditActivityStepProps {
   initialStep: ActivityStep;
@@ -39,12 +37,6 @@ export const EditActivityStep: React.FC<EditActivityStepProps> = ({
     setEditableStep((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleGuidedChange = (field: keyof GuidedActivityStep, value: any) => {
-    if (isGuidedActivityStep(editableStep)) {
-      setEditableStep((prev) => ({ ...prev, [field]: value } as GuidedActivityStep));
-    }
-  };
-
   const handleSave = () => {
     // Basic Validation Example
     if (!editableStep.slug.trim()) {
@@ -54,18 +46,6 @@ export const EditActivityStep: React.FC<EditActivityStepProps> = ({
     if (!editableStep.content.trim()) {
       Alert.alert("Validation Error", "Content cannot be empty.");
       return;
-    }
-    if (isGuidedActivityStep(editableStep)) {
-      if (editableStep.duration <= 0) {
-        Alert.alert("Validation Error", "Duration must be positive.");
-        return;
-      }
-    } else {
-      // TaskActivityStep
-      if (!editableStep.instructionMedia) {
-        Alert.alert("Validation Error", "Instruction Media is required for Task Activity Step.");
-        return;
-      }
     }
     onSave(editableStep);
   };
@@ -158,48 +138,19 @@ export const EditActivityStep: React.FC<EditActivityStepProps> = ({
               <PhotoUpload
                 photoUri={editableStep.instructionMedia?.url ?? ""}
                 onPickPhoto={(photo) =>
-                  handleGuidedChange("instructionMedia", {
+                  handleChange("instructionMedia", {
                     type: "image",
                     url: photo?.uri,
                   })
                 }
               />
 
-              {/* ---- Fields specific to GuidedActivityStep ---- */}
-              {isGuidedActivityStep(editableStep) && (
-                <>
-                  <View style={styles.fieldGroup}>
-                    <ThemedText style={styles.label}>Duration:</ThemedText>
-                    <ThemedTextInput
-                      style={styles.input}
-                      value={String(editableStep.duration)}
-                      onChangeText={(text) => handleGuidedChange("duration", parseInt(text, 10) || 0)}
-                      placeholder="e.g., 30"
-                      keyboardType="numeric"
-                    />
-                  </View>
-
-                  <View style={styles.fieldGroup}>
-                    <ThemedText style={styles.label}>Duration Type:</ThemedText>
-                    <ThemedPicker
-                      selectedValue={editableStep.durationType}
-                      onValueChange={(itemValue) => handleGuidedChange("durationType", itemValue)}
-                      items={[
-                        { label: "Seconds", value: "seconds" },
-                        { label: "Minutes", value: "minutes" },
-                        { label: "Hours", value: "hours" },
-                      ]}
-                    />
-                  </View>
-
-                  {previousSteps && previousSteps?.length > 0 && (
-                    <VisibleIfEditor
-                      initialDependencies={editableStep.visibleIf || []}
-                      possibleDependencies={previousSteps || []}
-                      onChange={(deps) => handleGuidedChange("visibleIf", deps)}
-                    />
-                  )}
-                </>
+              {previousSteps && previousSteps?.length > 0 && (
+                <VisibleIfEditor
+                  initialDependencies={editableStep.visibleIf || []}
+                  possibleDependencies={previousSteps || []}
+                  onChange={(deps) => handleChange("visibleIf", deps)}
+                />
               )}
             </View>
             <View style={styles.buttonContainer}>
