@@ -53,7 +53,7 @@ export async function removeGoal(goalId: string): Promise<void> {
 export async function getGoalById(goalId: string): Promise<Goal | null> {
   let result = await localDb.getFirstAsync<GoalBase>(`SELECT * FROM goals WHERE id = ?`, [goalId]);
   if (!result) {
-    result = DEFAULT_GOALS.find((goal) => goal.id === goalId) || null;
+    return DEFAULT_GOALS.find((goal) => goal.id === goalId) || null;
   }
   if (!result) {
     return null;

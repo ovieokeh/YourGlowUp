@@ -27,7 +27,6 @@ export const GoalCard: React.FC<GoalCardProps> = ({ item, hiddenFields = [], act
   const accent = useThemeColor({}, "accent");
   const bg = useThemeColor({}, "background");
   const border = useThemeColor({}, "border");
-  const gray10 = useThemeColor({}, "gray10");
 
   const progress = useMemo(() => {
     const completed = item.progress?.completedActivities ?? 0;
@@ -41,7 +40,6 @@ export const GoalCard: React.FC<GoalCardProps> = ({ item, hiddenFields = [], act
     return activitiesSnapshot?.count ?? item.activities.length;
   }, [activitiesSnapshot, item.activities.length]);
 
-  console.log("item", item.id);
   return (
     <View style={[styles.card, { backgroundColor: bg, borderColor: border }]}>
       {!hiddenFields.includes("info") && (

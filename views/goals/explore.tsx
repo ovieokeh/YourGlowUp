@@ -19,8 +19,6 @@ export const GoalsExploreView = () => {
   // const { data: goals = [] } = goalsQuery;
   const goals = DEFAULT_GOALS;
 
-  console.log("goals", goals);
-
   const textColor = useThemeColor({}, "text");
   const borderColor = useThemeColor({}, "border");
   const areas = useMemo(() => Array.from(new Set(goals.map((i) => i.category))), [goals]);

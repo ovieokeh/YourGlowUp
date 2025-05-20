@@ -257,9 +257,7 @@ export async function getActivitiesSnapshot(goalId: string): Promise<{
   count: number;
 }> {
   try {
-    console.log("getActivitiesSnapshot", goalId);
     const row = await localDb.getFirstAsync<any>(`SELECT COUNT(*) as count FROM activities WHERE goalId = ?`, [goalId]);
-    console.log("getActivitiesSnapshot", row);
     if (!row) return { count: 0 };
     return { count: row.count };
   } catch (error: unknown) {
