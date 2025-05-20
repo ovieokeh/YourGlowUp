@@ -10,7 +10,7 @@ import {
   removeActivity,
   updateActivity,
 } from "../activities";
-import { ActivityCreateInput, Activity } from "../shared";
+import { Activity, ActivityCreateInput } from "../shared";
 
 export const useGetActivities = (goalId?: string) => {
   return useQuery({

@@ -4,7 +4,6 @@ import { Spacings } from "@/constants/Theme";
 import { useAppContext } from "@/hooks/app/context";
 import { useCurrentScrollY } from "@/hooks/useCurrentScrollY";
 import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
-import { invariant } from "es-toolkit";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, KeyboardAvoidingView, Modal, View } from "react-native";
 import PagerView from "react-native-pager-view";
@@ -50,7 +49,6 @@ export const AddGoalModal = ({
   onDeleteSuccess,
 }: AddGoalModalProps) => {
   const { user } = useAppContext();
-  invariant(user, "user is required");
 
   const defaultForm = useMemo(
     () => ({
@@ -63,13 +61,14 @@ export const AddGoalModal = ({
       isPublic: false,
       completionType: GoalCompletionType.INDEFINITE,
       author: {
-        id: user.id,
-        name: user.user_metadata?.full_name,
+        id: user?.id ?? "",
+        name: user?.user_metadata?.full_name,
         avatarUrl: user?.user_metadata?.avatar_url,
       },
     }),
     [user]
   );
+  const userId = useMemo(() => user?.id ?? "", [user?.id]);
 
   const insets = useSafeAreaInsets();
   const [activeIndex, setActiveIndex] = useState(0);
@@ -78,8 +77,8 @@ export const AddGoalModal = ({
 
   const [goalForm, setGoalForm] = useState<GoalCreateInput>(defaultForm);
   const addGoalMutation = useAddGoal(user?.id);
-  const updateGoalMutation = useUpdateGoal(user?.id);
-  const deleteGoalMutation = useRemoveGoal(user?.id);
+  const updateGoalMutation = useUpdateGoal(userId);
+  const deleteGoalMutation = useRemoveGoal(userId);
   const currentGoal = useGetGoalById(id);
 
   useEffect(() => {

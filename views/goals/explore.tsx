@@ -2,11 +2,11 @@ import Fuse from "fuse.js";
 import React, { useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
-import { useGetPublicGoals } from "@/backend/queries/goals";
 import { GoalCard } from "@/components/GoalCard";
 import { ThemedButton } from "@/components/ThemedButton";
 import { ThemedPicker } from "@/components/ThemedPicker";
 import { ThemedTextInput } from "@/components/ThemedTextInput";
+import { DEFAULT_GOALS } from "@/constants/Goals";
 import { BorderRadii, Spacings } from "@/constants/Theme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 
@@ -15,8 +15,9 @@ export const GoalsExploreView = () => {
   const [categoryFilter, setAreaFilter] = useState<string>("all");
   const [selected, setSelected] = useState<Set<string>>(new Set([]));
 
-  const goalsQuery = useGetPublicGoals();
-  const { data: goals = [] } = goalsQuery;
+  // const goalsQuery = useGetPublicGoals();
+  // const { data: goals = [] } = goalsQuery;
+  const goals = DEFAULT_GOALS;
 
   console.log("goals", goals);
 

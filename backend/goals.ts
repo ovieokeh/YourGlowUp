@@ -1,3 +1,4 @@
+import { DEFAULT_GOALS } from "@/constants/Goals";
 import "react-native-get-random-values";
 import { v4 as uuidv4 } from "uuid";
 import { addActivity, getActivities } from "./activities";
@@ -50,8 +51,13 @@ export async function removeGoal(goalId: string): Promise<void> {
 }
 
 export async function getGoalById(goalId: string): Promise<Goal | null> {
-  const result = await localDb.getFirstAsync<GoalBase>(`SELECT * FROM goals WHERE id = ?`, [goalId]);
-  if (!result) return null;
+  let result = await localDb.getFirstAsync<GoalBase>(`SELECT * FROM goals WHERE id = ?`, [goalId]);
+  if (!result) {
+    result = DEFAULT_GOALS.find((goal) => goal.id === goalId) || null;
+  }
+  if (!result) {
+    return null;
+  }
 
   const activities = await getActivities(goalId);
   return deserializeGoal(result, activities);

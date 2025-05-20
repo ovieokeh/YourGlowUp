@@ -25,7 +25,7 @@ export default function HomeScreen() {
   const activityLogs = useMemo(() => logs.filter(isActivityLog), [logs]);
   const completedActivityIds = useMemo(() => activityLogs.map((log) => log.activityId), [activityLogs]);
 
-  const pendingActivitiesQuery = useGetPendingActivities(completedActivityIds /*, selectedGoalId */);
+  const pendingActivitiesQuery = useGetPendingActivities(completedActivityIds);
   const items = useMemo(() => pendingActivitiesQuery.data || [], [pendingActivitiesQuery.data]);
 
   useFocusEffect(

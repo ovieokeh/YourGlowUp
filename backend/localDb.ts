@@ -7,6 +7,30 @@ import { Activity } from "./shared";
 
 export const localDb = SQLite.openDatabaseSync("sharedstep.db");
 
+/**
+ * Online also - ['goals', 'activities', 'activity_schedules', 'logs', 'goal_activity_updates', 'goal_subscriptions', 'profile', 'profile_subscriptions']
+ * goals (online) - Holds all goals created by all users including updates.
+ * activities (online) - Holds all activities created by all users including updates.
+ * activity_schedules (online) - Holds all schedules created by all users including updates.
+ * logs (online) - Holds all logs created by all users including updates.
+ * goal_activity_updates - Holds all updates to activities created by users to be used for "community" features.
+ * goal_subscriptions - Holds all subscriptions to goals created by users. This is used for the "community" features as well as for syncing.
+ * profile - Holds all user profiles including updates.
+ * profile_subscriptions - Holds all subscriptions to user profiles created by users. This is used for the "community" features as well as for syncing.
+ *
+ * Local - ['goals', 'activities', 'activity_schedules', 'logs']
+ * goals (local) - Holds all goals created by the user including updates. Not synced to the server.
+ * activities (local) - Holds all activities created by the user including updates. Not synced to the server.
+ * activity_schedules (local) - Holds all schedules created by the user including updates. Not synced to the server. Local only notifications.
+ * logs (local) - Holds all logs created by the user including updates. Not synced to the server.
+ * __note: local mode means no access to server and no syncing to server__
+ *
+ * If a goal is marked as public, all activities and logs will also be public and will be synced to the server.
+ * Otherwise, they will be private and only available on the device.
+ * Users can only create local goals and activities which will not be synced to the server.
+ * However, they can view, subscribe to, and log public goals and activities.
+ * Public goals and activities will be synced to the server.
+ */
 export async function initDatabase(reset: boolean): Promise<void> {
   if (reset) {
     await localDb.execAsync(`
@@ -111,46 +135,46 @@ export async function initDatabase(reset: boolean): Promise<void> {
 }
 
 // seed the database with default activities and goals
-export async function seedDatabase(): Promise<void> {
-  const allGoals = await localDb.getAllAsync("SELECT * FROM goals");
-  if (allGoals.length > 0) {
-    console.info("Database already seeded with goals");
-    return;
-  }
+// export async function seedDatabase(): Promise<void> {
+//   const allGoals = await localDb.getAllAsync("SELECT * FROM goals");
+//   if (allGoals.length > 0) {
+//     console.info("Database already seeded with goals");
+//     return;
+//   }
 
-  const goals = DEFAULT_GOALS.map((goal) => ({
-    ...goal,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  }));
-  const GOAL_ID_TO_DEFAULT_ID: {
-    [key: string]: string;
-  } = {};
+//   const goals = DEFAULT_GOALS.map((goal) => ({
+//     ...goal,
+//     createdAt: new Date().toISOString(),
+//     updatedAt: new Date().toISOString(),
+//   }));
+//   const GOAL_ID_TO_DEFAULT_ID: {
+//     [key: string]: string;
+//   } = {};
 
-  let goalIds: string[] = [];
-  for (const goal of goals) {
-    const goalId = await addGoal(goal);
-    GOAL_ID_TO_DEFAULT_ID[goalId] = goal.id;
-    goalIds.push(goalId);
-  }
+//   let goalIds: string[] = [];
+//   for (const goal of goals) {
+//     const goalId = await addGoal(goal);
+//     GOAL_ID_TO_DEFAULT_ID[goalId] = goal.id;
+//     goalIds.push(goalId);
+//   }
 
-  for (const goalId of goalIds) {
-    const defaultId = GOAL_ID_TO_DEFAULT_ID[goalId];
+//   for (const goalId of goalIds) {
+//     const defaultId = GOAL_ID_TO_DEFAULT_ID[goalId];
 
-    // find default activities for this goal
-    const defaultActivities = DEFAULT_ACTIVITIES.filter((activity) => (activity as Activity).goalId === defaultId);
+//     // find default activities for this goal
+//     const defaultActivities = DEFAULT_ACTIVITIES.filter((activity) => (activity as Activity).goalId === defaultId);
 
-    await Promise.all(
-      defaultActivities.map(async (activity) => {
-        const activityId = await addActivity(goalId, {
-          ...activity,
-          schedules: activity.schedules?.map((schedule) => ({
-            ...schedule,
-            activityId: activityId,
-          })),
-        });
-        return activityId;
-      })
-    );
-  }
-}
+//     await Promise.all(
+//       defaultActivities.map(async (activity) => {
+//         const activityId = await addActivity(goalId, {
+//           ...activity,
+//           schedules: activity.schedules?.map((schedule) => ({
+//             ...schedule,
+//             activityId: activityId,
+//           })),
+//         });
+//         return activityId;
+//       })
+//     );
+//   }
+// }

@@ -23,7 +23,7 @@ const TABS = [
 ] as TabConfig[];
 
 export default function GoalsScreen() {
-  const { goals } = useAppContext();
+  const { goals, user } = useAppContext();
   const router = useRouter();
   const params = useSearchParams();
   const activeTab = (params.get("activeTab") as string) || "my-goals";
@@ -126,7 +126,9 @@ export default function GoalsScreen() {
         pagerRef={pagerRef}
         scrollContentContainerStyle={{ flexGrow: 1 }}
       />
-      <AddGoalModal isVisible={isAddModalVisible} onRequestClose={onRequestClose} onUpsertSuccess={onSubmit} />
+      {user && (
+        <AddGoalModal isVisible={isAddModalVisible} onRequestClose={onRequestClose} onUpsertSuccess={onSubmit} />
+      )}
     </ThemedView>
   );
 }

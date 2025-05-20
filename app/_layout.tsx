@@ -1,6 +1,6 @@
 import { queryClient } from "@/backend";
 import { resetBadges, resetShownToasts, resetXP } from "@/backend/gamification";
-import { initDatabase, seedDatabase } from "@/backend/localDb";
+import { initDatabase } from "@/backend/localDb";
 import { getOnboardingStatus, OnboardingStatus, setOnboardingStatus } from "@/backend/queries/onboarding";
 import { AppProvider } from "@/hooks/app/context";
 import { ThemeProviderCustom, useAppTheme } from "@/hooks/theme/context";
@@ -88,7 +88,7 @@ function App() {
       await resetBadges();
       await resetXP();
       await resetShownToasts();
-      await seedDatabase();
+      // await seedDatabase();
       setOnboardingStatus("main-onboarding", {
         step: 0,
         status: OnboardingStatus.NOT_STARTED,

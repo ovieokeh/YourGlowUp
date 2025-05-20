@@ -55,8 +55,8 @@ export const AudioPlayer = ({ uri, autoPlay, onPlay, onPause, onComplete }: Prop
         maximumValue={player.duration > 0 ? player.duration : 0}
         value={status.currentTime}
         onSlidingComplete={handleSeek}
-        minimumTrackTintColor={text}
-        maximumTrackTintColor={accent}
+        minimumTrackTintColor={accent}
+        maximumTrackTintColor={text}
         thumbTintColor={tint}
       />
 

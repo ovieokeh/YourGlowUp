@@ -126,7 +126,7 @@ export const StepModal = ({
           padding: Spacings.md,
           paddingTop: Spacings.md,
           paddingBottom: insets.bottom,
-          gap: Spacings.xxl,
+          gap: Spacings.sm,
         }}
       >
         <ThemedButton
